@@ -1,0 +1,48 @@
+.footer-container {
+  background: #ffffff;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.footer-text {
+  color: #B9375D;
+}
+
+.social-buttons {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.social-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+  color: #fff;
+  transition: transform 0.3s ease, filter 0.3s ease;
+}
+
+.social-btn:hover {
+  transform: scale(1.1);
+  filter: brightness(1.1);
+}
+
+/* Brand-colors */
+.instagram { background: #E4405F; }
+.facebook  { background: #1877F2; }
+.youtube   { background: #FF0000; }
+.whatsapp  { background: #25D366; }
+.email     { background: #6D4C41; }
+
+/* Responsive sizing */
+@media (max-width: 576px) {
+  .footer-container { padding: 1rem; }
+  .social-btn {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+}

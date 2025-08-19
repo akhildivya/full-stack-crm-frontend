@@ -1,0 +1,67 @@
+/* NotFound.css */
+.nf-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 2rem;
+  background: linear-gradient(135deg, #e0f7fa, #e8eaf6);
+}
+
+.nf-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 2rem;
+  max-width: 400px;
+  width: 100%;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+.nf-img {
+  width: 70%;
+  height: auto;
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.nf-content h1 {
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  margin: 1rem 0 0.5rem;
+}
+
+.nf-content p {
+  font-size: clamp(1rem, 2.5vw, 1.2rem);
+  margin-bottom: 1rem;
+  color: #555;
+}
+
+.nf-button {
+  padding: 0.75rem 1.5rem;
+  background-color: #6200ea;
+  color: white;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 600;
+  transition: background-color 0.3s ease;
+}
+
+.nf-button:hover {
+  background-color: #3700b3;
+}
+
+@media (max-width: 600px) {
+  .nf-card {
+    padding: 1.5rem;
+  }
+  .nf-img {
+    width: 90%;
+  }
+}
