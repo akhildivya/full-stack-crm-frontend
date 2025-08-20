@@ -103,7 +103,7 @@ function Login() {
                     <input type="password" name="password" value={inputs.password} onChange={(e) => takeInput(e)} placeholder="password" required />
 
                     <button type="submit" onClick={(e) => handleLogin(e)}  >Login</button>
-
+                    <p className='signup-text' > Forgot Password? <Link className="signup-link" to={'/forgot-password'} >Click here</Link></p>
                     <p className='signup-text' > New user? <Link className="signup-link" to={'/register'} >Signup</Link></p>
                 </form>
             </div>
