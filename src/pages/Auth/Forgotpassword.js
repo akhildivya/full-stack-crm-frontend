@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import Layout from '../../components/layout/Layout'
 import { toast } from 'react-toastify';
 import { forgotPasswordApi } from '../../service/allApis';
-import axios from 'axios';
+
 
 
 function Forgotpassword() {
@@ -11,26 +11,59 @@ function Forgotpassword() {
     const [message, setMessage] = useState("")
     const handleForgotPassword = async (e) => {
         e.preventDefault()
-        const result = await axios.post('http://localhost:4000/forgot-password', { email })
-        setMessage(result.data?.message)
-        if (result.status == 200) {
-        
-                        toast.success(`${result.data?.message}`, {
-                            position: "top-center",
-                            autoClose: 5000,
-                            hideProgressBar: false,
-                            closeOnClick: false,
-                            pauseOnHover: true,
-                            draggable: true,
-                            progress: undefined,
-                            theme: "light",
-        
-                        });
-                    }
-                    setEmail("")
-                    setMessage("")
+        //  const result = await axios.post('http://localhost:4000/forgot-password', { email })
+        if (!email) {
+            toast.warn('Enter a valid email id', {
+                position: "top-center",
+                autoClose: 5000,
+                hideProgressBar: false,
+                closeOnClick: false,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+                theme: "light",
 
+            });
+        }
+        else {
+            const result = await forgotPasswordApi({ email })
+            setMessage(result.data?.message)
+            if (result.status == 200) {
+                toast.success(`${result.data?.message}`, {
+                    position: "top-center",
+                    autoClose: 7000,
+                    hideProgressBar: false,
+                    closeOnClick: false,
+                    pauseOnHover: true,
+                    draggable: true,
+                    progress: undefined,
+                    theme: "light",
+
+                });
+                setEmail("")
+                setMessage("")
+            }
+            else {
+                toast.error(`${result.response.data.message}`, {
+                    position: "top-center",
+                    autoClose: 5000,
+                    hideProgressBar: false,
+                    closeOnClick: false,
+                    pauseOnHover: true,
+                    draggable: true,
+                    progress: undefined,
+                    theme: "light",
+
+                });
+                setEmail("")
+                setMessage("")
+            }
+
+
+
+        }
     }
+
     return (
         <Layout title={'CRM - Forgot-password'}>
             <div className="signup-page">
@@ -42,7 +75,7 @@ function Forgotpassword() {
 
 
                     <button type="submit" onClick={(e) => handleForgotPassword(e)} >Send</button>
-                  
+
                 </form>
 
             </div>

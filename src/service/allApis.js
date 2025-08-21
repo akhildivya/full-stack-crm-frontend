@@ -13,3 +13,6 @@ export const privateRouteApi=async()=>{
 export const forgotPasswordApi=async(body)=>{
     return await commonApi('POST',`${BASEURL}/forgot-password`,body,"")
 }
+export const resetPasswordApi=async(header,body,id)=>{
+    return await commonApi('POST',`${BASEURL}/reset-password/${id}`,body,header)
+}

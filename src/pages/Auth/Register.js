@@ -4,15 +4,16 @@ import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify';
 import '../../css/auth.css'
 import { registerApi } from '../../service/allApis';
-
+import { AiFillEye, AiFillEyeInvisible } from 'react-icons/ai';
 
 function Register() {
     const navigate = useNavigate()
+    const [showPassword, setShowPassword] = useState(false);
     const [inputs, setInputs] = useState({
         username: '',
         email: '',
         password: ''
-        
+
     })
     const takeInput = (e) => {
         const { name, value } = e.target
@@ -87,8 +88,23 @@ function Register() {
 
                     <input type="text" name="username" value={inputs.username} onChange={(e) => takeInput(e)} placeholder="username" required />
                     <input type="email" name="email" value={inputs.email} onChange={(e) => takeInput(e)} placeholder="email" required />
-                    <input type="password" name="password" value={inputs.password} onChange={(e) => takeInput(e)} placeholder="password" required />
-                    
+                    <div style={{ position: 'relative', width: '100%' }}>
+                        <input type={showPassword ? 'text' : 'password'} name="password" value={inputs.password} onChange={(e) => takeInput(e)} placeholder="password" required />
+                        <span
+                            onClick={() => setShowPassword((prev) => !prev)}
+                            style={{
+                                position: 'absolute',
+                                right: 8,
+                                top: '50%',
+                                transform: 'translateY(-50%)',
+                                cursor: 'pointer'
+                            }}
+                            aria-label="Toggle Password Visibility"
+                        >
+                            {showPassword ? <AiFillEyeInvisible /> : <AiFillEye />}
+                        </span>
+                    </div>
+
                     <button type="submit" onClick={(e) => handleRegister(e)}>Sign Up</button>
                     <p className='signup-text'>Already have account? <Link to={'/login'} className="signup-link">Login</Link></p>
                 </form>
