@@ -1,7 +1,7 @@
 import React from 'react'
 import Layout from '../components/layout/Layout'
 import { useAuth } from '../context/auth'
-import { Row, Col } from 'react-bootstrap';
+
 import '../css/home.css'
 function HomePage() {
     const [auth, setAuth] = useAuth()

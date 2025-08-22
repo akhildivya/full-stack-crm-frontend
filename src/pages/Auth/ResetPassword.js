@@ -10,12 +10,14 @@ function ResetPassword() {
     const navigate = useNavigate()
     const [password, setPassword] = useState("")
     const [confirm, setConfirm] = useState("");
-    const [message, setMessage] = useState("")
     const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    const [errors, setErrors] = useState({});
+    
     const handleReset = async (e) => {
         e.preventDefault()
         if (!password || !confirm) {
-            toast.warn("Cannot be empty", {
+            toast.warn("Password cannot be blank", {
                 position: "top-center",
                 autoClose: 5000,
                 hideProgressBar: false,
@@ -47,8 +49,8 @@ function ResetPassword() {
         }
         try {
             const result = await axios.post(`http://localhost:4000/reset-password/${id}/${token}`, { password })
-         
-            setMessage(result.data.message)
+
+
             if (result.status == 200) {
                 toast.success(`${result.data?.message}`, {
                     position: "top-center",
@@ -65,17 +67,30 @@ function ResetPassword() {
             }
         }
         catch (error) {
-            setMessage(error.response.data.message)
+
+            toast.error('Server error due to internet connectivity', {
+                position: "top-center",
+                autoClose: 7000,
+                hideProgressBar: false,
+                closeOnClick: false,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+                theme: "light",
+
+            });
+            setPassword("")
+            setConfirm("")
         }
     }
     return (
         <Layout title={'CRM-Reset Password'}>
             <div className="signup-page">
                 <form className="signup-card" >
-                    <h4 className="form-heading" >Reset Password</h4>
+                    <h6 className="form-heading" >Reset Password</h6>
 
                     <div style={{ position: 'relative', width: '100%' }}>
-                        <input type={showPassword ? 'text' : 'password'} name="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="New Password" required />
+                        <input type={showPassword ? 'text' : 'password'} name="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="New password" required />
                         <span
                             onClick={() => setShowPassword((prev) => !prev)}
                             style={{
@@ -93,7 +108,7 @@ function ResetPassword() {
 
 
                     <div style={{ position: 'relative', width: '100%' }}>
-                        <input type={showPassword ? 'text' : 'password'} placeholder="Confirm password" value={confirm} onChange={e => setConfirm(e.target.value)} required />
+                        <input type={showPassword ? 'text' : 'password'} placeholder="Confirm new password" value={confirm} onChange={e => setConfirm(e.target.value)} required />
                         <span
                             onClick={() => setShowPassword((prev) => !prev)}
                             style={{

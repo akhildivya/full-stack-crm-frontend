@@ -12,22 +12,75 @@ function Login() {
     const navigate = useNavigate()
     const location = useLocation()
     const [showPassword, setShowPassword] = useState(false);
+    const [errors, setErrors] = useState({});
     const [auth, setAuth] = useAuth()
     const [inputs, setInputs] = useState({
         email: "",
         password: ""
     })
-  
-    const takeInput = (e) => {
+
+    const handleChange = (e) => {
         const { name, value } = e.target
-        setInputs({ ...inputs, [name]: value })
+        // setInputs({ ...inputs, [name]: value })
+        setInputs((prev) => ({
+            ...prev,
+            [name]: value,
+        }));
+        const errorMsg = validateField(name, value);
+        setErrors((prev) => ({
+            ...prev,
+            [name]: errorMsg,
+        }));
+
     }
     console.log(inputs);
+    const handleBlur = (e) => {
+        // Optional: re-run validation on blur for fields that haven’t been touched
+        handleChange(e);
+    };
+    const validateAll = () => {
+        const newErrors = {};
+        Object.entries(inputs).forEach(([field, value]) => {
+            const error = validateField(field, value);
+            if (error) newErrors[field] = error;
+        });
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
+    const validateField = (name, value) => {
+        let error = "";
 
-    const handleLogin = async (e) => 
-    {
+
+
+        if (name === "email") {
+            if (!value) {
+                error = "email is required";
+            } else if (!/^[\w.-]+@[\w-]+\.[A-Za-z]{2,}$/.test(value)) {
+                error = "invalid email address";
+            }
+        }
+
+        if (name === "password") {
+            if (!value) {
+                error = "password is required";
+            } else if (
+                !/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{6,15}$/.test(value)
+            ) {
+                error =
+                    "6-15 chars contain atleast one uppercase, one lowercase, and one digit";
+            }
+        }
+
+
+        return error;
+    };
+    const handleLogin = async (e) => {
 
         e.preventDefault()
+        if (validateAll()) {
+            console.log("Form submitted:", inputs);
+            // proceed with your API call or other logic
+        }
         const { email, password } = inputs
         if (!email || !password) {
             toast.warn('Pleace fill all data', {
@@ -99,13 +152,24 @@ function Login() {
 
             <div className="signup-page">
                 <form className="signup-card" >
-                    <h4 className="form-heading" >Login</h4>
+                    <h6 className="form-heading" >Login</h6>
 
-                    <input type="email" name="email" value={inputs.email} onChange={(e) => takeInput(e)} placeholder="email" required />
+                    <div>
+                        <input type="email" name="email"
+                            value={inputs.email}
+                            onChange={handleChange}
+                            onBlur={handleBlur}
+                            placeholder="email" required />
+                        {errors.email && (<p style={{ color: "red" }}>{errors.email}</p>)}
+                    </div>
 
-
-                    <div style={{ position: 'relative', width: '100%' }}>
-                        <input type={showPassword ? 'text' : 'password'} name="password" value={inputs.password} onChange={(e) => takeInput(e)} placeholder="password" required style={{ paddingRight: '2rem' }} />
+                { /*   <div style={{ position: 'relative', width: '100%' }}>
+                        <input type={showPassword ? 'text' : 'password'} name="password"
+                            value={inputs.password}
+                            onChange={handleChange}
+                            onBlur={handleBlur}
+                            placeholder="password" required
+                            style={{ paddingRight: '2rem' }} />
                         <span
                             onClick={() => setShowPassword((prev) => !prev)}
                             style={{
@@ -119,7 +183,30 @@ function Login() {
                         >
                             {showPassword ? <AiFillEyeInvisible /> : <AiFillEye />}
                         </span>
-                    </div>
+                    </div>*/}
+                    
+                                        <div className="password-field-wrapper">
+                                            <div className={`input-container${errors.password ? ' error' : ''}`}>
+                                                <input
+                                                    type={showPassword ? 'text' : 'password'}
+                                                    name="password"
+                                                    value={inputs.password}
+                                                    onChange={handleChange}
+                                                    onBlur={handleBlur}
+                                                    placeholder="Password"
+                                                    required
+                                                    className="password-input"
+                                                />
+                                                <span
+                                                    className="toggle-icon"
+                                                    onClick={() => setShowPassword((prev) => !prev)}
+                                                    aria-label="Toggle Password Visibility"
+                                                >
+                                                    {showPassword ? <AiFillEyeInvisible /> : <AiFillEye />}
+                                                </span>
+                                            </div>
+                                            {errors.password && <p className="error-message">{errors.password}</p>}
+                                        </div>
 
 
                     <button type="submit" onClick={(e) => handleLogin(e)}  >Login</button>
