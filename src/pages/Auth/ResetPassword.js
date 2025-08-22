@@ -12,8 +12,8 @@ function ResetPassword() {
     const [confirm, setConfirm] = useState("");
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-    const [errors, setErrors] = useState({});
-    
+
+
     const handleReset = async (e) => {
         e.preventDefault()
         if (!password || !confirm) {
@@ -102,25 +102,26 @@ function ResetPassword() {
                             }}
                             aria-label="Toggle Password Visibility"
                         >
-                            {showPassword ? <AiFillEyeInvisible /> : <AiFillEye />}
+                            {showPassword ? <AiFillEye /> : <AiFillEyeInvisible />}
                         </span>
                     </div>
 
 
                     <div style={{ position: 'relative', width: '100%' }}>
-                        <input type={showPassword ? 'text' : 'password'} placeholder="Confirm new password" value={confirm} onChange={e => setConfirm(e.target.value)} required />
+                        <input type={showConfirmPassword ? 'text' : 'password'} placeholder="Confirm new password" value={confirm} onChange={e => setConfirm(e.target.value)} required />
                         <span
-                            onClick={() => setShowPassword((prev) => !prev)}
+                            onClick={() => setShowConfirmPassword((prev) => !prev)}
                             style={{
                                 position: 'absolute',
                                 right: 8,
                                 top: '50%',
+
                                 transform: 'translateY(-50%)',
                                 cursor: 'pointer'
                             }}
                             aria-label="Toggle Password Visibility"
                         >
-                            {showPassword ? <AiFillEyeInvisible /> : <AiFillEye />}
+                            {showConfirmPassword ? <AiFillEye /> : <AiFillEyeInvisible />}
                         </span>
                     </div>
 

@@ -138,7 +138,11 @@
   color: red;
   font-size: 0.875rem;
 }
+
+
 .password-input:focus {
   outline: none;
   border-color: initial; /* or apply your own style */
 }
+
+

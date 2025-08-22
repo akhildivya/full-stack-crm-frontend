@@ -5,7 +5,8 @@ import { toast } from 'react-toastify';
 import '../../css/auth.css'
 import { registerApi } from '../../service/allApis';
 import { AiFillEye, AiFillEyeInvisible } from 'react-icons/ai';
-
+import { FaUser } from 'react-icons/fa';
+import { MdEmail } from "react-icons/md";
 
 function Register() {
     const navigate = useNavigate()
@@ -217,32 +218,71 @@ function Register() {
         <Layout title={'CRM - Register new user'}>
             <div className="signup-page">
                 <form className="signup-card"  >
-                    <h6 className="form-heading" >Sign Up</h6>
+                    <h6 className="form-heading" >Register</h6>
 
-                    <div>
+                    {/* <div className='wrapper'>
+
                         <input type="text" name="username"
                             value={inputs.username}
                             onChange={handleChange}
                             onBlur={handleBlur}
                             placeholder="username" required
+                            className="input-with-icon"
 
                         />
-                        {errors.username && (<p style={{ color: "red" }}>{errors.username}</p>)}
+
+                        {errors.username && <p className="error-message">{errors.username}</p>}
+                    </div>*/}
+
+                    <div className="password-field-wrapper">
+                        <div className={`input-container${errors.username ? ' error' : ''}`}>
+                            <input
+
+                                name="username"
+                                value={inputs.username}
+                                onChange={handleChange}
+                                onBlur={handleBlur}
+                                placeholder="username"
+                                required
+                                className="password-input"
+                            />
+                            <FaUser size={15} className="toggle-icon" />
+
+                        </div>
+                        {errors.username && <p className="error-message">{errors.username}</p>}
                     </div>
 
 
+                    <div className="password-field-wrapper">
+                        <div className={`input-container${errors.email ? ' error' : ''}`}>
+                            <input
 
-                    <div>
+                                name="email"
+                                value={inputs.email}
+                                onChange={handleChange}
+                                onBlur={handleBlur}
+                                placeholder="email"
+                                required
+                                className="password-input"
+                            />
+                            <MdEmail size={15} className="toggle-icon" />
+
+                        </div>
+                        {errors.email && <p className="error-message">{errors.email}</p>}
+                    </div>
+
+                     {/* <div className="wrapper">
                         <input type="email" name="email"
                             value={inputs.email}
                             onChange={handleChange}
                             onBlur={handleBlur}
                             placeholder="email" required
-
+                            className="input-with-icon"
                         />
-                        {errors.email && (<p style={{ color: "red" }}>{errors.email}</p>)}
 
-                    </div>
+                        {errors.email && <p className="error-message">{errors.email}</p>}
+
+                    </div>*/}
 
 
 
@@ -254,7 +294,7 @@ function Register() {
                                 value={inputs.password}
                                 onChange={handleChange}
                                 onBlur={handleBlur}
-                                placeholder="Password"
+                                placeholder="password"
                                 required
                                 className="password-input"
                             />
@@ -263,7 +303,7 @@ function Register() {
                                 onClick={() => setShowPassword((prev) => !prev)}
                                 aria-label="Toggle Password Visibility"
                             >
-                                {showPassword ? <AiFillEyeInvisible /> : <AiFillEye />}
+                                {showPassword ? <AiFillEye /> : <AiFillEyeInvisible />}
                             </span>
                         </div>
                         {errors.password && <p className="error-message">{errors.password}</p>}
@@ -277,7 +317,7 @@ function Register() {
                                 value={inputs.confirmPassword}
                                 onChange={handleChange}
                                 onBlur={handleBlur}
-                                placeholder="Confirm password"
+                                placeholder="confirm password"
                                 required
                                 className="password-input"
                             />
@@ -286,7 +326,7 @@ function Register() {
                                 onClick={() => setShowConfirmPassword((prev) => !prev)}
                                 aria-label="Toggle Password Visibility"
                             >
-                                {showPassword ? <AiFillEyeInvisible /> : <AiFillEye />}
+                                {showConfirmPassword ? <AiFillEye /> : <AiFillEyeInvisible />}
                             </span>
                         </div>
                         {errors.confirmPassword && <p className="error-message">{errors.confirmPassword}</p>}

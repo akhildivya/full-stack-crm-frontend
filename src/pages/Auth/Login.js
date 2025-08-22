@@ -7,6 +7,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { toast } from 'react-toastify';
 import { loginApi } from '../../service/allApis';
 import { useAuth } from '../../context/auth';
+import { MdEmail } from 'react-icons/md';
 
 function Login() {
     const navigate = useNavigate()
@@ -49,9 +50,6 @@ function Login() {
     };
     const validateField = (name, value) => {
         let error = "";
-
-
-
         if (name === "email") {
             if (!value) {
                 error = "email is required";
@@ -154,59 +152,55 @@ function Login() {
                 <form className="signup-card" >
                     <h6 className="form-heading" >Login</h6>
 
-                    <div>
+                    {/*    <div>
                         <input type="email" name="email"
                             value={inputs.email}
                             onChange={handleChange}
                             onBlur={handleBlur}
                             placeholder="email" required />
-                        {errors.email && (<p style={{ color: "red" }}>{errors.email}</p>)}
+                        {errors.email && <p className="error-message">{errors.email}</p>}
+                    </div>*/}
+                    <div className="password-field-wrapper">
+                        <div className={`input-container${errors.email ? ' error' : ''}`}>
+                            <input
+
+                                name="email"
+                                value={inputs.email}
+                                onChange={handleChange}
+                                onBlur={handleBlur}
+                                placeholder="email"
+                                required
+                                className="password-input"
+                            />
+                            <MdEmail size={15} className="toggle-icon" />
+
+                        </div>
+                        {errors.email && <p className="error-message">{errors.email}</p>}
                     </div>
 
-                { /*   <div style={{ position: 'relative', width: '100%' }}>
-                        <input type={showPassword ? 'text' : 'password'} name="password"
-                            value={inputs.password}
-                            onChange={handleChange}
-                            onBlur={handleBlur}
-                            placeholder="password" required
-                            style={{ paddingRight: '2rem' }} />
-                        <span
-                            onClick={() => setShowPassword((prev) => !prev)}
-                            style={{
-                                position: 'absolute',
-                                right: 8,
-                                top: '50%',
-                                transform: 'translateY(-50%)',
-                                cursor: 'pointer'
-                            }}
-                            aria-label="Toggle Password Visibility"
-                        >
-                            {showPassword ? <AiFillEyeInvisible /> : <AiFillEye />}
-                        </span>
-                    </div>*/}
-                    
-                                        <div className="password-field-wrapper">
-                                            <div className={`input-container${errors.password ? ' error' : ''}`}>
-                                                <input
-                                                    type={showPassword ? 'text' : 'password'}
-                                                    name="password"
-                                                    value={inputs.password}
-                                                    onChange={handleChange}
-                                                    onBlur={handleBlur}
-                                                    placeholder="Password"
-                                                    required
-                                                    className="password-input"
-                                                />
-                                                <span
-                                                    className="toggle-icon"
-                                                    onClick={() => setShowPassword((prev) => !prev)}
-                                                    aria-label="Toggle Password Visibility"
-                                                >
-                                                    {showPassword ? <AiFillEyeInvisible /> : <AiFillEye />}
-                                                </span>
-                                            </div>
-                                            {errors.password && <p className="error-message">{errors.password}</p>}
-                                        </div>
+
+                    <div className="password-field-wrapper">
+                        <div className={`input-container${errors.password ? ' error' : ''}`}>
+                            <input
+                                type={showPassword ? 'text' : 'password'}
+                                name="password"
+                                value={inputs.password}
+                                onChange={handleChange}
+                                onBlur={handleBlur}
+                                placeholder="Password"
+                                required
+                                className="password-input"
+                            />
+                            <span
+                                className="toggle-icon"
+                                onClick={() => setShowPassword((prev) => !prev)}
+                                aria-label="Toggle Password Visibility"
+                            >
+                                {showPassword ? <AiFillEyeInvisible /> : <AiFillEye />}
+                            </span>
+                        </div>
+                        {errors.password && <p className="error-message">{errors.password}</p>}
+                    </div>
 
 
                     <button type="submit" onClick={(e) => handleLogin(e)}  >Login</button>
