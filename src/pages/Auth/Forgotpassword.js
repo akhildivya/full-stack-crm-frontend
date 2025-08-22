@@ -42,7 +42,7 @@ function Forgotpassword() {
 
         //  const result = await axios.post('http://localhost:4000/forgot-password', { email })
         if (!email) {
-            toast.warn('Enter a valid email id', {
+            toast.warn('email address is required.', {
                 position: "top-center",
                 autoClose: 5000,
                 hideProgressBar: false,

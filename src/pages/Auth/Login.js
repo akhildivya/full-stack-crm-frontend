@@ -117,15 +117,15 @@ function Login() {
                 })
                 setAuth({
                     ...auth,
-                    user: result.data.user,
-                    token: result.data.token,
+                    user: result.data?.user,
+                    token: result.data?.token,
                 })
                 localStorage.setItem('auth', JSON.stringify(result.data))
 
                 navigate(location.state || '/dashboard')
             }
             else {
-                toast.error(`${result.response.data}`, {
+                toast.error(`${result.response?.data}`, {
                     position: "top-center",
                     autoClose: 5000,
                     hideProgressBar: false,
@@ -187,7 +187,7 @@ function Login() {
                                 value={inputs.password}
                                 onChange={handleChange}
                                 onBlur={handleBlur}
-                                placeholder="Password"
+                                placeholder="password"
                                 required
                                 className="password-input"
                             />
@@ -196,7 +196,7 @@ function Login() {
                                 onClick={() => setShowPassword((prev) => !prev)}
                                 aria-label="Toggle Password Visibility"
                             >
-                                {showPassword ? <AiFillEyeInvisible /> : <AiFillEye />}
+                                {showPassword ? <AiFillEye /> : <AiFillEyeInvisible />}
                             </span>
                         </div>
                         {errors.password && <p className="error-message">{errors.password}</p>}

@@ -112,7 +112,7 @@ function Register() {
         }
         const { username, email, password, confirmPassword } = inputs
         if (!username || !email || !password || !confirmPassword) {
-            toast.warn('Please fill all data', {
+            toast.warn('All fields are required!', {
                 position: "top-center",
                 autoClose: 5000,
                 hideProgressBar: false,
@@ -174,7 +174,7 @@ function Register() {
                 navigate('/login')
             }
             else {
-                toast.error(`${result.response.data}` || "Registration failed", {
+                toast.error(`${result.response.data?.message}` || "Registration failed", {
                     position: "top-center",
                     autoClose: 5000,
                     hideProgressBar: false,
@@ -197,7 +197,7 @@ function Register() {
 
         catch (error) {
 
-            toast.error(error.response?.data || "Server error", {
+            toast.error( "Server error", {
                 position: "top-center",
                 autoClose: 5000,
                 hideProgressBar: false,
