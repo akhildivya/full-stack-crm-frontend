@@ -7,14 +7,15 @@ import { registerApi } from '../../service/allApis';
 import { AiFillEye, AiFillEyeInvisible } from 'react-icons/ai';
 import { FaUser } from 'react-icons/fa';
 import { MdEmail } from "react-icons/md";
-import { FaKey } from "react-icons/fa";
+import { PiLockKeyFill } from "react-icons/pi";
 import { FaPhone } from "react-icons/fa";
-
+import { PiLockKeyOpenFill } from "react-icons/pi";
 function Register() {
     const navigate = useNavigate()
 
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    const [showSecret,setShowSecret]=useState(false)
     const [errors, setErrors] = useState({});
     const [inputs, setInputs] = useState({
         username: '',
@@ -129,7 +130,16 @@ function Register() {
         const errors = [];
 
         if (userType === "Admin" && secretKey !== "unlock@superhhero") {
-            errors.push("Invalid admin");
+            errors.push("Invalid secretkey");
+            setInputs({
+
+                username: "",
+                email: "",
+                password: "",
+                confirmPassword: "",
+                phone:'',
+                userType:'User'
+            })
         }
         if (!username || !email || !password || !phone || !confirmPassword) {
             errors.push("All fields are required!");
@@ -310,13 +320,20 @@ function Register() {
 
                             <input
                                 name='secretKey'
-                                type="text"
+                                type={showSecret ? 'text' : 'password'}
                                 className="password-input"
                                 placeholder="secret key"
                                 onChange={handleChange}
 
                             />
-                            <FaKey size={15} className="toggle-icon" />
+                            <span
+                                className="toggle-icon"
+                                onClick={() => setShowSecret((prev) => !prev)}
+                                aria-label="Toggle Password Visibility"
+                            >
+                                {showSecret ? <PiLockKeyOpenFill /> : <PiLockKeyFill />}
+                            </span>
+                            
                         </div>
                     ) : null}
 
