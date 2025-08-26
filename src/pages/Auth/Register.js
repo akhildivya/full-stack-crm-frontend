@@ -7,6 +7,8 @@ import { registerApi } from '../../service/allApis';
 import { AiFillEye, AiFillEyeInvisible } from 'react-icons/ai';
 import { FaUser } from 'react-icons/fa';
 import { MdEmail } from "react-icons/md";
+import { FaKey } from "react-icons/fa";
+import { FaPhone } from "react-icons/fa";
 
 function Register() {
     const navigate = useNavigate()
@@ -18,7 +20,10 @@ function Register() {
         username: '',
         email: '',
         password: '',
-        confirmPassword: ''
+        phone: '',
+        confirmPassword: '',
+        userType: 'User',
+        secretKey: ''
 
     })
 
@@ -79,6 +84,18 @@ function Register() {
             }
         }
 
+        if (name === "phone") {
+            if (!value) {
+                error = "mobile number is required";
+            } else if (value.length < 10) {
+                error = "minimum 10 digits";
+            } else if (value.length > 15) {
+                error = "maximum 15 characters";
+            } else if (!/^\+?[0-9]{10,15}$/.test(value)) {
+                error = "invalid mobile number format";
+            }
+        }
+
         if (name === "password") {
             if (!value) {
                 error = "password is required";
@@ -105,12 +122,51 @@ function Register() {
 
 
     const handleRegister = async (e) => {
+
         e.preventDefault()
+
+        const { username, email, password, confirmPassword, userType, secretKey,phone } = inputs
+        const errors = [];
+
+        if (userType === "Admin" && secretKey !== "unlock@superhhero") {
+            errors.push("Invalid admin");
+        }
+        if (!username || !email || !password || !phone || !confirmPassword) {
+            errors.push("All fields are required!");
+        }
+
+        if (errors.length > 0) {
+            toast.warn(
+                <div>
+                    {errors.map((err, idx) => (
+                        <div key={idx}>{err}</div>
+                    ))}
+                </div>,
+                { position: "top-center", autoClose: 5000, }
+            );
+            return;
+        }
         if (validateAll()) {
             console.log("Form submitted:", inputs);
             // proceed with your API call or other logic
         }
-        const { username, email, password, confirmPassword } = inputs
+        {/*   if (userType == "Admin" && secretKey != "AdarshT") {
+
+            toast.warn('Invalid Admin', {
+                position: "top-center",
+                autoClose: 5000,
+                hideProgressBar: false,
+                closeOnClick: false,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+                theme: "light",
+
+            });
+        
+            return
+
+        }
         if (!username || !email || !password || !confirmPassword) {
             toast.warn('All fields are required!', {
                 position: "top-center",
@@ -126,7 +182,7 @@ function Register() {
 
             return
 
-        }
+       }*/}
         if (password !== confirmPassword) {
             toast.warn('Passwords do not match', {
                 position: "top-center",
@@ -144,17 +200,19 @@ function Register() {
                 username: "",
                 email: "",
                 password: "",
-                confirmPassword: ""
+                confirmPassword: "",
+                phone:'',
+                userType:'User'
             })
             return;
 
         }
 
         try {
-            const result = await registerApi({ username, email, password })
+            const result = await registerApi({ username, email, phone, password, userType })
             console.log(result);
             if (result.status == 200) {
-                toast.success(`${result.data}`, {
+                toast.success(`${result?.data}`, {
                     position: "top-center",
                     autoClose: 5000,
                     hideProgressBar: false,
@@ -169,7 +227,9 @@ function Register() {
                     username: "",
                     email: "",
                     password: "",
-                    confirmPassword: ""
+                    confirmPassword: "",
+                    phone:'',
+                    userType:'User'
                 })
                 navigate('/login')
             }
@@ -190,14 +250,16 @@ function Register() {
                     username: "",
                     email: "",
                     password: "",
-                    confirmPassword: ""
+                    confirmPassword: "",
+                    phone:'',
+                    userType:'User'
                 })
             }
         }
 
         catch (error) {
 
-            toast.error( "Server error", {
+            toast.error('server error', {
                 position: "top-center",
                 autoClose: 5000,
                 hideProgressBar: false,
@@ -207,7 +269,7 @@ function Register() {
                 progress: undefined,
                 theme: "light",
             });
-            setInputs({ username: '', email: '', password: '', confirmPassword: '' });
+            setInputs({ username: '', email: '', password: '', confirmPassword: '',phone:'',userType:'User' });
         }
 
 
@@ -219,6 +281,44 @@ function Register() {
             <div className="signup-page">
                 <form className="signup-card"  >
                     <h6 className="form-heading" >Register</h6>
+                    <div className="radio-group">
+                        <label className={`radio-label ${inputs.userType === 'User' ? 'selected' : ''}`}>
+                            <input
+                                type="radio"
+                                name="userType"
+                                value="User"
+                                checked={inputs.userType === 'User'}
+                                onChange={handleChange}
+                                className="password-input"
+                            />
+                            User
+                        </label>
+                        <label className={`radio-label ${inputs.userType === 'Admin' ? 'selected' : ''}`}>
+                            <input
+                                type="radio"
+                                name="userType"
+                                value="Admin"
+                                checked={inputs.userType === 'Admin'}
+                                onChange={handleChange}
+                                className="password-input"
+                            />
+                            Admin
+                        </label>
+                    </div>
+                    {inputs.userType == "Admin" ? (
+                        <div className='input-container'>
+
+                            <input
+                                name='secretKey'
+                                type="text"
+                                className="password-input"
+                                placeholder="secret key"
+                                onChange={handleChange}
+
+                            />
+                            <FaKey size={15} className="toggle-icon" />
+                        </div>
+                    ) : null}
 
                     {/* <div className='wrapper'>
 
@@ -270,8 +370,25 @@ function Register() {
                         </div>
                         {errors.email && <p className="error-message">{errors.email}</p>}
                     </div>
+                    <div className="password-field-wrapper">
+                        <div className={`input-container${errors.phone ? ' error' : ''}`}>
+                            <input
 
-                     {/* <div className="wrapper">
+                                name="phone"
+                                value={inputs.phone}
+                                onChange={handleChange}
+                                onBlur={handleBlur}
+                                placeholder="mobile"
+                                required
+                                className="password-input"
+                            />
+                            <FaPhone size={15} className="toggle-icon" />
+
+                        </div>
+                        {errors.phone && <p className="error-message">{errors.phone}</p>}
+                    </div>
+
+                    {/* <div className="wrapper">
                         <input type="email" name="email"
                             value={inputs.email}
                             onChange={handleChange}
