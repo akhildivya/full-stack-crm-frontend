@@ -3,7 +3,7 @@ import Layout from '../../components/layout/Layout'
 import '../../css/auth.css'
 //import '../../css/test.css'
 import { AiFillEye, AiFillEyeInvisible } from 'react-icons/ai';
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify';
 import { loginApi } from '../../service/allApis';
 import { useAuth } from '../../context/auth';
@@ -11,6 +11,7 @@ import { MdEmail } from 'react-icons/md';
 
 function Login() {
     const navigate = useNavigate()
+    const location = useLocation()
     const [showPassword, setShowPassword] = useState(false);
     const [errors, setErrors] = useState({});
     const [auth, setAuth] = useAuth()
@@ -123,11 +124,13 @@ function Login() {
 
                 /*navigate(location.state || '/dashboard')*/
                 const userType = result.data?.user?.userType;
-                if (userType === 'Admin') {
-                    navigate('/admin-dashboard');
-                } else {
-                    navigate('/user-dashboard');
-                }
+                /* if (userType === 'Admin') {
+                     navigate(location.state || '/admin-dashboard');
+                 } else {
+                     navigate( location.state ||'/user-dashboard');
+                 }*/
+                const dest = location.state?.from?.pathname || (userType === 'Admin' ? '/admin-dashboard' : '/user-dashboard');
+                navigate(dest, { replace: true });
             }
             else {
                 toast.error(`${result.response?.data}`, {

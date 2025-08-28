@@ -6,7 +6,7 @@ function Dashboard() {
   
   return (
     <Layout title={"CRM-User-Dashboard "}>
-        <h1>User Dashboard</h1>
+        <h1 className='text-center'>User Dashboard</h1>
     </Layout>
   )
 }

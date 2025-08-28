@@ -8,12 +8,16 @@ import { useNavigate } from 'react-router-dom';
 import '../../css/header.css'
 function Header() {
   const navigate = useNavigate()
+
   const [auth, setAuth] = useAuth()
   const handleLogout = () => {
     setAuth({
       ...auth, user: null, token: ''
     })
+
     localStorage.removeItem('auth')
+
+
     toast.success('Logout successfully', {
       position: "top-center",
       autoClose: 5000,
@@ -27,6 +31,12 @@ function Header() {
     });
     navigate('/')
   }
+  const toPath = auth.user?.userType === 'Admin'
+    ? '/admin-dashboard'
+    : '/user-dashboard';
+    const title = auth?.user?.username
+    ? `${auth.user.username}${auth.user.userType ? ` (${auth.user.userType})` : ''}`
+    : 'Dropdown';
   return (
     <>
       <Navbar expand="lg" className="custom-navbar"  >
@@ -46,11 +56,13 @@ function Header() {
             <Nav className="ms-auto">
               <Nav.Link href="/"><strong>Home</strong></Nav.Link>
               {
+
                 !auth.user ? <>
                   <Nav.Link href="/register"><strong>Signup</strong></Nav.Link>
                   <Nav.Link href="/login"><strong>Login</strong></Nav.Link>
 
-                </> : <>   <Nav.Link as="span" className="navbar-username"><strong>{auth?.user?.username}{auth?.user?.userType && ` (${auth.user.userType})`}</strong></Nav.Link>
+                </> : <>   <Nav.Link href={toPath} ><strong>{auth?.user?.username}{auth?.user?.userType && ` (${auth.user.userType})`}</strong></Nav.Link>
+                  
                   <Nav.Link onClick={handleLogout}  ><strong>Logout</strong></Nav.Link></>
               }
 
