@@ -10,6 +10,9 @@ export const registerApi=async(body)=>{
 export const privateRouteApi=async()=>{
     return await commonApi('GET',`${BASEURL}/user-auth`,"","")
 }
+export const adminRouteApi=async()=>{
+    return await commonApi('GET',`${BASEURL}/admin-auth`,"","")
+}
 export const forgotPasswordApi=async(body)=>{
     return await commonApi('POST',`${BASEURL}/forgot-password`,body,"")
 }

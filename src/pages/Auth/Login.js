@@ -3,7 +3,7 @@ import Layout from '../../components/layout/Layout'
 import '../../css/auth.css'
 //import '../../css/test.css'
 import { AiFillEye, AiFillEyeInvisible } from 'react-icons/ai';
-import { Link, useNavigate, useLocation } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify';
 import { loginApi } from '../../service/allApis';
 import { useAuth } from '../../context/auth';
@@ -11,7 +11,6 @@ import { MdEmail } from 'react-icons/md';
 
 function Login() {
     const navigate = useNavigate()
-    const location = useLocation()
     const [showPassword, setShowPassword] = useState(false);
     const [errors, setErrors] = useState({});
     const [auth, setAuth] = useAuth()
@@ -122,7 +121,13 @@ function Login() {
                 })
                 localStorage.setItem('auth', JSON.stringify(result.data))
 
-                navigate(location.state || '/dashboard')
+                /*navigate(location.state || '/dashboard')*/
+                const userType = result.data?.user?.userType;
+                if (userType === 'Admin') {
+                    navigate('/admin-dashboard');
+                } else {
+                    navigate('/user-dashboard');
+                }
             }
             else {
                 toast.error(`${result.response?.data}`, {

@@ -7,7 +7,7 @@ import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 import '../../css/header.css'
 function Header() {
-  const navigate=useNavigate()
+  const navigate = useNavigate()
   const [auth, setAuth] = useAuth()
   const handleLogout = () => {
     setAuth({
@@ -44,13 +44,14 @@ function Header() {
           <Navbar.Toggle aria-controls="basic-navbar-nav" />
           <Navbar.Collapse id="basic-navbar-nav">
             <Nav className="ms-auto">
-              <Nav.Link  href="/"><strong>Home</strong></Nav.Link>
+              <Nav.Link href="/"><strong>Home</strong></Nav.Link>
               {
                 !auth.user ? <>
-                  <Nav.Link  href="/register"><strong>Signup</strong></Nav.Link>
-                  <Nav.Link  href="/login"><strong>Login</strong></Nav.Link>
+                  <Nav.Link href="/register"><strong>Signup</strong></Nav.Link>
+                  <Nav.Link href="/login"><strong>Login</strong></Nav.Link>
 
-                </> : <><Nav.Link onClick={handleLogout}  ><strong>Logout</strong></Nav.Link></>
+                </> : <>   <Nav.Link as="span" className="navbar-username"><strong>{auth?.user?.username}{auth?.user?.userType && ` (${auth.user.userType})`}</strong></Nav.Link>
+                  <Nav.Link onClick={handleLogout}  ><strong>Logout</strong></Nav.Link></>
               }
 
 

@@ -1,10 +1,12 @@
 import React from 'react'
 import Layout from '../../components/layout/Layout'
 
+
 function Dashboard() {
+  
   return (
-    <Layout title={"Sales Agent Dashboard - CRM"}>
-        <h1>Dashboard Page</h1>
+    <Layout title={"CRM-User-Dashboard "}>
+        <h1>User Dashboard</h1>
     </Layout>
   )
 }

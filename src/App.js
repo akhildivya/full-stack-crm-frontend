@@ -12,6 +12,8 @@ import Dashboard from "./pages/user/Dashboard";
 import PrivateRoute from "./components/routes/Private";
 import Forgotpassword from "./pages/Auth/Forgotpassword";
 import ResetPassword from "./pages/Auth/ResetPassword";
+import AdminRoute from "./components/routes/Adminroute";
+import Admindashboard from "./pages/Admin/Admindashboard";
 
 function App() {
   return (
@@ -19,10 +21,12 @@ function App() {
       <ToastContainer />
       <Routes>
         <Route path='/' element={<HomePage />}></Route>
-        <Route path='/dashboard' element={<PrivateRoute />}>
+        <Route path='/user-dashboard' element={<PrivateRoute />}>
           <Route path="" element={<Dashboard />} />
         </Route>
-
+        <Route path='/admin-dashboard' element={<AdminRoute />}>
+          <Route path="" element={<Admindashboard />} />
+        </Route>
         <Route path='/register' element={<Register />}></Route>
         <Route path='/login' element={<Login />}></Route>
         <Route path='/forgot-password' element={<Forgotpassword />}></Route>

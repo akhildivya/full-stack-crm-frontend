@@ -15,7 +15,7 @@ function Register() {
 
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-    const [showSecret,setShowSecret]=useState(false)
+    const [showSecret, setShowSecret] = useState(false)
     const [errors, setErrors] = useState({});
     const [inputs, setInputs] = useState({
         username: '',
@@ -68,7 +68,10 @@ function Register() {
         if (name === "username") {
             if (!value) {
                 error = "username is required";
-            } else if (value.length < 3) {
+            } else if (!/^[A-Z]/.test(value)) {
+                error = "first letter must be uppercase";
+            }
+            else if (value.length < 3) {
                 error = "minimum 3 characters";
             } else if (value.length > 25) {
                 error = "maximum 25 characters";
@@ -126,7 +129,7 @@ function Register() {
 
         e.preventDefault()
 
-        const { username, email, password, confirmPassword, userType, secretKey,phone } = inputs
+        const { username, email, password, confirmPassword, userType, secretKey, phone } = inputs
         const errors = [];
 
         if (userType === "Admin" && secretKey !== "unlock@superhhero") {
@@ -137,8 +140,8 @@ function Register() {
                 email: "",
                 password: "",
                 confirmPassword: "",
-                phone:'',
-                userType:'User'
+                phone: '',
+                userType: 'User'
             })
         }
         if (!username || !email || !password || !phone || !confirmPassword) {
@@ -211,8 +214,8 @@ function Register() {
                 email: "",
                 password: "",
                 confirmPassword: "",
-                phone:'',
-                userType:'User'
+                phone: '',
+                userType: 'User'
             })
             return;
 
@@ -238,8 +241,8 @@ function Register() {
                     email: "",
                     password: "",
                     confirmPassword: "",
-                    phone:'',
-                    userType:'User'
+                    phone: '',
+                    userType: 'User'
                 })
                 navigate('/login')
             }
@@ -261,8 +264,8 @@ function Register() {
                     email: "",
                     password: "",
                     confirmPassword: "",
-                    phone:'',
-                    userType:'User'
+                    phone: '',
+                    userType: 'User'
                 })
             }
         }
@@ -279,7 +282,7 @@ function Register() {
                 progress: undefined,
                 theme: "light",
             });
-            setInputs({ username: '', email: '', password: '', confirmPassword: '',phone:'',userType:'User' });
+            setInputs({ username: '', email: '', password: '', confirmPassword: '', phone: '', userType: 'User' });
         }
 
 
@@ -333,7 +336,7 @@ function Register() {
                             >
                                 {showSecret ? <PiLockKeyOpenFill /> : <PiLockKeyFill />}
                             </span>
-                            
+
                         </div>
                     ) : null}
 
