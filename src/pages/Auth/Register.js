@@ -132,7 +132,7 @@ function Register() {
         const { username, email, password, confirmPassword, userType, secretKey, phone } = inputs
         const errors = [];
 
-        if (userType === "Admin" && secretKey !== "unlock@superhhero") {
+        if (userType === "Admin" && secretKey !== "Unl0ckMySuperH30Best2025!") {
             errors.push("Invalid secretkey");
             setInputs({
 
@@ -290,7 +290,7 @@ function Register() {
     }
 
     return (
-        <Layout title={'CRM - Register new user'}>
+        <Layout title={'CRM - Register New User'}>
             <div className="signup-page">
                 <form className="signup-card"  >
                     <h6 className="form-heading" >Register</h6>

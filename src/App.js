@@ -14,6 +14,7 @@ import Forgotpassword from "./pages/Auth/Forgotpassword";
 import ResetPassword from "./pages/Auth/ResetPassword";
 import AdminRoute from "./components/routes/Adminroute";
 import Admindashboard from "./pages/Admin/Admindashboard";
+import Allusers from "./pages/Admin/Allusers";
 
 function App() {
   return (
@@ -25,14 +26,16 @@ function App() {
           <Route path="" element={<Dashboard />} />
         </Route>
         <Route path='/admin-dashboard' element={<AdminRoute />}>
-          <Route path="" element={<Admindashboard />} />
+          <Route index element={<Admindashboard />} />
+          <Route path='all-users' element={<Allusers />} />
+          <Route path='about' element={<About />}></Route>
+          <Route path='contact' element={<Contact />}></Route>
         </Route>
         <Route path='/register' element={<Register />}></Route>
         <Route path='/login' element={<Login />}></Route>
         <Route path='/forgot-password' element={<Forgotpassword />}></Route>
         <Route path='/reset-password/:id/:token' element={<ResetPassword />}></Route>
-        <Route path='/about' element={<About />}></Route>
-        <Route path='/contact' element={<Contact />}></Route>
+
         <Route path='/policy' element={<Policy />}></Route>
         <Route path='*' element={<Pagenotfound />}></Route>
       </Routes>
