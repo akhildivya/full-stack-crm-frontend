@@ -4,7 +4,7 @@ import Adminmenu from '../components/layout/Adminmenu'
 
 function Contact() {
   return (
-    <Layout title={"Contact Us Ecommerce"}>
+    <Layout title={"CRM- Contactus"}>
         <div className='container-fluid m-3 p-3'>
                 <div className='row'>
                     <div className='col-md-3'>

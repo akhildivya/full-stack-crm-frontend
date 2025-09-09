@@ -1,140 +1,90 @@
+
+/* admin.css */
 :root{
-  /* tweak these to your brand */
-  --bg: #0f1724;
-  --sidebar-accent-1: #7b61ff;
-  --sidebar-accent-2: #00d4ff;
-  --sidebar-accent-3: #ff7ab6;
-  --card-accent-1: #ffb86b;
-  --card-accent-2: #ff6b6b;
-  --link-color: rgba(255,255,255,0.95);
-  --muted: rgba(255,255,255,0.75);
-  --glass: rgba(255,255,255,0.03);
+  --sidebar-grad-1: linear-gradient(135deg,#7b61ff,#00d4ff);
+  --sidebar-text: #ffffff;
+  --card-grad: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(255,255,255,0.95));
 }
 
-/* container background hint (optional) */
-body {
-  background: var(--bg);
-  color: var(--link-color);
-}
-
-/* SIDEBAR */
+/* Sidebar container */
 .admin-sidebar {
-  padding: 0.5rem;
-  border-radius: 0.6rem;
-  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
-  box-shadow: 0 6px 18px rgba(2,6,23,0.6);
-  backdrop-filter: blur(6px);
+  background: var(--sidebar-grad-1);
+  color: var(--sidebar-text);
+  min-height: 260px;
+  transition: transform .28s ease, box-shadow .28s ease;
+  border-radius: 12px;
 }
 
-/* heading style */
-.admin-panel-heading h4 {
-  margin: 0;
-  color: white;
-  background: linear-gradient(90deg, var(--sidebar-accent-1), var(--sidebar-accent-2));
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  font-weight: 700;
-  letter-spacing: 0.2px;
+/* Title */
+.admin-panel-title {
+  color: rgba(255,255,255,0.95);
+  margin-bottom: 0.75rem;
+  font-weight: 600;
+  font-size: 1.05rem;
 }
 
-/* list group items — keep base transparent to show sidebar aesthetic */
-.admin-sidebar .list-group-item {
-  background: transparent;
-  color: var(--link-color) ;
+/* links */
+.admin-link {
+  color: rgba(255,255,255,0.92);
   border: none;
-  border-radius: 0.45rem;
-  margin: 0.25rem 0;
-  padding: 0.9rem 1rem;
-  position: relative;
-  overflow: hidden;
-  transition: all 220ms cubic-bezier(.2,.9,.2,1);
-  display: flex;
-  align-items: center;
-  gap: .6rem;
+  background: transparent;
+  margin: 4px 0;
+  border-radius: 8px;
+  padding: 10px 12px;
+  transition: background .18s ease, transform .08s ease;
 }
 
-/* small left colored accent that animates in on hover/active */
-.admin-sidebar .list-group-item::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 8%;
-  bottom: 8%;
-  width: 6px;
-  border-radius: 4px;
-  background: linear-gradient(180deg, var(--sidebar-accent-1), var(--sidebar-accent-2));
-  transform: scaleY(0);
-  transform-origin: center;
-  transition: transform 240ms ease;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.35);
-}
-
-/* hover */
-.admin-sidebar .list-group-item:hover {
-  color: var(--link-color) ;
-  transform: translateX(6px);
-  background: linear-gradient(90deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
-}
-
-/* expand the accent on hover */
-.admin-sidebar .list-group-item:hover::before {
-  transform: scaleY(1);
+.admin-link:hover {
+  background: rgba(255,255,255,0.08);
+  transform: translateX(4px);
+  color: #fff;
 }
 
 /* active state */
-.admin-sidebar .list-group-item.active {
-  color: white;
-  background: linear-gradient(90deg, rgba(255,255,255,0.03), rgba(255,255,255,0.02));
-  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.02);
-}
-.admin-sidebar .list-group-item.active::before {
-  transform: scaleY(1);
-  background: linear-gradient(180deg, var(--sidebar-accent-2), var(--sidebar-accent-3));
+.active-link {
+  background: rgba(0,0,0,0.12);
+  box-shadow: inset 0 0 18px rgba(0,0,0,0.12);
+  color: #fff !important;
+  font-weight: 600;
 }
 
-/* focus for accessibility */
-.admin-sidebar .list-group-item:focus {
-  outline: 3px solid rgba(0, 212, 255, 0.12);
-  outline-offset: 3px;
+/* card in the main area */
+.admin-card{
+  background: var(--card-grad);
+  border-radius: 12px;
+  min-height: 220px;
 }
 
-/* Mobile menu button */
-.menu-btn {
-  background: linear-gradient(90deg, var(--sidebar-accent-1), var(--sidebar-accent-2));
-  color: white;
+/* mobile menu button style */
+.mobile-menu-btn {
+  background: linear-gradient(90deg,#ffffff10,#ffffff08);
+  color: #fff;
   border: none;
-  padding: .45rem .9rem;
-  border-radius: .45rem;
-  box-shadow: 0 6px 14px rgba(123,97,255,0.18);
+  padding: 6px 12px;
 }
 
-/* CARD (main content) */
-.admin-card {
-  border: none;
-  color: #0b1020;
-  background: linear-gradient(135deg, var(--card-accent-1), var(--card-accent-2));
-  border-radius: 0.6rem;
-  box-shadow: 0 8px 28px rgba(12,13,52,0.6);
-}
+/* Responsive behavior: on small screens, sidebar becomes overlay */
+@media (max-width: 767.98px) {
+  .admin-sidebar {
+    position: fixed;
+    top: 70px; /* adjust if you have a fixed top navbar */
+    left: 12px;
+    right: 12px;
+    z-index: 1050;
+    transform: translateY(-20px) scale(.98);
+    opacity: 0;
+    pointer-events: none;
+  }
+  .admin-sidebar.open {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+    pointer-events: auto;
+  }
 
-/* headings inside colorful card should be white-ish for contrast */
-.admin-card h4 {
-  color: white;
-  margin-bottom: .35rem;
-}
-
-/* small responsive tweaks */
-@media (min-width: 768px){
-  .admin-sidebar { min-height: calc(100vh - 48px); padding-top: 1rem; }
-  .admin-sidebar .list-group-item { padding-left: 1.1rem; }
-}
-
-/* reduce motion if user prefers */
-@media (prefers-reduced-motion: reduce){
-  .admin-sidebar .list-group-item,
-  .admin-card,
-  .menu-btn {
-    transition: none;
+  /* make the card full width on mobile and slightly elevated */
+  .admin-card {
+    width: 100% !important;
+    margin-top: 12px;
+    box-shadow: 0 6px 18px rgba(33,33,33,0.06);
   }
 }

@@ -1,0 +1,119 @@
+/* admin.css - colorful responsive admin styles */
+
+:root{
+  --sidebar-w: 260px;
+  --bg-dark: #0f1724;
+  --card-bg: linear-gradient(135deg,#ffb86b 0%, #ff6b6b 50%, #7b61ff 100%);
+  --sidebar-gradient: linear-gradient(180deg, #0f1724 0%, #19212b 100%);
+  --accent-1: #7b61ff;
+  --accent-2: #00d4ff;
+  --accent-3: #ff7ab6;
+  --muted: #9aa4b2;
+}
+
+/* Layout */
+.admin-layout {
+  min-height: 100vh;
+   background: linear-gradient(180deg, rgba(123,97,255,0.12), rgba(0,212,255,0.06));
+  color: #e6eef6;
+  padding-top: 1rem;
+}
+
+/* Sidebar */
+.admin-sidebar {
+  width: var(--sidebar-w);
+  min-height: calc(100vh - 2rem);
+  border-radius: 12px;
+  overflow: hidden;
+  background: linear-gradient(180deg, rgba(123,97,255,0.12), rgba(0,212,255,0.06));
+  box-shadow: 0 6px 18px rgba(2,6,23,0.6);
+  backdrop-filter: blur(6px);
+  padding: 1rem;
+}
+
+.sidebar-brand {
+  display:flex;
+  gap:.5rem;
+  align-items:center;
+  margin-bottom: .75rem;
+}
+.sidebar-brand .logo {
+  width:44px;height:44px;border-radius:10px;
+  background: linear-gradient(135deg,var(--accent-1),var(--accent-2));
+  display:flex;align-items:center;justify-content:center;font-weight:700;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.35);
+}
+
+/* List group overrides */
+.list-group-item {
+  background: transparent;
+  color: var(--muted);
+  border: none;
+  padding: .75rem .9rem;
+  border-radius: 10px;
+  margin-bottom: .35rem;
+  transition: all .18s ease;
+  display:flex;
+  gap:.75rem;
+  align-items:center;
+}
+.list-group-item .bi {
+  font-size:1.05rem;
+  opacity:0.9;
+}
+
+/* hover + focus */
+.list-group-item:hover,
+.list-group-item:focus {
+  transform: translateY(-3px);
+  color: #fff;
+  background: linear-gradient(90deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+}
+
+/* active state (React Router adds .active by default) */
+.list-group-item.active {
+  color: #061223;
+  background: linear-gradient(90deg,var(--accent-2), var(--accent-1));
+  box-shadow: 0 6px 18px rgba(123,97,255,0.12);
+  font-weight:600;
+}
+
+/* content card */
+.admin-card {
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+  border-radius: 14px;
+  padding: 1.25rem;
+  box-shadow: 0 8px 24px rgba(2,6,23,0.6);
+  color: #eaf2ff;
+}
+
+/* colored small cards */
+.color-card {
+  background: var(--card-bg);
+  color: #061223;
+  border-radius: 12px;
+  padding: .75rem;
+  min-height: 80px;
+}
+
+/* responsive tweaks */
+@media (max-width: 767.98px) {
+  .admin-sidebar {
+    width: 100%;
+    min-height: auto;
+    border-radius: 0.75rem;
+  }
+  .admin-card { margin-top: 1rem; }
+}
+
+/* utility for small icon + text */
+.nav-text { font-size: .95rem; }
+
+/* optional: subtle animated gradient accent line */
+.sidebar-accent {
+  height: 6px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, var(--accent-1), var(--accent-2), var(--accent-3));
+  margin-top: .5rem;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.45);
+}

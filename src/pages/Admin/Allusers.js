@@ -2,7 +2,10 @@ import React from 'react'
 import Layout from '../../components/layout/Layout'
 import Adminmenu from '../../components/layout/Adminmenu'
 
+
 function Allusers() {
+  
+    
   return (
     <Layout>
         <div className='container-fluid m-3 p-3'>
@@ -16,7 +19,9 @@ function Allusers() {
     
             </div>
         </div>
-    
+ 
+      
+  
 
     </Layout>
   )
