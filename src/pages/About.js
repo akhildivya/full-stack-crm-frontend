@@ -5,7 +5,7 @@ import '../css/admin.css'
 function About() {
   return (
     <Layout title={"CRM- About Us"}>
-    {/* <div className='container-fluid m-3 p-3'>
+      {/* <div className='container-fluid m-3 p-3'>
                 <div className='row'>
                     <div className='col-md-3'>
                         <Adminmenu />
@@ -16,38 +16,23 @@ function About() {
 
                 </div>
             </div>*/}
-            <div className='container-fluid m-3 p-3'>
-      <div className='row'>
-        <div className='col-md-3 d-none d-md-block'>
-          <Adminmenu />
-        </div>
+      <div className="container-fluid m-3 p-3 admin-root">
+        <div className="row">
+          <aside className="col-md-3">
+            <Adminmenu />
+          </aside>
 
-        <div className='col-12 col-md-9'>
-          <div className="admin-card">
-            <h4>About us</h4>
-            <p className="text-muted">This area describes the admin application — replace with your company text.</p>
-
-            <div className="row">
-              <div className="col-sm-6">
-                <div className="card p-3 mb-3">
-                  <h6>Mission</h6>
-                  <p className="small">Our mission is to build great admin UIs.</p>
-                </div>
-              </div>
-              <div className="col-sm-6">
-                <div className="card p-3 mb-3">
-                  <h6>Contact</h6>
-                  <p className="small">admin@yourdomain.com</p>
-                </div>
-              </div>
+          <main className="col-md-9">
+            <div className="card admin-card p-4">
+              <h4>About us</h4>
+              <p>
+                This admin dashboard is built with React + Bootstrap grid. Customize cards,
+                colors, and icons from <code>admin.css</code>.
+              </p>
             </div>
-
-          </div>
+          </main>
         </div>
       </div>
-    </div>
-
-
 
     </Layout>
   )

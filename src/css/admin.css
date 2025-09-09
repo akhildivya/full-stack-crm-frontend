@@ -1,119 +1,219 @@
-/* admin.css - colorful responsive admin styles */
+/* admin.css - drop into src/ and import in your layout components */
 
-:root{
+/* ================
+   Color tokens
+   ================ */
+:root {
   --sidebar-w: 260px;
+
+  /* Primary gradient palette (soft purple-blue) */
   --bg-dark: #0f1724;
-  --card-bg: linear-gradient(135deg,#ffb86b 0%, #ff6b6b 50%, #7b61ff 100%);
-  --sidebar-gradient: linear-gradient(180deg, #0f1724 0%, #19212b 100%);
   --accent-1: #7b61ff;
+  /* purple */
   --accent-2: #00d4ff;
+  /* aqua */
   --accent-3: #ff7ab6;
-  --muted: #9aa4b2;
+  /* pink */
+
+  --card-bg: linear-gradient(135deg, #ffffff 0%, #f7f9ff 100%);
+  --link-text: #0f1724;
+  --link-muted: #6b7280;
+  --active-bg: linear-gradient(90deg, var(--accent-1), var(--accent-2));
+  --active-color: #fff;
+  --border: rgba(15, 23, 36, 0.08);
+
+
+
 }
 
-/* Layout */
-.admin-layout {
-  min-height: 100vh;
-   background: linear-gradient(180deg, rgba(123,97,255,0.12), rgba(0,212,255,0.06));
-  color: #e6eef6;
-  padding-top: 1rem;
+/* ================
+   Layout basics
+   ================ */
+.admin-root {
+  min-height: 80vh;
 }
 
 /* Sidebar */
-.admin-sidebar {
-  width: var(--sidebar-w);
-  min-height: calc(100vh - 2rem);
+.admin-sidebar .admin-panel {
+  width: 100%;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.01));
   border-radius: 12px;
-  overflow: hidden;
-  background: linear-gradient(180deg, rgba(123,97,255,0.12), rgba(0,212,255,0.06));
-  box-shadow: 0 6px 18px rgba(2,6,23,0.6);
-  backdrop-filter: blur(6px);
   padding: 1rem;
+  box-shadow: 0 6px 18px rgba(12, 18, 30, 0.06);
+  
+  top: 1rem;
+  position: relative;
+  transition: transform 0.3s ease;
 }
 
-.sidebar-brand {
-  display:flex;
-  gap:.5rem;
-  align-items:center;
-  margin-bottom: .75rem;
-}
-.sidebar-brand .logo {
-  width:44px;height:44px;border-radius:10px;
-  background: linear-gradient(135deg,var(--accent-1),var(--accent-2));
-  display:flex;align-items:center;justify-content:center;font-weight:700;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.35);
-}
-
-/* List group overrides */
-.list-group-item {
-  background: transparent;
-  color: var(--muted);
-  border: none;
-  padding: .75rem .9rem;
-  border-radius: 10px;
-  margin-bottom: .35rem;
-  transition: all .18s ease;
-  display:flex;
-  gap:.75rem;
-  align-items:center;
-}
-.list-group-item .bi {
-  font-size:1.05rem;
-  opacity:0.9;
+/* Glowing pseudo-element for vibrant shadow */
+.admin-sidebar .admin-panel::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  top: -8px;
+  left: -8px;
+  right: -8px;
+  bottom: -8px;
+  border-radius: 16px;
+  opacity: 0;
+  box-shadow:
+    0 0 8px 2px rgba(123, 97, 255, 0.6),
+    0 0 16px 4px rgba(0, 212, 255, 0.4),
+    0 0 24px 6px rgba(255, 123, 182, 0.3);
+  transition: opacity 0.4s ease;
 }
 
-/* hover + focus */
-.list-group-item:hover,
-.list-group-item:focus {
-  transform: translateY(-3px);
-  color: #fff;
-  background: linear-gradient(90deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+.admin-sidebar .admin-panel:hover {
+  transform: translateY(-4px);
 }
 
-/* active state (React Router adds .active by default) */
-.list-group-item.active {
-  color: #061223;
-  background: linear-gradient(90deg,var(--accent-2), var(--accent-1));
-  box-shadow: 0 6px 18px rgba(123,97,255,0.12);
-  font-weight:600;
+.admin-sidebar .admin-panel:hover::after {
+  opacity: 1;
+}
+/* Brand */
+.brand-icon i {
+  font-size: 1.25rem;
+  width: 40px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--active-bg);
+  color: var(--active-color);
+  border-radius: 8px;
+  padding: 6px;
 }
 
-/* content card */
+/* Card */
 .admin-card {
-  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
-  border-radius: 14px;
-  padding: 1.25rem;
-  box-shadow: 0 8px 24px rgba(2,6,23,0.6);
-  color: #eaf2ff;
-}
-
-/* colored small cards */
-.color-card {
   background: var(--card-bg);
-  color: #061223;
+  border: 1px solid var(--border);
   border-radius: 12px;
-  padding: .75rem;
-  min-height: 80px;
+  box-shadow: 0 6px 20px rgba(12, 18, 30, 0.04);
 }
 
-/* responsive tweaks */
+/* Link list */
+.list-group-item.admin-link {
+  display: flex;
+  gap: 0.625rem;
+  align-items: center;
+  padding: 0.7rem 0.9rem;
+  margin-bottom: 0.35rem;
+  border-radius: 8px;
+  color: var(--link-text);
+  background: transparent;
+  border: none;
+  transition: all 180ms ease;
+  font-weight: 500;
+}
+
+.list-group-item.admin-link i {
+  font-size: 1.05rem;
+  min-width: 22px;
+  text-align: center;
+  opacity: 0.95;
+}
+
+/* Hover */
+.list-group-item.admin-link:hover {
+  transform: translateX(6px);
+  box-shadow: 0 6px 18px rgba(123, 97, 255, 0.08);
+  background: linear-gradient(90deg, rgba(123, 97, 255, 0.06), rgba(0, 212, 255, 0.03));
+}
+
+/* Active (NavLink active) */
+.list-group-item.admin-link.active {
+  color: var(--active-color);
+  background: var(--active-bg);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  transform: none;
+}
+
+/* small helper */
+.btn-ghost {
+  background: transparent;
+  border: 1px solid rgba(15, 23, 36, 0.06);
+  color: var(--link-text);
+}
+
+/* ================
+   Responsive rules
+   ================ */
+
+/* On very small screens: turn sidebar into horizontal top area */
 @media (max-width: 767.98px) {
-  .admin-sidebar {
-    width: 100%;
-    min-height: auto;
-    border-radius: 0.75rem;
+  .admin-root .row {
+    flex-direction: column;
   }
-  .admin-card { margin-top: 1rem; }
+
+  .admin-sidebar .admin-panel {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem;
+    overflow-x: auto;
+   
+  }
+
+
+
+
+  .admin-sidebar .list-group {
+    display: flex;
+    flex-direction: row;
+    gap: 0.5rem;
+    width: 100%;
+  }
+
+  .list-group-item.admin-link {
+    white-space: nowrap;
+    padding: 0.5rem 0.75rem;
+    border-radius: 999px;
+    font-size: 0.9rem;
+  }
+
+  .admin-card {
+    margin-top: 0.75rem;
+  }
 }
 
-/* utility for small icon + text */
-.nav-text { font-size: .95rem; }
-
-/* optional: subtle animated gradient accent line */
-.sidebar-accent {
-  height: 6px;
-  border-radius: 6px;
-  background: linear-gradient(90deg, var(--accent-1), var(--accent-2), var(--accent-3));
-  margin-top: .5rem;
-  box-shadow: 0 6px 18px rgba(0,0,0,0.45);
+/* medium screens: narrow sidebar width */
+@media (min-width: 768px) and (max-width: 991.98px) {
+  .admin-sidebar .admin-panel {
+    width: calc(var(--sidebar-w) - 40px);
+  }
 }
+
+
+.custom-table {
+  border-collapse: separate;
+  border-spacing: 0;
+  width: 100%;
+}
+
+.custom-table thead th {
+  background-color: #28a745;
+  color: #fff;
+  padding: 0.75rem;
+}
+
+.custom-table tbody tr {
+  border: 2px solid #28a745; /* default green border */
+}
+
+.custom-table tbody tr:nth-child(odd) {
+  background-color: rgba(40, 167, 69, 0.05);
+}
+
+.custom-table tbody tr:hover {
+  border-color: #dc3545; /* red border on hover */
+  background-color: rgba(220, 53, 69, 0.1);
+}
+
+.custom-table th, .custom-table td {
+  padding: 0.6rem;
+}
+
+

@@ -19,47 +19,21 @@ function Admindashboard() {
           </div>
 
         </div>*/}
-         <div className="container-fluid admin-layout">
-      <div className="row gx-3">
-        <div className="col-md-3 d-none d-md-block">
+     <div className="container-fluid m-3 p-3 admin-root">
+      <div className="row">
+        <aside className="col-md-3">
           <Adminmenu />
-        </div>
+        </aside>
 
-        <div className="col-12 col-md-9">
-          {/* Mobile menu (on top) */}
-          <div className="d-md-none mb-2">
-            <Adminmenu />
+        <main className="col-md-9">
+          <div className="card admin-card w-100 p-3">
+            <h3 className="mb-3">Admin Overview</h3>
+            <p>Welcome — use the menu to navigate admin pages.</p>
+            {/* cards / KPI widgets can go here */}
           </div>
-
-          <div className="admin-card">
-            <div className="d-flex justify-content-between align-items-center mb-3">
-              <h4 className="mb-0">Admin Panel</h4>
-              <div className="d-flex gap-2">
-                <div className="color-card">Total Users<br /><strong>1,234</strong></div>
-                <div className="color-card">Active<br /><strong>987</strong></div>
-              </div>
-            </div>
-
-            {/* Put real content here — tables, charts, forms */}
-            <div className="mt-3">
-              <p>Welcome to your redesigned admin area — responsive and colorful.</p>
-
-              {/* Example card */}
-              <div className="card p-3 mt-3" style={{borderRadius:12}}>
-                <h5>Quick actions</h5>
-                <div className="d-flex gap-2 flex-wrap">
-                  <button className="btn btn-outline-light">Add user</button>
-                  <button className="btn btn-outline-light">Export</button>
-                  <button className="btn btn-outline-light">Settings</button>
-                </div>
-              </div>
-            </div>
-
-          </div>
-        </div>
+        </main>
       </div>
     </div>
-        
 
          
     </Layout>
