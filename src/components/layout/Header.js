@@ -61,7 +61,7 @@ function Header() {
                   <Nav.Link href="/register"><strong>Signup</strong></Nav.Link>
                   <Nav.Link href="/login"><strong>Login</strong></Nav.Link>
 
-                </> : <>   <Nav.Link href={toPath} ><strong>{auth?.user?.username}{auth?.user?.userType && ` (${auth.user.userType})`}</strong></Nav.Link>
+                </> : <>   <Nav.Link href={toPath} ><strong>Dashboard</strong></Nav.Link>
                   
                   <Nav.Link onClick={handleLogout}  ><strong>Logout</strong></Nav.Link></>
               }

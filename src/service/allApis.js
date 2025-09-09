@@ -19,3 +19,4 @@ export const forgotPasswordApi=async(body)=>{
 export const resetPasswordApi=async(header,body,id)=>{
     return await commonApi('POST',`${BASEURL}/reset-password/${id}`,body,header)
 }
+
