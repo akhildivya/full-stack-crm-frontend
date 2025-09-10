@@ -3,6 +3,7 @@ import { NavLink } from 'react-router-dom'
 import '../../css/admin.css'
 import axios from 'axios';
 import { useAuth } from '../../context/auth';
+import { FaCheckCircle, FaTimesCircle } from "react-icons/fa";
 
 function Usermenu() {
   const [verified, setVerified] = useState(null);
@@ -19,18 +20,25 @@ function Usermenu() {
       .then(response => setVerified(response.data.verified))
       .catch(error => console.error(error));
   }, []);
-
+  const StatusIcon = ({ verified }) => {
+    return verified ? (
+      <FaCheckCircle style={{ color: "green" }} size={20} aria-label="Verified" />
+    ) : (
+      <FaTimesCircle style={{ color: "red" }} size={20} aria-label="Not Verified" />
+    );
+  }
   return (
 
     <>
+
       <nav className="admin-sidebar">
         <div className="admin-panel p-3">
           <div className="brand mb-3 d-flex align-items-center">
             <div className="brand-icon me-2">
               <i className="bi bi-shield-lock-fill" aria-hidden="true"></i>
             </div>
-            <h5 className="m-0">{username}{userType}</h5>
-           
+            <h6 className="m-0">{username}{userType}</h6>
+            <StatusIcon className='m-1 p-1'  verified={verified} />
           </div>
 
           <div className="list-group">
@@ -40,7 +48,7 @@ function Usermenu() {
               <span>My Profile</span>
             </NavLink>
 
-            
+
 
 
           </div>
