@@ -23,6 +23,11 @@ function Adminmenu() {
           </div>
 
           <div className="list-group">
+            <NavLink to="/admin-dashboard/my-profile" className={linkClass}>
+              <i className="bi bi-people-fill me-2" aria-hidden="true"></i>
+              <span>My Profile</span>
+
+            </NavLink>
             <NavLink to="/admin-dashboard/all-users" className={linkClass}>
               <i className="bi bi-people-fill me-2" aria-hidden="true"></i>
               <span>All users</span>

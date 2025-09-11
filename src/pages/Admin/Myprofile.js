@@ -1,14 +1,13 @@
 import React, { useEffect, useState } from 'react'
 import Layout from '../../components/layout/Layout'
-import Usermenu from '../../components/layout/Usermenu'
+import Adminmenu from '../../components/layout/Adminmenu'
 import '../../css/admin.css'
 import axios from 'axios'
 import { useAuth } from '../../context/auth'
-import { editUserProfileApi } from '../../service/allApis'
 import { useNavigate } from 'react-router-dom'
-import ConfirmDeleteModal from './ConfirmDeleteModal'
+import AdminConfirmDelete from './AdminConfirmDelete'
 
-function Profile() {
+function Myprofile() {
   const navigate = useNavigate()
   const [auth, setAuth] = useAuth();
   const [user, setUser] = useState(auth.user || null);
@@ -17,10 +16,8 @@ function Profile() {
   const [showModal, setShowModal] = useState(false);
   const [errors, setErrors] = useState({});
   const [selectedUser, setSelectedUser] = useState(null);
-
-
   useEffect(() => {
-    axios.get('http://localhost:4000/my-profile')
+    axios.get('http://localhost:4000/admin-profile')
       .then(res => setUser(res.data))
       .catch(err => console.error(err));
   }, []);
@@ -83,15 +80,7 @@ function Profile() {
     const errorMsg = validate(name, value);
     setErrors((prev) => ({ ...prev, [name]: errorMsg }));
   };
-  /* const handleSave = () => {
-    axios.put('http://localhost:4000/my-profile', form)
-      .then(res => {
-        setUser(res.data);
-        setForm(res.data)
-        setEditing(false);
-      })
-      .catch(err => console.error(err));
-  };*/
+
 
   const handleSave = async () => {
     const newErrors = {};
@@ -106,8 +95,8 @@ function Profile() {
 
     setEditing(false);
     try {
-      // const res = await axios.put('http://localhost:4000/my-profile', form); // adapt to your API
-      const res = await editUserProfileApi(form)
+      const res = await axios.put('http://localhost:4000/admin-profile', form); // adapt to your API
+
       const updatedUser = res.data; // ensure this is the updated user object
 
       // Update local component state
@@ -126,7 +115,7 @@ function Profile() {
     }
   };
 
-  if (user ==null) return <p>Loading...</p>;
+  if (user == null) return <p>Loading...</p>;
   {/* const handleDelete = async userId => {
     try {
       await axios.delete(`http://localhost:4000/delete-user/${userId}`);
@@ -141,11 +130,11 @@ function Profile() {
     if (!selectedUser) return;
 
     try {
-      await axios.delete(`http://localhost:4000/delete-user/${selectedUser._id}`);
+      await axios.delete(`http://localhost:4000/admin-delete/${selectedUser._id}`);
       // Optionally update the UI list immediately:
-     
+
       setAuth(prev => ({ ...prev, user: null, token: '' }));
-        try { localStorage.removeItem('auth'); } catch (e) { /* ignore */ }
+      try { localStorage.removeItem('auth'); } catch (e) { /* ignore */ }
       closeModal();
       navigate('/'); // redirect to home
     } catch (err) {
@@ -154,15 +143,15 @@ function Profile() {
     }
   };
   return (
-    <Layout title={"CRM-User profile"}>
+    <Layout title={"CRM- Admin Profile"}>
 
       <div className="container-fluid m-3 p-3 admin-root">
         <div className="row">
           <aside className="col-md-3">
-            <Usermenu />
+            <Adminmenu />
           </aside>
 
-          <main className="col-md-9">
+           <main className="col-md-9">
 
             <div className="card admin-card p-4">
 
@@ -293,7 +282,7 @@ function Profile() {
                   </tr>
                 </tbody>
               </table>
-              <ConfirmDeleteModal
+              <AdminConfirmDelete
                 show={showModal}
                 onHide={closeModal}
                 onConfirm={confirmDelete}
@@ -305,9 +294,8 @@ function Profile() {
         </div>
       </div>
 
-
     </Layout>
   )
 }
 
-export default Profile
+export default Myprofile

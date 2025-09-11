@@ -15,6 +15,7 @@ import ResetPassword from "./pages/Auth/ResetPassword";
 import AdminRoute from "./components/routes/Adminroute";
 import Admindashboard from "./pages/Admin/Admindashboard";
 import Allusers from "./pages/Admin/Allusers";
+import Myprofile from "./pages/Admin/Myprofile";
 import Profile from "./pages/user/Profile";
 
 function App() {
@@ -30,6 +31,7 @@ function App() {
         <Route path='/admin-dashboard' element={<AdminRoute />}>
           <Route index element={<Admindashboard />} />
           <Route path='all-users' element={<Allusers />} />
+          <Route path='my-profile' element={<Myprofile />} />
           <Route path='about' element={<About />}></Route>
           <Route path='contact' element={<Contact />}></Route>
         </Route>

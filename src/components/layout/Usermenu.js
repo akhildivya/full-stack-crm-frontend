@@ -20,6 +20,8 @@ function Usermenu() {
       .then(response => setVerified(response.data.verified))
       .catch(error => console.error(error));
   }, []);
+
+
   const StatusIcon = ({ verified }) => {
     return verified ? (
       <FaCheckCircle style={{ color: "green" }} size={20} aria-label="Verified" />
