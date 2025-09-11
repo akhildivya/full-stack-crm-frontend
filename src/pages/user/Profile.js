@@ -6,21 +6,27 @@ import axios from 'axios'
 import { useAuth } from '../../context/auth'
 import { editUserProfileApi } from '../../service/allApis'
 import { useNavigate } from 'react-router-dom'
+import ConfirmDeleteModal from './ConfirmDeleteModal'
 
 function Profile() {
-  const navigate=useNavigate()
+  const navigate = useNavigate()
   const [auth, setAuth] = useAuth();
-  const [user, setUser] = useState(auth.user || {});
+  const [user, setUser] = useState(auth.user || null);
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState(user);
-
+  const [showModal, setShowModal] = useState(false);
   const [errors, setErrors] = useState({});
+  const [selectedUser, setSelectedUser] = useState(null);
+
+
   useEffect(() => {
     axios.get('http://localhost:4000/my-profile')
       .then(res => setUser(res.data))
       .catch(err => console.error(err));
   }, []);
   console.log(user);
+
+
 
   const validate = (name, value) => {
     let error;
@@ -59,6 +65,15 @@ function Profile() {
       }
     }
     return error;
+  };
+  const openModal = (user) => {
+    setSelectedUser(user);
+    setShowModal(true);
+  };
+
+  const closeModal = () => {
+    setSelectedUser(null);
+    setShowModal(false);
   };
 
   const handleChange = e => {
@@ -111,14 +126,31 @@ function Profile() {
     }
   };
 
-  if (!user) return <p>Loading...</p>;
-  const handleDelete = async userId => {
+  if (user ==null) return <p>Loading...</p>;
+  {/* const handleDelete = async userId => {
     try {
       await axios.delete(`http://localhost:4000/delete-user/${userId}`);
-       navigate('/');
+      navigate('/');
       // Optionally, redirect or update UI
     } catch (err) {
       console.error(err.response?.data || err.message);
+    }
+    
+  };*/}
+  const confirmDelete = async () => {
+    if (!selectedUser) return;
+
+    try {
+      await axios.delete(`http://localhost:4000/delete-user/${selectedUser._id}`);
+      // Optionally update the UI list immediately:
+     
+      setAuth(prev => ({ ...prev, user: null, token: '' }));
+        try { localStorage.removeItem('auth'); } catch (e) { /* ignore */ }
+      closeModal();
+      navigate('/'); // redirect to home
+    } catch (err) {
+      console.error('Error deleting user:', err.response?.data || err.message);
+      closeModal();
     }
   };
   return (
@@ -290,7 +322,7 @@ function Profile() {
                       <button
                         type="button"
                         className="btn btn-danger"
-                        onClick={() => handleDelete(user._id)}
+                        onClick={() => openModal(user)}
                       >
                         Delete
                       </button>
@@ -298,6 +330,12 @@ function Profile() {
                   </tr>
                 </tbody>
               </table>
+              <ConfirmDeleteModal
+                show={showModal}
+                onHide={closeModal}
+                onConfirm={confirmDelete}
+                userName={selectedUser?.username}
+              />
             </div>
           </main>
 

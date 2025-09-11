@@ -267,22 +267,7 @@
   min-width: 80px;
 }
 
-/*@media (max-width: 576px) {
-  .profile-table th {
-    display: block;
-    width: auto;
-    background-color: transparent;
-    padding-top: 0.5rem;
-  }
-  .profile-table td {
-    display: block;
-    padding-bottom: 0.5rem;
-  }
-  .actions-cell {
-    text-align: center;
-    padding-top: 0.75rem;
-  }
-}*/
+
 
 /* mobile stacked table */
 @media (max-width: 576px) {

@@ -1,0 +1,102 @@
+/* ---- Modal Dialog & Content ---- */
+
+.confirm-delete-modal-dialog {
+  width: 90%;
+  max-width: 400px;
+  margin: auto;
+  border-radius: 12px;
+  overflow: hidden;
+  animation: modalFadeIn 0.3s ease-out;
+}
+
+.confirm-delete-modal-content {
+  border-radius: 12px;
+  border: none;
+  background: #fff;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+}
+
+/* ---- Modal Header ---- */
+
+.confirm-delete-modal-header {
+  background: #ff4b4b;
+  color: #fff;
+  border-bottom: none;
+  padding: 1rem 1.2rem;
+}
+
+.modal-title-custom {
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+/* ---- Modal Body ---- */
+
+.confirm-delete-modal-body {
+  padding: 1.3rem;
+  font-size: 1rem;
+  color: #333;
+}
+
+/* ---- Modal Footer & Buttons ---- */
+
+.confirm-delete-modal-footer {
+  padding: 1rem 1.2rem;
+  background: #f8f9fa;
+  border-top: none;
+  justify-content: flex-end;
+}
+
+.btn-cancel {
+  border-radius: 4px;
+  margin-right: 0.5rem;
+}
+
+.btn-confirm {
+  border-radius: 4px;
+  background-color: #ee0000;
+  border-color: #ee0000;
+  transition: background-color 0.2s ease;
+}
+.btn-confirm:hover {
+  background-color: #c40000;
+  border-color: #c40000;
+}
+
+/* ---- Backdrop Styling ---- */
+
+.confirm-delete-modal-backdrop {
+  background-color: rgba(0, 0, 0, 0.6) !important;
+}
+
+/* ---- Responsive Tweaks ---- */
+
+@media (max-width: 576px) {
+  .confirm-delete-modal-dialog {
+    width: 95%;
+    max-width: 95%;
+  }
+  .modal-title-custom {
+    font-size: 1.1rem;
+  }
+  .confirm-delete-modal-body {
+    font-size: 0.95rem;
+  }
+  .btn-cancel, .btn-confirm {
+    font-size: 0.9rem;
+    padding: 0.45rem 0.9rem;
+  }
+}
+
+/* ---- Animations ---- */
+
+@keyframes modalFadeIn {
+  from {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}

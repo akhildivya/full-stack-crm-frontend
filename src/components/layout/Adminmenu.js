@@ -12,14 +12,7 @@ function Adminmenu() {
     `list-group-item d-flex align-items-center ${isActive ? 'active' : ''}`;
   return (
     <>
-      {/* <div className="list-group">
-        <h4>Admin Panel</h4>
-
-        <NavLink to="/admin-dashboard/all-users" className="list-group-item list-group-item-NavLinkcation  NavLinkctive">Allusers</NavLink>
-        <NavLink to="/admin-dashboard/about" className="list-group-item list-group-item-NavLinkaction  ">About</NavLink>
-        <NavLink to="/admin-dashboard/contact" className="list-group-item list-group-item-NavLinkaction ">Contact</NavLink>
-
-      </div>*/}
+     
       <nav className="admin-sidebar">
         <div className="admin-panel p-3">
           <div className="brand mb-3 d-flex align-items-center">

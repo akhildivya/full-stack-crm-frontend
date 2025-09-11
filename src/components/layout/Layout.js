@@ -2,7 +2,6 @@ import React from 'react'
 import Header from './Header'
 import Footer from './Footer'
 import { Helmet } from "react-helmet";
-import Adminmenu from './Adminmenu';
 
 function Layout({ children, title, description, keywords, author }) {
   return (

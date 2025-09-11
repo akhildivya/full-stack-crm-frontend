@@ -7,7 +7,7 @@ import { FaCheckCircle, FaTimesCircle } from "react-icons/fa";
 
 function Usermenu() {
   const [verified, setVerified] = useState(null);
-  const [auth] = useAuth(); // Destructure the auth state
+  const [auth] = useAuth(); 
   const username = auth?.user?.username ?? 'Admin';
   const userType = auth?.user?.userType ? ` (${auth.user.userType})` : '';
 
