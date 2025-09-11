@@ -5,7 +5,7 @@ import { useAuth } from '../../context/auth';
 
 
 function Adminmenu() {
-const [auth] = useAuth(); // Destructure the auth state
+  const [auth] = useAuth(); // Destructure the auth state
   const username = auth?.user?.username ?? 'Admin';
   const userType = auth?.user?.userType ? ` (${auth.user.userType})` : '';
   const linkClass = ({ isActive }) =>
@@ -45,7 +45,7 @@ const [auth] = useAuth(); // Destructure the auth state
               <span>Contact</span>
             </NavLink>
 
-          
+
           </div>
 
 

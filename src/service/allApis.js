@@ -19,4 +19,6 @@ export const forgotPasswordApi=async(body)=>{
 export const resetPasswordApi=async(header,body,id)=>{
     return await commonApi('POST',`${BASEURL}/reset-password/${id}`,body,header)
 }
-
+export const editUserProfileApi=async(body)=>{
+    return await commonApi('PUT',`${BASEURL}/my-profile`,body,"")
+}
