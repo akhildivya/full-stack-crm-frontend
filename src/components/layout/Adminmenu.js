@@ -9,17 +9,21 @@ import axios from 'axios';
 function Adminmenu() {
   const [verified, setVerified] = useState(null);
   const [auth] = useAuth(); // Destructure the auth state
+  const user = auth.user;
   const username = auth?.user?.username ?? 'Admin';
   const userType = auth?.user?.userType ? ` (${auth.user.userType})` : '';
   const linkClass = ({ isActive }) =>
     `list-group-item d-flex align-items-center ${isActive ? 'active' : ''}`;
-  
+
   useEffect(() => {
     // Fetch admin's verification status
-    axios.get('http://localhost:4000/admin-status')
-      .then(response => setVerified(response.data.verified))
-      .catch(error => console.error(error));
-  }, []);
+    if (user) {
+      axios.get('http://localhost:4000/admin-status')
+        .then(response => setVerified(response.data.verified))
+        .catch(error => console.error(error));
+    }
+
+  }, [user]);
 
   const StatusIcon = ({ verified }) => {
     return verified ? (

@@ -19,7 +19,7 @@ function ConfirmDeleteModal({ show, onHide, onConfirm, userName }) {
       </Modal.Header>
       <Modal.Body className="confirm-delete-modal-body">
         <p>
-          Are you sure you want to delete{' '}
+          Are you sure you want to delete?
           
         </p>
       </Modal.Body>

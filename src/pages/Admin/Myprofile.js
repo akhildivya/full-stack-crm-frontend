@@ -75,19 +75,31 @@ function Myprofile() {
 
   const handleChange = e => {
     const { name, value } = e.target;
-   setForm({
-    ...form,
-    [name]: name === "verified" ? (value === "true") : value
-  });
+    setForm({
+      ...form,
+      [name]: name === "verified" ? (value === "true") : value
+    });
 
     const errorMsg = validate(name, value);
     setErrors((prev) => ({ ...prev, [name]: errorMsg }));
   };
+  const handleCheckboxChange = e => {
+    const { name, checked } = e.target;
+    setForm(prev => ({
+      ...prev,
+      [name]: checked
+    }));
 
+    // maybe clear any errors
+    setErrors(prev => ({
+      ...prev,
+      [name]: null
+    }));
+  };
 
   const handleSave = async () => {
     const newErrors = {};
-    ['username', 'email', 'phone','verified'].forEach((field) => {
+    ['username', 'email', 'phone', 'verified'].forEach((field) => {
       const error = validate(field, form[field]);
       if (error) newErrors[field] = error;
     });
@@ -164,7 +176,7 @@ function Myprofile() {
                     <th>Name</th>
                     <th>Email</th>
                     <th>Phone</th>
-                    <th>Verified</th>
+                    <th>Status</th>
                     <th>Edit</th>
                     <th>Delete</th>
                   </tr>
@@ -226,28 +238,27 @@ function Myprofile() {
                     </td>
 
                     {/* Verified */}
-                    <td >
+                    <td>
                       {editing ? (
-                        <div className="form-group responsive-select-wrapper">
-                          <select
+                        <div className="form-check">
+                          <input
+                            type="checkbox"
                             name="verified"
-                            value={form.verified}
-                            onChange={handleChange}
-                           className="form-control  responsive-select "
-                          >
-                            <option value={true}>✓</option>
-                            <option value={false}>✗</option>
-                          </select>
+                            checked={!!form.verified}
+                            onChange={handleCheckboxChange}
+                            className="form-check-input"
+                            id="verifiedCheckbox"
+                          />
+                          <label className="form-check-label" htmlFor="verifiedCheckbox">
+                            Verified
+                          </label>
                         </div>
                       ) : (
                         user.verified == null
                           ? 'Loading…'
-                          : user.verified
-                            ? '✓'
-                            : '✗'
+                          : (user.verified ? '✓' : '✗')
                       )}
                     </td>
-
                     {/* Edit / Save / Cancel */}
                     <td className="text-center">
                       {editing ? (

@@ -223,7 +223,8 @@
   background-color: #ffffff;
   border: 1px solid #ddd;
   border-radius: 8px;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: visible;
   box-shadow: 0 3px 12px rgba(0,0,0,0.08);
 }
 
@@ -297,27 +298,3 @@
   }
 }
 
-.responsive-select-wrapper {
-  display: inline-block;       /* so wrapper shrinks to content or assigned width */
-  max-width: 50px;             /* adjust this to your needed width */
-  width: 100%;                 /* or a percentage of the cell, but capped by max-width */
-  box-sizing: border-box;      /* includes padding/border in width */
-  overflow: hidden;            /* hide overflow if any */
-}
-
-.responsive-select {
-  width: 100%;                 /* fill wrapper width */
-  min-width: 0;                /* allow shrinking inside flex or grid layouts */
-  font-size: 0.9rem;            /* smaller text so that content fits */
-  padding: 0.2rem 0.3rem;       /* smaller padding */
-  box-sizing: border-box;
-}
-@media (max-width: 576px) {
-  .responsive-select-wrapper {
-    max-width: 40px;          /* even smaller on very small screens */
-  }
-  .responsive-select {
-    font-size: 0.8rem;
-    padding: 0.2rem;
-  }
-}
