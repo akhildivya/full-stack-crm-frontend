@@ -7,13 +7,37 @@ function Allusers() {
   const [searchTerm, setSearchTerm] = useState("");
   const [users, setUsers] = useState([]);
 
-  useEffect(() => {
+  {/*useEffect(() => {
     axios.get("http://localhost:4000/all-users")
       .then(response => {
         setUsers(response.data);
         console.log("Fetched users:", response.data);
       })
       .catch(error => console.error("Error fetching users:", error));
+  }, []);*/}
+  useEffect(() => {
+    let intervalId;
+
+    const fetchUsers = async () => {
+      try {
+        const response = await axios.get("http://localhost:4000/all-users");
+        setUsers(response.data);
+        console.log("Fetched users:", response.data);
+      } catch (error) {
+        console.error("Error fetching users:", error);
+      }
+    };
+
+    // Fetch immediately
+    fetchUsers();
+
+    // Start polling every 5 seconds
+    intervalId = setInterval(fetchUsers, 1000);
+
+    // Cleanup when component unmounts
+    return () => {
+      clearInterval(intervalId);
+    };
   }, []);
 
   const handleVerify = (userId) => {
@@ -32,11 +56,13 @@ function Allusers() {
     const name  = String(user.username || user.name || '').toLowerCase();
     const email = String(user.email || '').toLowerCase();
     const phone = String(user.phone ?? '').toLowerCase(); // <-- use String() or toString()
-
+    const statusText = user.verified ? "verified" : "not verified";
     return (
       name.includes(normalized) ||
       email.includes(normalized) ||
-      phone.includes(normalized)
+      phone.includes(normalized)  ||
+      statusText.includes(normalized)
+       
     );
   });
 }, [users, normalized]);
@@ -84,6 +110,9 @@ function Allusers() {
                     ))}
                   </tbody>
                 </Table>
+                {filteredUsers.length === 0 && (
+                  <div className="text-center">No users found.</div>
+                )}
               </div>
 
             </div>

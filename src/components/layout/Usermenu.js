@@ -15,15 +15,36 @@ function Usermenu() {
   const linkClass = ({ isActive }) =>
     `list-group-item d-flex align-items-center ${isActive ? 'active' : ''}`;
 
-  useEffect(() => {
-    // Fetch user's verification status
+   useEffect(() => {
+    let intervalId;
+
+    const fetchStatus = async () => {
+      try {
+        const response = await axios.get('http://localhost:4000/status');
+        if (response.data && typeof response.data.verified !== 'undefined') {
+          setVerified(response.data.verified);
+        }
+      } catch (error) {
+        console.error('Error fetching verified status:', error);
+      }
+    };
+
     if (user) {
-      axios.get('http://localhost:4000/status')
-        .then(response => setVerified(response.data.verified))
-        .catch(error => console.error(error));
+      // fetch immediately
+      fetchStatus();
+
+      // then start polling every 5 seconds (you can adjust)
+      intervalId = setInterval(fetchStatus, 1000);
     }
 
-  }, [user]);
+  
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
+
+  }, [user]); 
 
 
   const StatusIcon = ({ verified }) => {
