@@ -75,7 +75,10 @@ function Myprofile() {
 
   const handleChange = e => {
     const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+   setForm({
+    ...form,
+    [name]: name === "verified" ? (value === "true") : value
+  });
 
     const errorMsg = validate(name, value);
     setErrors((prev) => ({ ...prev, [name]: errorMsg }));
@@ -84,7 +87,7 @@ function Myprofile() {
 
   const handleSave = async () => {
     const newErrors = {};
-    ['username', 'email', 'phone'].forEach((field) => {
+    ['username', 'email', 'phone','verified'].forEach((field) => {
       const error = validate(field, form[field]);
       if (error) newErrors[field] = error;
     });
@@ -151,11 +154,9 @@ function Myprofile() {
             <Adminmenu />
           </aside>
 
-           <main className="col-md-9">
+          <main className="col-md-9">
 
             <div className="card admin-card p-4">
-
-           
 
               <table className="profile-table table">
                 <thead>
@@ -226,11 +227,25 @@ function Myprofile() {
 
                     {/* Verified */}
                     <td >
-                      {user.verified == null
-                        ? 'Loading…'
-                        : user.verified
-                          ? 'Verified'
-                          : 'Not Verified'}
+                      {editing ? (
+                        <div className="form-group responsive-select-wrapper">
+                          <select
+                            name="verified"
+                            value={form.verified}
+                            onChange={handleChange}
+                           className="form-control  responsive-select "
+                          >
+                            <option value={true}>✓</option>
+                            <option value={false}>✗</option>
+                          </select>
+                        </div>
+                      ) : (
+                        user.verified == null
+                          ? 'Loading…'
+                          : user.verified
+                            ? '✓'
+                            : '✗'
+                      )}
                     </td>
 
                     {/* Edit / Save / Cancel */}

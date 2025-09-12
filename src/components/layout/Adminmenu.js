@@ -2,17 +2,35 @@
 import { NavLink } from 'react-router-dom'
 import '../../css/admin.css'
 import { useAuth } from '../../context/auth';
-
+import { FaCheckCircle, FaTimesCircle } from "react-icons/fa";
+import { useEffect, useState } from 'react';
+import axios from 'axios';
 
 function Adminmenu() {
+  const [verified, setVerified] = useState(null);
   const [auth] = useAuth(); // Destructure the auth state
   const username = auth?.user?.username ?? 'Admin';
   const userType = auth?.user?.userType ? ` (${auth.user.userType})` : '';
   const linkClass = ({ isActive }) =>
     `list-group-item d-flex align-items-center ${isActive ? 'active' : ''}`;
+  
+  useEffect(() => {
+    // Fetch admin's verification status
+    axios.get('http://localhost:4000/admin-status')
+      .then(response => setVerified(response.data.verified))
+      .catch(error => console.error(error));
+  }, []);
+
+  const StatusIcon = ({ verified }) => {
+    return verified ? (
+      <FaCheckCircle style={{ color: "green" }} size={20} aria-label="Verified" />
+    ) : (
+      <FaTimesCircle style={{ color: "red" }} size={20} aria-label="Not Verified" />
+    );
+  }
   return (
     <>
-     
+
       <nav className="admin-sidebar">
         <div className="admin-panel p-3">
           <div className="brand mb-3 d-flex align-items-center">
@@ -20,6 +38,7 @@ function Adminmenu() {
               <i className="bi bi-shield-lock-fill" aria-hidden="true"></i>
             </div>
             <h5 className="m-0"> {username}{userType}</h5>
+            <StatusIcon className='m-1 p-1' verified={verified} />
           </div>
 
           <div className="list-group">
