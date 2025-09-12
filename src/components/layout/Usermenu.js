@@ -7,7 +7,8 @@ import { FaCheckCircle, FaTimesCircle } from "react-icons/fa";
 
 function Usermenu() {
   const [verified, setVerified] = useState(null);
-  const [auth] = useAuth(); 
+  const [auth] = useAuth();
+  const user = auth.user;
   const username = auth?.user?.username ?? 'User';
   const userType = auth?.user?.userType ? ` (${auth.user.userType})` : '';
 
@@ -16,10 +17,13 @@ function Usermenu() {
 
   useEffect(() => {
     // Fetch user's verification status
-    axios.get('http://localhost:4000/status')
-      .then(response => setVerified(response.data.verified))
-      .catch(error => console.error(error));
-  }, []);
+    if (user) {
+      axios.get('http://localhost:4000/status')
+        .then(response => setVerified(response.data.verified))
+        .catch(error => console.error(error));
+    }
+
+  }, [user]);
 
 
   const StatusIcon = ({ verified }) => {
@@ -40,7 +44,7 @@ function Usermenu() {
               <i className="bi bi-shield-lock-fill" aria-hidden="true"></i>
             </div>
             <h6 className="m-0">{username}{userType}</h6>
-            <StatusIcon className='m-1 p-1'  verified={verified} />
+            <StatusIcon className='m-1 p-1' verified={verified} />
           </div>
 
           <div className="list-group">
