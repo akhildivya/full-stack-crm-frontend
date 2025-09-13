@@ -298,3 +298,13 @@
   }
 }
 
+/* make sure form-controls are visible, don’t overflow parent */
+.search-input {
+  min-width: 0; /* allow flex boxes to shrink properly */
+}
+
+
+
+/* ensure container allows overflow wrapping */
+
+
