@@ -17,6 +17,7 @@ import Admindashboard from "./pages/Admin/Admindashboard";
 import Allusers from "./pages/Admin/Allusers";
 import Myprofile from "./pages/Admin/Myprofile";
 import Profile from "./pages/user/Profile";
+import Uploadsheet from "./pages/Admin/Uploadsheet";
 
 function App() {
   return (
@@ -32,6 +33,7 @@ function App() {
           <Route index element={<Admindashboard />} />
           <Route path='all-users' element={<Allusers />} />
           <Route path='my-profile' element={<Myprofile />} />
+          <Route path='upload-sheet' element={<Uploadsheet />} />
           <Route path='about' element={<About />}></Route>
           <Route path='contact' element={<Contact />}></Route>
         </Route>

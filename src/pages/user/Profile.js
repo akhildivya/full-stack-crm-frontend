@@ -19,12 +19,34 @@ function Profile() {
   const [selectedUser, setSelectedUser] = useState(null);
 
 
-  useEffect(() => {
+  {/*useEffect(() => {
     axios.get('http://localhost:4000/my-profile')
       .then(res => setUser(res.data))
       .catch(err => console.error(err));
   }, []);
-  console.log(user);
+  console.log(user);*/}
+  useEffect(() => {
+  let mounted = true;
+  const fetchProfile = async () => {
+    try {
+      const res = await axios.get('http://localhost:4000/my-profile');
+      if (!mounted) return;
+      setUser(res.data);
+      // keep edit form in sync when not editing
+      if (!editing) setForm(res.data);
+    } catch (err) {
+      console.error('Profile poll failed', err);
+    }
+  };
+
+  fetchProfile();                    // initial load
+  const id = setInterval(fetchProfile, 1000); // every 5s (tune as needed)
+
+  return () => {
+    mounted = false;
+    clearInterval(id);
+  };
+}, [editing]);
 
 
 
@@ -126,7 +148,12 @@ function Profile() {
     }
   };
 
-  if (user ==null) return <p>Loading...</p>;
+  if (user ==null) return <div className="loader-overlay">
+      <div className="loader-box">
+        <div className="spinner"></div>
+        <p className="loader-text">Loading...</p>
+      </div>
+    </div>
   {/* const handleDelete = async userId => {
     try {
       await axios.delete(`http://localhost:4000/delete-user/${userId}`);

@@ -56,6 +56,11 @@ function Adminmenu() {
               <span>All users</span>
             </NavLink>
 
+
+            <NavLink to="/admin-dashboard/upload-sheet" className={linkClass}>
+              <i className="bi bi-filetype-xls me-2" aria-hidden="true"></i>
+              <span>Add sheet</span>
+            </NavLink>
             <NavLink to="/admin-dashboard/about" className={linkClass}>
               <i className="bi bi-info-circle-fill me-2" aria-hidden="true"></i>
               <span>About</span>

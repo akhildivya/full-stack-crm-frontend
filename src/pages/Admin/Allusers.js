@@ -141,7 +141,7 @@ function Allusers() {
                 </div>
               </div>*/}
 
-              <div className="mb-3 controls-flex d-flex flex-wrap align-items-center gap-2">
+              {/*<div className="mb-3 controls-flex d-flex flex-wrap align-items-center gap-2">
                 <div className="control-item" style={{ flex: '1 1 200px', minWidth: 0 }}>
                   <input
                     type="text"
@@ -176,10 +176,43 @@ function Allusers() {
                     <option value="desc">Descending</option>
                   </select>
                 </div>
+              </div>*/}
+              <div className="mb-3 controls-flex d-flex flex-wrap align-items-center gap-2" style={{ width: '100%' }}>
+                <div className="control-item" style={{ flex: '1 1 0', minWidth: 0 }}>
+                  <input
+                    type="text"
+                    className="form-control w-100"
+                    placeholder="Search ..."
+                    value={searchTerm}
+                    onChange={e => setSearchTerm(e.target.value)}
+                  />
+                </div>
+                <div className="control-item" style={{ flex: '1 1 0', minWidth: 0 }}>
+                  <select
+                    id="sortKey"
+                    value={sortKey}
+                    onChange={e => setSortKey(e.target.value)}
+                    className="form-select w-100"
+                  >
+                    <option value="">-- none --</option>
+                    <option value="name">Name</option>
+                    <option value="status">Status (Verified)</option>
+                    <option value="email">Email</option>
+                    <option value="phone">Phone</option>
+                  </select>
+                </div>
+                <div className="control-item" style={{ flex: '1 1 0', minWidth: 0 }}>
+                  <select
+                    id="sortOrder"
+                    value={sortOrder}
+                    onChange={e => setSortOrder(e.target.value)}
+                    className="form-select w-100"
+                  >
+                    <option value="asc">Ascending</option>
+                    <option value="desc">Descending</option>
+                  </select>
+                </div>
               </div>
-              
-              
-
 
 
               <div className="table-responsive">

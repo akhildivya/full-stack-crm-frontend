@@ -308,3 +308,131 @@
 /* ensure container allows overflow wrapping */
 
 
+
+/* Overlay to cover parent / full screen */
+.loader-overlay {
+  position: fixed; /* or absolute, depending on parent */
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(255, 255, 255, 0.8); /* semi-transparent background */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+/* Box containing spinner + text */
+.loader-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  /* Padding, background, etc. optional */
+  padding: 1rem;
+}
+
+/* Spinner style */
+.spinner {
+  width: 4rem;
+  height: 4rem;
+  border: 0.5rem solid #ddd;
+  border-top: 0.5rem solid #3498db; /* Change colour as you like */
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
+}
+
+/* Loading text */
+.loader-text {
+  font-size: 1.25rem;
+  color: #333;
+  /* adjust to your design */
+}
+
+/* Keyframe */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .spinner {
+    width: 3rem;
+    height: 3rem;
+    border-width: 0.4rem;
+  }
+  .loader-text {
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .spinner {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-width: 0.35rem;
+  }
+  .loader-text {
+    font-size: 0.9rem;
+  }
+}
+
+
+/* Container for the controls */
+.control-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem; /* space between items */
+  align-items: center;
+  /* optional: margin, padding as needed */
+  margin-bottom: 1rem;
+}
+
+/* Each control item */
+.control-item {
+  flex: 1 1 0; /* grow & shrink, initial basis 0 so they share space */
+  min-width: 200px; /* minimum width so items don’t become too small */
+}
+
+/* For full-width inputs/select boxes inside */
+.control-item input.form-control,
+.control-item select.form-select {
+  width: 100%;
+  box-sizing: border-box; /* include padding/border in width */
+}
+
+/* Text placeholder / font sizes etc adjust */
+.control-item input.form-control {
+  padding: 0.5rem;
+  font-size: 1rem;
+}
+
+.control-item select.form-select {
+  padding: 0.5rem;
+  font-size: 1rem;
+}
+
+/* Media queries for responsiveness */
+
+/* Smaller tablets, make maybe 2 per row */
+@media (max-width: 768px) {
+  .control-item {
+    flex: 1 1 45%; /* two items per row roughly */
+  }
+}
+
+/* Mobile / small phones, each control full width */
+@media (max-width: 480px) {
+  .control-item {
+    flex: 1 1 100%;
+  }
+
+  .control-item input.form-control,
+  .control-item select.form-select {
+    font-size: 0.9rem;
+    padding: 0.4rem;
+  }
+}
