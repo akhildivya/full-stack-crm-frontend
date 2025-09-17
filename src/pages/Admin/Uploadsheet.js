@@ -69,6 +69,7 @@ function Uploadsheet() {
   const [columnsWarning, setColumnsWarning] = useState('');
   const [isValidColumns, setIsValidColumns] = useState(false);
   const [message, setMessage] = useState('');
+  const [errorDetails, setErrorDetails] = useState([]);
 
   // onchange event
   const handleFile = (e) => {
@@ -250,10 +251,13 @@ function Uploadsheet() {
       if (resp.insertedCount !== undefined) msgParts.push(`Inserted: ${resp.insertedCount}`);
       if (resp.modifiedCount !== undefined) msgParts.push(`Modified (existing updated): ${resp.modifiedCount}`);
       if (resp.invalidCount !== undefined) msgParts.push(`Invalid rows skipped: ${resp.invalidCount}`);
-      if (resp.invalidRows) {
-        msgParts.push(`Errors in some rows.`);
-      }
+      if (resp.invalidRows && resp.invalidRows.length > 0) msgParts.push(`Errors in some rows.`);
+
       setMessage(msgParts.join('. '));
+      // store invalidRows to show details
+      if (resp.invalidRows && resp.invalidRows.length > 0) {
+        setErrorDetails(resp.invalidRows);
+      }
     } catch (err) {
       console.error('Error while saving:', err);
       const errMsg = err.response?.data?.message || err.response?.data?.error || err.message;
@@ -293,7 +297,21 @@ function Uploadsheet() {
                   >Save</button>
                 </div>
               )}
-
+              {errorDetails && errorDetails.length > 0 && (
+                <div className="alert alert-danger mt-3">
+                  <h5>Errors in some rows:</h5>
+                  <ul>
+                    {errorDetails.map((errorObj, i) => (
+                      <li key={i}>
+                        { /* if backend includes sheet name */}
+                        {errorObj.sheet ? `Sheet: ${errorObj.sheet}, ` : ''}
+                        Row: <strong>{errorObj.rowIndex + 1 /* or as received */}</strong> —
+                        {errorObj.errors.join(', ')}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
               <div className="viewer mt-3">
                 {rawPreviews.length > 0 ? rawPreviews.map(s => (
                   <div key={s.sheetName} style={{ marginBottom: '20px' }}>
