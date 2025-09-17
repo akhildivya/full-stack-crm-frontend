@@ -47,7 +47,7 @@ function Adminmenu() {
 
           <div className="list-group">
             <NavLink to="/admin-dashboard/my-profile" className={linkClass}>
-              <i className="bi bi-people-fill me-2" aria-hidden="true"></i>
+              <i className="bi bi-person-circle me-2" aria-hidden="true"></i>
               <span>My Profile</span>
 
             </NavLink>
@@ -58,7 +58,7 @@ function Adminmenu() {
 
 
             <NavLink to="/admin-dashboard/upload-sheet" className={linkClass}>
-              <i className="bi bi-filetype-xls me-2" aria-hidden="true"></i>
+              <i className="bi bi-file-earmark-excel-fill me-2" aria-hidden="true"></i>
               <span>Add sheet</span>
             </NavLink>
             <NavLink to="/admin-dashboard/about" className={linkClass}>

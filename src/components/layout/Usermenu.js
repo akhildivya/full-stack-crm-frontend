@@ -15,7 +15,7 @@ function Usermenu() {
   const linkClass = ({ isActive }) =>
     `list-group-item d-flex align-items-center ${isActive ? 'active' : ''}`;
 
-   useEffect(() => {
+  useEffect(() => {
     let intervalId;
 
     const fetchStatus = async () => {
@@ -30,21 +30,20 @@ function Usermenu() {
     };
 
     if (user) {
-      // fetch immediately
+
       fetchStatus();
 
-      // then start polling every 5 seconds (you can adjust)
       intervalId = setInterval(fetchStatus, 1000);
     }
 
-  
+
     return () => {
       if (intervalId) {
         clearInterval(intervalId);
       }
     };
 
-  }, [user]); 
+  }, [user]);
 
 
   const StatusIcon = ({ verified }) => {
@@ -75,18 +74,10 @@ function Usermenu() {
               <span>My Profile</span>
             </NavLink>
 
-
-
-
           </div>
-
 
         </div>
       </nav>
-
-
-
-
 
     </>
   )
