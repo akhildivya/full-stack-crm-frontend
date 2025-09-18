@@ -108,7 +108,7 @@ function Uploadsheet() {
     }
   };
 
-  const handlePreview = (e) => {
+ {/*const handlePreview = (e) => {
     e.preventDefault();
     setMessage('');
     setColumnsWarning('');
@@ -236,7 +236,135 @@ function Uploadsheet() {
       console.error('Error during preview:', err);
       setMessage('Error parsing Excel/CSV file. Make sure file is not corrupted.');
     }
-  };
+  };*/}
+const handlePreview = (e) => {
+  e.preventDefault();
+  // reset states
+  setMessage('');
+  setColumnsWarning('');
+  setPreviewRecords([]);
+  setRawPreviews([]);
+  setIsValidColumns(false);
+  setErrorDetails([]);  // clear previous
+
+  if (!excelFile) {
+    setMessage('No file loaded.');
+    return;
+  }
+
+  try {
+    const workbook = XLSX.read(excelFile, { type: 'buffer' });
+    let allCleaned = [];
+    let globalExtra = new Set();
+    let globalMissing = new Set();
+
+    const sheetPreviews = [];
+    const allErrors = [];   // accumulate errors from all sheets
+
+    workbook.SheetNames.forEach(sheetName => {
+      const ws = workbook.Sheets[sheetName];
+      const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+      if (!rows || rows.length === 0) {
+        return;
+      }
+
+      const rowsFilled = fillVerticalBlanks(rows);
+      const headerRowIndex = findHeaderRow(rowsFilled);
+      const rawHeaders = rowsFilled[headerRowIndex].map(c => normalizeCell(c));
+      const headersFilled = fillHeaderBlanks(rawHeaders).map(h => h.toLowerCase().trim());
+
+      const filteredHeaders = headersFilled.map(h => {
+        if (!h) return '';
+        const cleaned = h.replace(/\s+/g, '').toLowerCase();
+        if (IGNORE_HEADERS.includes(cleaned)) return '';
+        return h;
+      });
+
+      const dataRows = rowsFilled.slice(headerRowIndex + 1);
+      const objs = dataRows.map(row => {
+        const obj = {};
+        for (let ci = 0; ci < filteredHeaders.length; ci++) {
+          const fh = filteredHeaders[ci];
+          if (!fh) continue;
+          obj[fh] = normalizeCell(row[ci]);
+        }
+        const anyNonEmpty = Object.values(obj).some(v => v !== '');
+        return anyNonEmpty ? obj : null;
+      }).filter(r => r !== null);
+
+      // validate rows in this sheet
+      objs.forEach((o, rowIdxInSheet) => {
+        const rowErrors = [];
+        // your validations:
+        if (!o.name) rowErrors.push('name missing');
+        else if (!/^[A-Za-z\s'-]{2,50}$/.test(o.name)) rowErrors.push('name invalid; only letters, spaces, hyphen allowed, length 2-50');
+
+        if (!o.email) rowErrors.push('email missing');
+        else if (!/^([\w-.]+@([\w-]+\.)+[\w-]{2,})$/.test(String(o.email).toLowerCase())) rowErrors.push('email invalid');
+
+        if (!o.phone) rowErrors.push('phone missing');
+        else if (!/^\d{10}$/.test(o.phone)) rowErrors.push('phone invalid; must be 10 digits');
+
+        if (!o.course) rowErrors.push('course missing');
+        else if (!/^[A-Za-z\s]{2,100}$/.test(o.course)) rowErrors.push('course invalid');
+
+        if (!o.place) rowErrors.push('place missing');
+        else if (!/^[A-Za-z\s]{2,100}$/.test(o.place)) rowErrors.push('place invalid');
+
+        if (rowErrors.length > 0) {
+          allErrors.push({
+            sheet: sheetName,
+            rowIndex: rowIdxInSheet,  // 0-based here; +1 later for display
+            errors: rowErrors,
+            rec: o
+          });
+        }
+      });
+
+      // the rest of your code: cleanedObjs, sheetPreviews, allCleaned etc.
+      const cleanedObjs = objs.map(o => {
+        const rec = {};
+        ALLOWED.forEach(field => {
+          const val = o[field] !== undefined && o[field] !== null ? String(o[field]).trim() : '';
+          rec[field] = val;
+        });
+        return rec;
+      });
+      sheetPreviews.push({ sheetName, headerRow: filteredHeaders, records: cleanedObjs.slice(0, 20) });
+      allCleaned = allCleaned.concat(cleanedObjs);
+    });
+
+    setRawPreviews(sheetPreviews);
+
+    // set errors with sheet name
+    setErrorDetails(allErrors);
+
+    // columns warning logic unchanged
+    const extras = Array.from(globalExtra);
+    const missings = Array.from(globalMissing);
+    if (extras.length > 0 || missings.length > 0) {
+      let warn = '';
+      if (extras.length > 0) warn += `Extra columns found: ${extras.join(', ')}. `;
+      if (missings.length > 0) warn += `Missing required columns: ${missings.join(', ')}. `;
+      warn += `Required columns: ${ALLOWED.join(', ')}.`;
+      setColumnsWarning(warn);
+      setIsValidColumns(false);
+    } else {
+      setColumnsWarning('');
+      setIsValidColumns(true);
+    }
+
+    // filteredClean etc
+    const filteredClean = allCleaned.filter(o => {
+      return Object.values(o).some(v => v !== '');
+    });
+    setPreviewRecords(filteredClean);
+
+  } catch (err) {
+    console.error('Error during preview:', err);
+    setMessage('Error parsing Excel/CSV file. Make sure file is not corrupted.');
+  }
+};
 
   // send to backend to insert/upsert
   const handleSave = async () => {
