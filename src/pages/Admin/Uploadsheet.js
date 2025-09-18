@@ -31,21 +31,24 @@ function fillHeaderBlanks(headers) {
   return out;
 }
 
-function fillVerticalBlanks(rows) {
+function fillVerticalBlanks(rows, fillCols = []) {
   const numCols = rows[0].length;
   const lastSeen = new Array(numCols).fill('');
   return rows.map(row => {
     return row.map((cell, cidx) => {
       const val = normalizeCell(cell);
-      if (val === '') {
+      if (val === '' && fillCols.includes(cidx)) {
         return lastSeen[cidx];
       } else {
-        lastSeen[cidx] = val;
+        if (val !== '') lastSeen[cidx] = val;
         return val;
       }
     });
   });
 }
+
+// usage: only fill first column (0) and second (1)
+
 
 // Find index of the header row: first row in which there is at least one non-empty header (after normalization)
 function findHeaderRow(rows) {
@@ -71,6 +74,9 @@ function Uploadsheet() {
   const [message, setMessage] = useState('');
   const [errorDetails, setErrorDetails] = useState([]);
 
+   const [alertMessage, setAlertMessage] = useState(null);  // null or string
+  const [alertType, setAlertType] = useState('info'); // e.g. 'success', 'error'
+
   // onchange event
   const handleFile = (e) => {
     setTypeError(null);
@@ -79,6 +85,7 @@ function Uploadsheet() {
     setColumnsWarning('');
     setIsValidColumns(false);
     setMessage('');
+    setErrorDetails([]);
 
     const file = e.target.files[0];
     if (!file) {
@@ -108,6 +115,7 @@ function Uploadsheet() {
     setPreviewRecords([]);
     setRawPreviews([]);
     setIsValidColumns(false);
+    setErrorDetails([]);
 
     if (!excelFile) {
       setMessage('No file loaded.');
@@ -188,7 +196,8 @@ function Uploadsheet() {
         const cleanedObjs = objs.map(o => {
           const rec = {};
           ALLOWED.forEach(field => {
-            rec[field] = (o[field] !== undefined ? o[field] : '');
+            const val = o[field] !== undefined && o[field] !== null ? String(o[field]).trim() : '';
+            rec[field] = val;
           });
           return rec;
         });
@@ -260,7 +269,14 @@ function Uploadsheet() {
       }
     } catch (err) {
       console.error('Error while saving:', err);
+      const status = err.response?.status;
       const errMsg = err.response?.data?.message || err.response?.data?.error || err.message;
+      if (status === 409 || err.response?.data?.error === 'duplicate_key') {
+        setAlertMessage('Duplicate key error: ' + errMsg);
+      } else {
+         setAlertMessage('Error: ' + errMsg);
+      }
+      setAlertType('error');
       setMessage(`Error: ${errMsg}`);
     }
   };
