@@ -364,7 +364,8 @@ function Uploadsheet() {
 
       if (resp.alreadyExisting && Array.isArray(resp.alreadyExisting) && resp.alreadyExisting.length > 0) {
         // Create readable list of already existing rows (prefer server sheet/index, else match client)
-        const rowsListArr = resp.alreadyExisting.map((e, idx) => {
+        const serverItems = resp.alreadyExisting;
+        const rowsListArr = serverItems.map((e, idx) => {
           // try many possible server keys for sheet and row
           let sheet = e.sheetName || e.sheet || null;
           let rowNum = null;
@@ -394,8 +395,30 @@ function Uploadsheet() {
           else if (keyPhone && phoneToRec.has(keyPhone)) matched = phoneToRec.get(keyPhone);
           else if (keyNameCP && namecpToRec.has(keyNameCP)) matched = namecpToRec.get(keyNameCP);
 
+          // If still not matched, try to find any preview record whose normalized values appear in the server item text.
+          if (!matched) {
+            try {
+              const s = JSON.stringify(e).toLowerCase();
+              for (let pr of previewRecords) {
+                if (pr._normEmail && s.includes(pr._normEmail)) { matched = pr; break; }
+                if (pr._normPhone && s.includes(pr._normPhone)) { matched = pr; break; }
+                // check name/course/place fragments
+                if (pr._nameCoursePlace) {
+                  const frags = pr._nameCoursePlace.split('|').filter(Boolean);
+                  let foundFrag = false;
+                  for (let f of frags) {
+                    if (f && s.includes(f)) { foundFrag = true; break; }
+                  }
+                  if (foundFrag) { matched = pr; break; }
+                }
+              }
+            } catch (ex) {
+              // ignore stringify errors
+            }
+          }
+
           // positional fallback: if server returned same total length as payload, assume ordering corresponds
-          if (!matched && resp.alreadyExisting.length === payload.length) {
+          if (!matched && serverItems.length === payload.length) {
             const pr = previewRecords[idx];
             if (pr) matched = pr;
           }
@@ -412,7 +435,8 @@ function Uploadsheet() {
           sheet = sheet || 'UnknownSheet';
           rowNum = rowNum !== null && rowNum !== undefined ? rowNum : 'UnknownRow';
 
-          return ` ${sheet } Row ${rowNum}`;
+          // DO NOT prepend literal "Sheet " — display the name directly to avoid "Sheet Sheet1"
+          return `${sheet} Row ${rowNum}`;
         });
 
         // create short display for toast (truncate if very long)
