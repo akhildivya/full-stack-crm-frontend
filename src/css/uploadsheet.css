@@ -103,3 +103,23 @@
   font-weight: 500;
   margin-top: 1rem;
 }
+/* New style for making table responsive */
+.table-container {
+  width: 100%;
+  overflow-x: auto;    /* horizontal scroll when needed */
+  -webkit-overflow-scrolling: touch; /* smooth scrolling on mobile */
+}
+
+.table-container table {
+  width: 100%;
+  min-width: 600px; /* or some min width so columns don't squish too much */
+  table-layout: auto; /* or fixed if you want fixed width columns */
+}
+
+.viewer .table-container {
+  /* Optionally limit height, allow vertical scroll if many rows */
+  max-height: 400px;
+  overflow-y: auto;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+}

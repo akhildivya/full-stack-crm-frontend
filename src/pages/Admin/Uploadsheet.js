@@ -60,12 +60,12 @@ function findHeaderRow(rows) {
 function Uploadsheet() {
   const [excelFile, setExcelFile] = useState(null);
   const [typeError, setTypeError] = useState(null);
-  const [previewRecords, setPreviewRecords] = useState([]);  // Records + maybe rowErrors
+  const [previewRecords, setPreviewRecords] = useState([]);
   const [rawPreviews, setRawPreviews] = useState([]);
   const [columnsWarning, setColumnsWarning] = useState('');
   const [isValidColumns, setIsValidColumns] = useState(false);
   const [message, setMessage] = useState('');
-  const [errorDetails, setErrorDetails] = useState([]);  // to store duplicates, missing, field validation errors
+  const [errorDetails, setErrorDetails] = useState([]);
   const [hasDuplicatesOrErrors, setHasDuplicatesOrErrors] = useState(false);
 
   const handleFile = (e) => {
@@ -121,10 +121,12 @@ function Uploadsheet() {
 
     try {
       const workbook = XLSX.read(excelFile, { type: 'buffer' });
-      let allCleaned = [];
+      let allCleaned = [];  // flat list of records with sheet + row info
       let previews = [];
       let headersFoundSet = new Set();
-      let allErrors = [];  // <--- new: collect field validation errors per row
+      let allFieldErrors = [];  // errors from field validation
+      let duplicateRows = [];
+      let missingValueRows = [];
 
       workbook.SheetNames.forEach(sheetName => {
         const ws = workbook.Sheets[sheetName];
@@ -160,75 +162,70 @@ function Uploadsheet() {
             obj[fh] = normalizeCell(row[ci]);
           }
           const anyNonEmpty = Object.values(obj).some(v => v !== '');
-          return anyNonEmpty ? { rec: obj, sheetName, rowIdxInSheet } : null;
+          return anyNonEmpty
+            ? { rec: obj, sheetName, rowIdxInSheet }
+            : null;
         }).filter(r => r !== null);
 
-        // Map objs to cleaned (with only ALLOWED fields) + run per-row field validations
-        const cleanedWithErrors = objs.map(o => {
-          const rec = {};
+        const cleaned = objs.map(o => {
+          const rec = { sheetName: o.sheetName, rowIdxInSheet: o.rowIdxInSheet };
           ALLOWED.forEach(field => {
             if (o.rec[field] !== undefined) {
               rec[field] = String(o.rec[field]).trim();
             } else {
-              // fuzzy match
               const foundKey = Object.keys(o.rec).find(k => k.includes(field));
               rec[field] = foundKey ? String(o.rec[foundKey]).trim() : '';
             }
           });
-
-          // --- START ROW VALIDATION CODE ----
-          const rowErrors = [];
-          // name
-          if (!rec.name) {
-            rowErrors.push('name missing');
-          } else if (!/^[A-Za-z\s'-]{2,50}$/.test(rec.name)) {
-            rowErrors.push('name invalid; only letters, spaces, hyphens/apostrophes; length 2-50');
-          }
-          // email
-          if (!rec.email) {
-            rowErrors.push('email missing');
-          } else if (!/^([\w-.]+@([\w-]+\.)+[\w-]{2,})$/.test(String(rec.email).toLowerCase())) {
-            rowErrors.push('email invalid');
-          }
-          // phone
-          if (!rec.phone) {
-            rowErrors.push('phone missing');
-          } else if (!/^\d{10}$/.test(rec.phone)) {
-            rowErrors.push('phone invalid; must be exactly 10 digits');
-          }
-          // course
-          if (!rec.course) {
-            rowErrors.push('course missing');
-          } else if (!/^[A-Za-z\s]{2,100}$/.test(rec.course)) {
-            rowErrors.push('course invalid; only letters and spaces; length 2-100');
-          }
-          // place
-          if (!rec.place) {
-            rowErrors.push('place missing');
-          } else if (!/^[A-Za-z\s]{2,100}$/.test(rec.place)) {
-            rowErrors.push('place invalid; only letters and spaces; length 2-100');
-          }
-
-          if (rowErrors.length > 0) {
-            allErrors.push({
-              sheet: o.sheetName,
-              rowIndex: o.rowIdxInSheet,  // zero-based
-              errors: rowErrors,
-              rec
-            });
-          }
-          // --- END ROW VALIDATION CODE ----
-
-          return { ...rec, sheet: o.sheetName, rowIdxInSheet: o.rowIdxInSheet };
+          return rec;
         });
 
-        previews.push({ sheetName, headerRow: filteredHeaders, records: cleanedWithErrors.slice(0, 20) });
-        allCleaned = allCleaned.concat(cleanedWithErrors);
+        previews.push({ sheetName, headerRow: filteredHeaders, records: cleaned.slice(0, 20) });
+        allCleaned = allCleaned.concat(cleaned);
+      });
+
+      // field validation per cleaned record
+      allCleaned.forEach((rec, flatIdx) => {
+        const errs = [];
+        // name
+        if (!rec.name) {
+          errs.push('name missing');
+        } else if (!/^[A-Za-z\s'-]{2,50}$/.test(rec.name)) {
+          errs.push('name invalid; only letters, spaces, hyphens/apostrophes; length 2-50');
+        }
+        // email
+        if (!rec.email) {
+          errs.push('email missing');
+        } else if (!/^([\w-.]+@([\w-]+\.)+[\w-]{2,})$/.test(String(rec.email).toLowerCase())) {
+          errs.push('email invalid');
+        }
+        // phone
+        if (!rec.phone) {
+          errs.push('phone missing');
+        } else if (!/^\d{10}$/.test(rec.phone)) {
+          errs.push('phone invalid; must be exactly 10 digits');
+        }
+        // course
+        if (!rec.course) {
+          errs.push('course missing');
+        } else if (!/^[A-Za-z\s]{2,100}$/.test(rec.course)) {
+          errs.push('course invalid; only letters and spaces; length 2-100');
+        }
+        // place
+        if (!rec.place) {
+          errs.push('place missing');
+        } else if (!/^[A-Za-z\s]{2,100}$/.test(rec.place)) {
+          errs.push('place invalid; only letters and spaces; length 2-100');
+        }
+
+        if (errs.length > 0) {
+          allFieldErrors.push({ sheetName: rec.sheetName, rowIdxInSheet: rec.rowIdxInSheet, errors: errs, rec });
+        }
       });
 
       setRawPreviews(previews);
 
-      // COLUMN CHECK
+      // column check
       const headersFound = Array.from(headersFoundSet);
       const missingRequiredColumns = ALLOWED.filter(a => !headersFound.includes(a));
       if (missingRequiredColumns.length > 0) {
@@ -239,85 +236,64 @@ function Uploadsheet() {
         return;
       }
 
-      // CONTENT CHECKS: duplicates + missing values (fields on required fields) + field validation errors
+      // duplicates & missing values check
       const seenEmails = new Map();
       const seenPhones = new Map();
-      const duplicateRows = [];
-      const missingValueRows = [];
-      // note: field validation errors are already in allErrors
-
-      const flagged = allCleaned.map((rec, idx) => {
-        let isDup = false;
+      allCleaned.forEach((rec, flatIdx) => {
         const email = rec.email ? rec.email.toLowerCase().trim() : '';
         const phone = rec.phone ? rec.phone.trim() : '';
-
         if (email) {
-          if (!seenEmails.has(email)) {
-            seenEmails.set(email, idx);
-          } else {
-            isDup = true;
-            duplicateRows.push({ rowIndex: idx, errors: ['duplicate email'], rec });
+          if (!seenEmails.has(email)) seenEmails.set(email, rec);
+          else {
+            duplicateRows.push({ sheetName: rec.sheetName, rowIdxInSheet: rec.rowIdxInSheet, errors: ['duplicate email'], rec });
           }
         }
         if (phone) {
-          if (!seenPhones.has(phone)) {
-            seenPhones.set(phone, idx);
-          } else {
-            isDup = true;
-            duplicateRows.push({ rowIndex: idx, errors: ['duplicate phone'], rec });
+          if (!seenPhones.has(phone)) seenPhones.set(phone, rec);
+          else {
+            duplicateRows.push({ sheetName: rec.sheetName, rowIdxInSheet: rec.rowIdxInSheet, errors: ['duplicate phone'], rec });
           }
         }
-
         const missingFields = ALLOWED.filter(f => !rec[f] || String(rec[f]).trim() === '');
         if (missingFields.length > 0) {
-          missingValueRows.push({ rowIndex: idx, missingFields, rec });
+          missingValueRows.push({ sheetName: rec.sheetName, rowIdxInSheet: rec.rowIdxInSheet, missingFields, rec });
         }
-
-        return { ...rec, isDuplicate: isDup };
       });
 
-      setPreviewRecords(flagged);
+      setPreviewRecords(allCleaned);
 
       const hasDup = duplicateRows.length > 0;
       const hasMissing = missingValueRows.length > 0;
-      const hasFieldErrors = allErrors.length > 0;
+      const hasFieldErr = allFieldErrors.length > 0;
 
-      // Decide the message and what to show based on combinations
       const errorsToDisplay = [];
-
       if (hasDup) errorsToDisplay.push({ type: 'duplicates', items: duplicateRows });
       if (hasMissing) errorsToDisplay.push({ type: 'missing', items: missingValueRows });
-      if (hasFieldErrors) errorsToDisplay.push({ type: 'fieldErrors', items: allErrors });
+      if (hasFieldErr) errorsToDisplay.push({ type: 'fieldErrors', items: allFieldErrors });
 
-      if (hasDup || hasMissing || hasFieldErrors) {
-        // you can decide priority / combination
-        let msg = '';
-        if (hasDup && hasMissing && hasFieldErrors) {
-          msg = 'Preview has duplicates, missing values, and invalid field formats. Please fix all.';
-        } else if (hasDup && hasMissing) {
-          msg = 'Preview has duplicates and missing values. Please correct both.';
-        } else if (hasDup && hasFieldErrors) {
-          msg = 'Preview has duplicates and invalid formats. Please correct.';
-        } else if (hasMissing && hasFieldErrors) {
-          msg = 'Preview has missing values and invalid formats. Please correct.';
-        } else if (hasDup) {
-          msg = 'Preview has duplicate rows. Please correct duplicates.';
-        } else if (hasMissing) {
-          msg = 'Preview has missing values. Please fill required fields.';
-        } else if (hasFieldErrors) {
-          msg = 'Preview has invalid field formats. Please correct them.';
-        }
-
-        setErrorDetails(errorsToDisplay);
-        setMessage(msg);
-        setHasDuplicatesOrErrors(true);
-        setIsValidColumns(false);
+      let msg = '';
+      if (hasDup && hasMissing && hasFieldErr) {
+        msg = 'Preview has duplicates, missing values, and invalid field formats. Please fix all.';
+      } else if (hasDup && hasMissing) {
+        msg = 'Preview has duplicates and missing values. Please correct both.';
+      } else if (hasDup && hasFieldErr) {
+        msg = 'Preview has duplicates and invalid formats. Please correct.';
+      } else if (hasMissing && hasFieldErr) {
+        msg = 'Preview has missing values and invalid formats. Please correct.';
+      } else if (hasDup) {
+        msg = 'Preview has duplicate rows. Please correct duplicates.';
+      } else if (hasMissing) {
+        msg = 'Preview has missing values. Please fill required fields.';
+      } else if (hasFieldErr) {
+        msg = 'Preview has invalid field formats. Please correct them.';
       } else {
-        setErrorDetails([]);
-        setMessage('Preview ready. All rows valid: no duplicates, no missing, formats OK.');
-        setHasDuplicatesOrErrors(false);
-        setIsValidColumns(true);
+        msg = 'Preview ready. All rows valid: no duplicates, no missing, formats OK.';
       }
+
+      setErrorDetails(errorsToDisplay);
+      setMessage(msg);
+      setHasDuplicatesOrErrors(hasDup || hasMissing || hasFieldErr);
+      setIsValidColumns(!(hasDup || hasMissing || hasFieldErr));
 
     } catch (err) {
       console.error('Error parsing file:', err);
@@ -330,7 +306,7 @@ function Uploadsheet() {
   const handleSave = async () => {
     setMessage('');
     if (!isValidColumns) {
-      toast.error('Cannot save: there are duplicate/missing/invalid rows or invalid columns.');
+      toast.error('Cannot save: duplicate/missing/invalid rows or invalid columns.');
       return;
     }
     if (previewRecords.length === 0) {
@@ -338,10 +314,10 @@ function Uploadsheet() {
       return;
     }
 
-    const payload = previewRecords.map(r => {
+    const payload = previewRecords.map(rec => {
       const out = {};
       ALLOWED.forEach(f => {
-        out[f] = r[f] !== undefined && r[f] !== null ? String(r[f]).trim() : '';
+        out[f] = rec[f] !== undefined && rec[f] !== null ? String(rec[f]).trim() : '';
       });
       return out;
     });
@@ -354,7 +330,7 @@ function Uploadsheet() {
       if (resp.modifiedCount !== undefined) msgParts.push(`Modified: ${resp.modifiedCount}`);
       if (resp.invalidCount !== undefined) msgParts.push(`Invalid rows: ${resp.invalidCount}`);
       if (resp.alreadyExisting && resp.alreadyExisting.length > 0) {
-        const rows = resp.alreadyExisting.map(e => (e.rowIndex + 1)).join(', ');
+        const rows = resp.alreadyExisting.map(e => `Sheet ${e.sheetName} Row ${e.rowIndex + 1}`).join(', ');
         msgParts.push(`Already existing rows: ${rows}`);
         toast.info(`Rows already existed: ${rows}`);
       }
@@ -414,49 +390,51 @@ function Uploadsheet() {
                 </div>
               )}
 
+            
               <div className="viewer mt-3">
                 {previewRecords.length > 0 ? (
-                  <table className="table table-sm">
-                    <thead>
-                      <tr>
-                        {ALLOWED.map((h, idx) => (
-                          <th key={idx}>{h}</th>
-                        ))}
-                        <th>Flags / Errors</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {previewRecords.map((rec, idx) => {
-                        // see if this row had field errors
-                        const errObj = errorDetails.find(block => block.type === 'fieldErrors')?.items.find(e => e.rowIndex === idx);
-                        const hasFieldErr = !!errObj;
-                        return (
-                          <tr
-                            key={idx}
-                            className={
-                              rec.isDuplicate 
-                                ? 'duplicate-row' 
-                                : hasFieldErr 
-                                  ? 'field-error-row' 
-                                  : ''
-                            }
-                          >
-                            {ALLOWED.map((field, fidx) => (
-                              <td key={fidx}>{rec[field]}</td>
-                            ))}
-                            <td>
-                              {rec.isDuplicate && 'DUPLICATE'}
-                              {hasFieldErr && ` ERR: ${errObj.errors.join('; ')}`}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                  <div className="table-container">
+                    <table className="table table-sm">
+                      <thead>
+                        <tr>
+                          <th>Sheet</th>
+                          {ALLOWED.map((h, idx) => (
+                            <th key={idx}>{h}</th>
+                          ))}
+                          <th>Errors</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {previewRecords.map((rec, idx) => {
+                          const dupErr = errorDetails.find(block => block.type === 'duplicates')?.items.find(e => (e.sheetName === rec.sheetName && e.rowIdxInSheet === rec.rowIdxInSheet));
+                          const missErr = errorDetails.find(block => block.type === 'missing')?.items.find(e => (e.sheetName === rec.sheetName && e.rowIdxInSheet === rec.rowIdxInSheet));
+                          const fldErr = errorDetails.find(block => block.type === 'fieldErrors')?.items.find(e => (e.sheetName === rec.sheetName && e.rowIdxInSheet === rec.rowIdxInSheet));
+
+                          const errMessages = [];
+                          if (dupErr) errMessages.push(...dupErr.errors);
+                          if (missErr) errMessages.push(`missing: ${missErr.missingFields.join(', ')}`);
+                          if (fldErr) errMessages.push(...fldErr.errors);
+
+                          const rowClass = dupErr ? 'duplicate-row' : fldErr ? 'field-error-row' : '';
+
+                          return (
+                            <tr key={`${rec.sheetName}-${rec.rowIdxInSheet}`} className={rowClass}>
+                              <td>{rec.sheetName} (Row {rec.rowIdxInSheet + 1})</td>
+                              {ALLOWED.map((field, fidx) => (
+                                <td key={fidx}>{rec[field]}</td>
+                              ))}
+                              <td>{errMessages.join('; ')}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
                 ) : (
                   <div>No preview yet.</div>
                 )}
               </div>
+
 
               {errorDetails && errorDetails.length > 0 && (
                 <div className="alert alert-danger mt-3">
@@ -468,7 +446,7 @@ function Uploadsheet() {
                           <ul>
                             {block.items.map((e, i) => (
                               <li key={i}>
-                                Row: <strong>{e.rowIndex + 1}</strong> — {e.errors.join(', ')}
+                                Sheet: <strong>{e.sheetName}</strong>, Row: <strong>{e.rowIdxInSheet + 1}</strong> — {e.errors.join(', ')}
                               </li>
                             ))}
                           </ul>
@@ -481,7 +459,7 @@ function Uploadsheet() {
                           <ul>
                             {block.items.map((e, i) => (
                               <li key={i}>
-                                Row: <strong>{e.rowIndex + 1}</strong> — missing fields: {e.missingFields.join(', ')}
+                                Sheet: <strong>{e.sheetName}</strong>, Row: <strong>{e.rowIdxInSheet + 1}</strong> — missing: {e.missingFields.join(', ')}
                               </li>
                             ))}
                           </ul>
@@ -494,7 +472,7 @@ function Uploadsheet() {
                           <ul>
                             {block.items.map((e, i) => (
                               <li key={i}>
-                                Row: <strong>{e.rowIndex + 1}</strong> — Errors: {e.errors.join('; ')}
+                                Sheet: <strong>{e.sheetName}</strong>, Row: <strong>{e.rowIdxInSheet + 1}</strong> — errors: {e.errors.join('; ')}
                               </li>
                             ))}
                           </ul>
