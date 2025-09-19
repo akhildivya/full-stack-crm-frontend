@@ -297,8 +297,16 @@ function Uploadsheet() {
       if (resp.insertedCount !== undefined) msgParts.push(`Inserted: ${resp.insertedCount}`);
       if (resp.modifiedCount !== undefined) msgParts.push(`Modified: ${resp.modifiedCount}`);
       if (resp.invalidCount !== undefined) msgParts.push(`Invalid rows: ${resp.invalidCount}`);
-      setMessage(msgParts.join('. ') || 'Save completed.');
-      toast.success('Save completed.');
+      if (resp.alreadyExisting && resp.alreadyExisting.length > 0) {
+      // Show message about already existing rows
+      const rows = resp.alreadyExisting.map(e => (e.rowIndex + 1)).join(', ');
+      msgParts.push(`Already existing rows (not newly inserted): ${rows}`);
+      toast.info(`Rows already existed: ${rows}`);
+    }
+
+    const overallMessage = msgParts.join('. ') || 'Save completed.';
+    setMessage(overallMessage);
+    toast.success('Save completed.');
     } catch (err) {
       // improved error handling: show server message when available
       if (err.response) {
