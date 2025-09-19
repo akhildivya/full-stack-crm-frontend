@@ -1,3 +1,4 @@
+// src/pages/admin/Uploadsheet.jsx  (or same path you use)
 import React, { useState } from 'react';
 import Layout from '../../components/layout/Layout';
 import Adminmenu from '../../components/layout/Adminmenu';
@@ -58,7 +59,6 @@ function findHeaderRow(rows) {
   return 0;
 }
 
-/* Component */
 function Uploadsheet() {
   // state
   const [excelFile, setExcelFile] = useState(null);
@@ -126,7 +126,6 @@ function Uploadsheet() {
       let allCleaned = [];
       let previews = [];
 
-      // Gather headers across sheets to detect mismatches
       let headersFoundSet = new Set();
 
       workbook.SheetNames.forEach(sheetName => {
@@ -139,26 +138,21 @@ function Uploadsheet() {
         const rawHeaders = rowsFilled[headerRowIndex].map(c => normalizeCell(c));
         const headersFilled = fillHeaderBlanks(rawHeaders).map(h => h.toLowerCase().trim());
 
-        // Normalize header keys to canonical keys we match against ALLOWED
         const headerKeys = headersFilled.map(h => {
           if (!h) return '';
-          // remove spaces and non-word characters, lowercase
           return h.replace(/\s+/g, '').replace(/[^\w]/g, '').toLowerCase();
         });
 
-        // Filter out ignore headers
         const filteredHeaders = headerKeys.map(h => {
           if (!h) return '';
           if (IGNORE_HEADERS.includes(h)) return '';
           return h;
         });
 
-        // Record headers that will be used for mismatch detection
         filteredHeaders.forEach(h => {
           if (h) headersFoundSet.add(h);
         });
 
-        // Build objects based on filteredHeaders and rows after header row
         const dataRows = rowsFilled.slice(headerRowIndex + 1);
         const objs = dataRows.map(row => {
           const obj = {};
@@ -167,22 +161,17 @@ function Uploadsheet() {
             if (!fh) continue;
             obj[fh] = normalizeCell(row[ci]);
           }
-          // only keep rows that have at least one non-empty cell
           const anyNonEmpty = Object.values(obj).some(v => v !== '');
           return anyNonEmpty ? obj : null;
         }).filter(r => r !== null);
 
-        // Map objects to canonical ALLOWED fields (missing fields will be '')
         const cleaned = objs.map(o => {
           const rec = {};
           ALLOWED.forEach(field => {
-            // o uses keys like 'name', 'email' after normalization; if header text was 'Full Name' it becomes 'fullname' and won't match 'name'
-            // so we also attempt to match partial keys: if header contains the field word (e.g. 'fullname' contains 'name'), prefer it.
             let val = '';
             if (o[field] !== undefined) {
               val = String(o[field]).trim();
             } else {
-              // fuzzy attempt: check if any key in o contains the field token
               const foundKey = Object.keys(o).find(k => k.includes(field));
               if (foundKey) val = String(o[foundKey]).trim();
             }
@@ -197,63 +186,43 @@ function Uploadsheet() {
 
       setRawPreviews(previews);
 
-      // --- MISMATCHED COLUMNS CHECK (highest priority)
-      const headersFound = Array.from(headersFoundSet); // e.g. ['name','email','phone']
-      // missing required columns
+      // columns check (only missing required columns will block)
+      const headersFound = Array.from(headersFoundSet);
       const missingRequiredColumns = ALLOWED.filter(a => !headersFound.includes(a));
-      // extra columns (non-empty headers that are not in ALLOWED)
-      const extraColumns = headersFound.filter(h => h && !ALLOWED.includes(h));
-
-      if (missingRequiredColumns.length > 0 || extraColumns.length > 0) {
-        const msgs = [];
-        if (missingRequiredColumns.length > 0) {
-          msgs.push(`Missing required columns: ${missingRequiredColumns.join(', ')}`);
-        }
-        if (extraColumns.length > 0) {
-          msgs.push(`Unexpected columns present: ${extraColumns.join(', ')}`);
-        }
-        // Show only the mismatched columns message (per your priority rule)
-        setColumnsWarning(msgs.join(' • '));
+      if (missingRequiredColumns.length > 0) {
+        setColumnsWarning(`Missing required columns: ${missingRequiredColumns.join(', ')}`);
         setIsValidColumns(false);
         setMessage('Column mismatch detected. Fix headers before previewing data.');
         setHasDuplicatesOrErrors(true);
-        return; // stop further validation
+        return;
       }
 
-      // --- CONTENT VALIDATION (duplicates + missing)
+      // content checks
       const seenEmails = new Map();
       const seenPhones = new Map();
       const duplicateRows = [];
       const missingValueRows = [];
+
       const flagged = allCleaned.map((rec, idx) => {
         let isDup = false;
         const email = rec.email ? rec.email.toLowerCase().trim() : '';
         const phone = rec.phone ? rec.phone.trim() : '';
 
         if (email) {
-          if (!seenEmails.has(email)) {
-            seenEmails.set(email, idx);
-          } else {
+          if (!seenEmails.has(email)) seenEmails.set(email, idx);
+          else {
             isDup = true;
             duplicateRows.push({ rowIndex: idx, errors: ['duplicate email'], rec });
           }
         }
         if (phone) {
-          if (!seenPhones.has(phone)) {
-            seenPhones.set(phone, idx);
-          } else {
-            // if the same row already flagged for email dup, append phone duplicate, else add new
-            const existingDup = duplicateRows.find(d => d.rowIndex === idx && d.rec === rec);
-            if (existingDup) {
-              existingDup.errors.push('duplicate phone');
-            } else {
-              isDup = true;
-              duplicateRows.push({ rowIndex: idx, errors: ['duplicate phone'], rec });
-            }
+          if (!seenPhones.has(phone)) seenPhones.set(phone, idx);
+          else {
+            isDup = true;
+            duplicateRows.push({ rowIndex: idx, errors: ['duplicate phone'], rec });
           }
         }
 
-        // missing/null values check — any ALLOWED field empty?
         const missingFields = ALLOWED.filter(f => !rec[f] || String(rec[f]).trim() === '');
         if (missingFields.length > 0) {
           missingValueRows.push({ rowIndex: idx, missingFields, rec });
@@ -264,11 +233,6 @@ function Uploadsheet() {
 
       setPreviewRecords(flagged);
 
-      // Build messages according to your precedence:
-      // - If both duplicates AND missing -> show both messages
-      // - If only duplicates -> show only duplicates
-      // - If only missing -> show only missing
-      // (We've already returned if mismatched columns existed)
       const hasDup = duplicateRows.length > 0;
       const hasMissing = missingValueRows.length > 0;
 
@@ -291,7 +255,6 @@ function Uploadsheet() {
         setHasDuplicatesOrErrors(true);
         setIsValidColumns(false);
       } else {
-        // no issues
         setErrorDetails([]);
         setMessage('Preview ready. No duplicates, no missing values, and headers match.');
         setIsValidColumns(true);
@@ -316,22 +279,41 @@ function Uploadsheet() {
       toast.info('No data to save.');
       return;
     }
-    // double-check: ensure no duplicate flags remain
-    const filteredForSave = previewRecords.filter(r => !r.isDuplicate);
+
+    // IMPORTANT: Sanitize — only send allowed fields (no isDuplicate, no internal metadata)
+    const payload = previewRecords.map(r => {
+      const out = {};
+      ALLOWED.forEach(f => {
+        // ensure string; backend expects trimmed strings
+        out[f] = r[f] !== undefined && r[f] !== null ? String(r[f]).trim() : '';
+      });
+      return out;
+    });
 
     try {
-      const response = await axios.post('http://localhost:4000/admin/upload-sheet', {
-        data: filteredForSave
-      }, { timeout: 60000 });
+      const response = await axios.post('http://localhost:4000/admin/upload-sheet', { data: payload }, { timeout: 60000 });
       const resp = response.data;
       let msgParts = [];
       if (resp.insertedCount !== undefined) msgParts.push(`Inserted: ${resp.insertedCount}`);
       if (resp.modifiedCount !== undefined) msgParts.push(`Modified: ${resp.modifiedCount}`);
       if (resp.invalidCount !== undefined) msgParts.push(`Invalid rows: ${resp.invalidCount}`);
       setMessage(msgParts.join('. ') || 'Save completed.');
+      toast.success('Save completed.');
     } catch (err) {
-      console.error('Error saving:', err);
-      setMessage('Error saving. ' + (err.message || ''));
+      // improved error handling: show server message when available
+      if (err.response) {
+        console.error('Server responded:', err.response.status, err.response.data);
+        setMessage('Error saving: ' + (err.response.data?.message || JSON.stringify(err.response.data)));
+        toast.error('Save failed: ' + (err.response.data?.message || `status ${err.response.status}`));
+      } else if (err.request) {
+        console.error('No response (request sent):', err.request);
+        setMessage('No response from server.');
+        toast.error('No response from server.');
+      } else {
+        console.error('Axios error', err.message);
+        setMessage('Error: ' + err.message);
+        toast.error('Error: ' + err.message);
+      }
     }
   };
 
