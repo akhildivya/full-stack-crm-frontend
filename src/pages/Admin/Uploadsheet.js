@@ -4,6 +4,7 @@ import Adminmenu from '../../components/layout/Adminmenu';
 import * as XLSX from 'xlsx';
 import axios from 'axios';
 import '../../css/uploadsheet.css';
+import { toast } from 'react-toastify';
 
 const ALLOWED = ['name', 'email', 'phone', 'course', 'place'];
 const IGNORE_HEADERS = ['slno', 'sno', 's.no', 'srno', 'serialno', 'serial', 'id'];
@@ -65,6 +66,7 @@ function Uploadsheet() {
   const [isValidColumns, setIsValidColumns] = useState(false);
   const [message, setMessage] = useState('');
   const [errorDetails, setErrorDetails] = useState([]);
+ const [hasDuplicatesOrErrors, setHasDuplicatesOrErrors] = useState(false);
 
   const [alertMessage, setAlertMessage] = useState(null);
   const [alertType, setAlertType] = useState('info');
@@ -107,6 +109,7 @@ function Uploadsheet() {
     setRawPreviews([]);
     setIsValidColumns(false);
     setErrorDetails([]);
+    setHasDuplicatesOrErrors(false);
 
     if (!excelFile) {
       setMessage('No file loaded.');
@@ -196,27 +199,42 @@ function Uploadsheet() {
 
       if (duplicateRows.length > 0) {
         setErrorDetails(duplicateRows);
-        setMessage('Some rows are duplicates (same email or phone) and will be skipped.');
+        setMessage('Some rows are duplicates (same email or phone) and please correct it.');
         setIsValidColumns(false);  // prevent save
+         setHasDuplicatesOrErrors(true);
       } else {
-        setMessage('Preview ready. No duplicates found.');
-        setIsValidColumns(true);
+          if (errorDetails.length > 0) {
+          setHasDuplicatesOrErrors(true);
+         setMessage('Some rows have errors and please correct it.');
+          setIsValidColumns(false);
+        }
+        else {
+          setMessage('Preview ready. No duplicates or errors.');
+          setIsValidColumns(true);
+          setHasDuplicatesOrErrors(false);
+        }
       }
 
     } catch (err) {
       console.error('Error parsing file', err);
       setMessage('Error parsing file. Make sure it is valid.');
+       setHasDuplicatesOrErrors(true);
+      setIsValidColumns(false);
     }
   };
 
   const handleSave = async () => {
     setMessage('');
     if (!isValidColumns) {
-      setMessage('Cannot save: duplicate rows or invalid columns.');
+       toast.error('Cannot save: duplicate rows or invalid columns.');
       return;
     }
     if (previewRecords.length === 0) {
-      setMessage('No data to save.');
+      toast.info('No data to save.');
+      return;
+    }
+    if (hasDuplicatesOrErrors) {
+      toast.error('Cannot save: fix duplicate or invalid rows first.');
       return;
     }
     // optionally filter out duplicates from previewRecords before sending

@@ -1,7 +1,6 @@
 import React, { useState } from 'react'
 import Layout from '../../components/layout/Layout'
 import '../../css/auth.css'
-//import '../../css/test.css'
 import { AiFillEye, AiFillEyeInvisible } from 'react-icons/ai';
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify';
