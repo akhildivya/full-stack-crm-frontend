@@ -1,4 +1,3 @@
-// src/pages/admin/Uploadsheet.jsx  (or same path you use)
 import React, { useState } from 'react';
 import Layout from '../../components/layout/Layout';
 import Adminmenu from '../../components/layout/Adminmenu';
@@ -10,7 +9,6 @@ import { toast } from 'react-toastify';
 const ALLOWED = ['name', 'email', 'phone', 'course', 'place'];
 const IGNORE_HEADERS = ['slno', 'sno', 's.no', 'srno', 'serialno', 'serial', 'id'];
 
-/* Utilities */
 function normalizeCell(cell) {
   if (cell === null || cell === undefined) return '';
   return String(cell).trim();
@@ -60,15 +58,14 @@ function findHeaderRow(rows) {
 }
 
 function Uploadsheet() {
-  // state
   const [excelFile, setExcelFile] = useState(null);
   const [typeError, setTypeError] = useState(null);
-  const [previewRecords, setPreviewRecords] = useState([]);
+  const [previewRecords, setPreviewRecords] = useState([]);  // Records + maybe rowErrors
   const [rawPreviews, setRawPreviews] = useState([]);
   const [columnsWarning, setColumnsWarning] = useState('');
   const [isValidColumns, setIsValidColumns] = useState(false);
   const [message, setMessage] = useState('');
-  const [errorDetails, setErrorDetails] = useState([]);
+  const [errorDetails, setErrorDetails] = useState([]);  // to store duplicates, missing, field validation errors
   const [hasDuplicatesOrErrors, setHasDuplicatesOrErrors] = useState(false);
 
   const handleFile = (e) => {
@@ -96,10 +93,10 @@ function Uploadsheet() {
       reader.readAsArrayBuffer(file);
       reader.onload = (ev) => {
         setExcelFile(ev.target.result);
-      }
+      };
       reader.onerror = () => {
         setTypeError('Error reading file.');
-      }
+      };
     } else {
       setTypeError('Please select only Excel (xlsx / xls) or CSV files.');
     }
@@ -107,6 +104,7 @@ function Uploadsheet() {
 
   const handlePreview = (e) => {
     e.preventDefault();
+
     // reset
     setMessage('');
     setColumnsWarning('');
@@ -125,8 +123,8 @@ function Uploadsheet() {
       const workbook = XLSX.read(excelFile, { type: 'buffer' });
       let allCleaned = [];
       let previews = [];
-
       let headersFoundSet = new Set();
+      let allErrors = [];  // <--- new: collect field validation errors per row
 
       workbook.SheetNames.forEach(sheetName => {
         const ws = workbook.Sheets[sheetName];
@@ -154,7 +152,7 @@ function Uploadsheet() {
         });
 
         const dataRows = rowsFilled.slice(headerRowIndex + 1);
-        const objs = dataRows.map(row => {
+        const objs = dataRows.map((row, rowIdxInSheet) => {
           const obj = {};
           for (let ci = 0; ci < filteredHeaders.length; ci++) {
             const fh = filteredHeaders[ci];
@@ -162,31 +160,75 @@ function Uploadsheet() {
             obj[fh] = normalizeCell(row[ci]);
           }
           const anyNonEmpty = Object.values(obj).some(v => v !== '');
-          return anyNonEmpty ? obj : null;
+          return anyNonEmpty ? { rec: obj, sheetName, rowIdxInSheet } : null;
         }).filter(r => r !== null);
 
-        const cleaned = objs.map(o => {
+        // Map objs to cleaned (with only ALLOWED fields) + run per-row field validations
+        const cleanedWithErrors = objs.map(o => {
           const rec = {};
           ALLOWED.forEach(field => {
-            let val = '';
-            if (o[field] !== undefined) {
-              val = String(o[field]).trim();
+            if (o.rec[field] !== undefined) {
+              rec[field] = String(o.rec[field]).trim();
             } else {
-              const foundKey = Object.keys(o).find(k => k.includes(field));
-              if (foundKey) val = String(o[foundKey]).trim();
+              // fuzzy match
+              const foundKey = Object.keys(o.rec).find(k => k.includes(field));
+              rec[field] = foundKey ? String(o.rec[foundKey]).trim() : '';
             }
-            rec[field] = val;
           });
-          return rec;
+
+          // --- START ROW VALIDATION CODE ----
+          const rowErrors = [];
+          // name
+          if (!rec.name) {
+            rowErrors.push('name missing');
+          } else if (!/^[A-Za-z\s'-]{2,50}$/.test(rec.name)) {
+            rowErrors.push('name invalid; only letters, spaces, hyphens/apostrophes; length 2-50');
+          }
+          // email
+          if (!rec.email) {
+            rowErrors.push('email missing');
+          } else if (!/^([\w-.]+@([\w-]+\.)+[\w-]{2,})$/.test(String(rec.email).toLowerCase())) {
+            rowErrors.push('email invalid');
+          }
+          // phone
+          if (!rec.phone) {
+            rowErrors.push('phone missing');
+          } else if (!/^\d{10}$/.test(rec.phone)) {
+            rowErrors.push('phone invalid; must be exactly 10 digits');
+          }
+          // course
+          if (!rec.course) {
+            rowErrors.push('course missing');
+          } else if (!/^[A-Za-z\s]{2,100}$/.test(rec.course)) {
+            rowErrors.push('course invalid; only letters and spaces; length 2-100');
+          }
+          // place
+          if (!rec.place) {
+            rowErrors.push('place missing');
+          } else if (!/^[A-Za-z\s]{2,100}$/.test(rec.place)) {
+            rowErrors.push('place invalid; only letters and spaces; length 2-100');
+          }
+
+          if (rowErrors.length > 0) {
+            allErrors.push({
+              sheet: o.sheetName,
+              rowIndex: o.rowIdxInSheet,  // zero-based
+              errors: rowErrors,
+              rec
+            });
+          }
+          // --- END ROW VALIDATION CODE ----
+
+          return { ...rec, sheet: o.sheetName, rowIdxInSheet: o.rowIdxInSheet };
         });
 
-        previews.push({ sheetName, headerRow: filteredHeaders, records: cleaned.slice(0, 20) });
-        allCleaned = allCleaned.concat(cleaned);
+        previews.push({ sheetName, headerRow: filteredHeaders, records: cleanedWithErrors.slice(0, 20) });
+        allCleaned = allCleaned.concat(cleanedWithErrors);
       });
 
       setRawPreviews(previews);
 
-      // columns check (only missing required columns will block)
+      // COLUMN CHECK
       const headersFound = Array.from(headersFoundSet);
       const missingRequiredColumns = ALLOWED.filter(a => !headersFound.includes(a));
       if (missingRequiredColumns.length > 0) {
@@ -197,11 +239,12 @@ function Uploadsheet() {
         return;
       }
 
-      // content checks
+      // CONTENT CHECKS: duplicates + missing values (fields on required fields) + field validation errors
       const seenEmails = new Map();
       const seenPhones = new Map();
       const duplicateRows = [];
       const missingValueRows = [];
+      // note: field validation errors are already in allErrors
 
       const flagged = allCleaned.map((rec, idx) => {
         let isDup = false;
@@ -209,15 +252,17 @@ function Uploadsheet() {
         const phone = rec.phone ? rec.phone.trim() : '';
 
         if (email) {
-          if (!seenEmails.has(email)) seenEmails.set(email, idx);
-          else {
+          if (!seenEmails.has(email)) {
+            seenEmails.set(email, idx);
+          } else {
             isDup = true;
             duplicateRows.push({ rowIndex: idx, errors: ['duplicate email'], rec });
           }
         }
         if (phone) {
-          if (!seenPhones.has(phone)) seenPhones.set(phone, idx);
-          else {
+          if (!seenPhones.has(phone)) {
+            seenPhones.set(phone, idx);
+          } else {
             isDup = true;
             duplicateRows.push({ rowIndex: idx, errors: ['duplicate phone'], rec });
           }
@@ -235,34 +280,47 @@ function Uploadsheet() {
 
       const hasDup = duplicateRows.length > 0;
       const hasMissing = missingValueRows.length > 0;
+      const hasFieldErrors = allErrors.length > 0;
 
-      if (hasDup && hasMissing) {
-        setErrorDetails([
-          { type: 'duplicates', items: duplicateRows },
-          { type: 'missing', items: missingValueRows }
-        ]);
-        setMessage('Preview has duplicate rows and missing values. Please fix both issues.');
-        setHasDuplicatesOrErrors(true);
-        setIsValidColumns(false);
-      } else if (hasDup) {
-        setErrorDetails([{ type: 'duplicates', items: duplicateRows }]);
-        setMessage('Preview has duplicate rows (same email or phone). Please fix duplicates.');
-        setHasDuplicatesOrErrors(true);
-        setIsValidColumns(false);
-      } else if (hasMissing) {
-        setErrorDetails([{ type: 'missing', items: missingValueRows }]);
-        setMessage('Preview has missing/null values in required columns. Please fill them.');
+      // Decide the message and what to show based on combinations
+      const errorsToDisplay = [];
+
+      if (hasDup) errorsToDisplay.push({ type: 'duplicates', items: duplicateRows });
+      if (hasMissing) errorsToDisplay.push({ type: 'missing', items: missingValueRows });
+      if (hasFieldErrors) errorsToDisplay.push({ type: 'fieldErrors', items: allErrors });
+
+      if (hasDup || hasMissing || hasFieldErrors) {
+        // you can decide priority / combination
+        let msg = '';
+        if (hasDup && hasMissing && hasFieldErrors) {
+          msg = 'Preview has duplicates, missing values, and invalid field formats. Please fix all.';
+        } else if (hasDup && hasMissing) {
+          msg = 'Preview has duplicates and missing values. Please correct both.';
+        } else if (hasDup && hasFieldErrors) {
+          msg = 'Preview has duplicates and invalid formats. Please correct.';
+        } else if (hasMissing && hasFieldErrors) {
+          msg = 'Preview has missing values and invalid formats. Please correct.';
+        } else if (hasDup) {
+          msg = 'Preview has duplicate rows. Please correct duplicates.';
+        } else if (hasMissing) {
+          msg = 'Preview has missing values. Please fill required fields.';
+        } else if (hasFieldErrors) {
+          msg = 'Preview has invalid field formats. Please correct them.';
+        }
+
+        setErrorDetails(errorsToDisplay);
+        setMessage(msg);
         setHasDuplicatesOrErrors(true);
         setIsValidColumns(false);
       } else {
         setErrorDetails([]);
-        setMessage('Preview ready. No duplicates, no missing values, and headers match.');
-        setIsValidColumns(true);
+        setMessage('Preview ready. All rows valid: no duplicates, no missing, formats OK.');
         setHasDuplicatesOrErrors(false);
+        setIsValidColumns(true);
       }
 
     } catch (err) {
-      console.error('Error parsing file', err);
+      console.error('Error parsing file:', err);
       setMessage('Error parsing file. Make sure it is a valid Excel/CSV file.');
       setHasDuplicatesOrErrors(true);
       setIsValidColumns(false);
@@ -272,7 +330,7 @@ function Uploadsheet() {
   const handleSave = async () => {
     setMessage('');
     if (!isValidColumns) {
-      toast.error('Cannot save: duplicate/missing rows or invalid columns.');
+      toast.error('Cannot save: there are duplicate/missing/invalid rows or invalid columns.');
       return;
     }
     if (previewRecords.length === 0) {
@@ -280,11 +338,9 @@ function Uploadsheet() {
       return;
     }
 
-    // IMPORTANT: Sanitize — only send allowed fields (no isDuplicate, no internal metadata)
     const payload = previewRecords.map(r => {
       const out = {};
       ALLOWED.forEach(f => {
-        // ensure string; backend expects trimmed strings
         out[f] = r[f] !== undefined && r[f] !== null ? String(r[f]).trim() : '';
       });
       return out;
@@ -298,17 +354,15 @@ function Uploadsheet() {
       if (resp.modifiedCount !== undefined) msgParts.push(`Modified: ${resp.modifiedCount}`);
       if (resp.invalidCount !== undefined) msgParts.push(`Invalid rows: ${resp.invalidCount}`);
       if (resp.alreadyExisting && resp.alreadyExisting.length > 0) {
-      // Show message about already existing rows
-      const rows = resp.alreadyExisting.map(e => (e.rowIndex + 1)).join(', ');
-      msgParts.push(`Already existing rows (not newly inserted): ${rows}`);
-      toast.info(`Rows already existed: ${rows}`);
-    }
+        const rows = resp.alreadyExisting.map(e => (e.rowIndex + 1)).join(', ');
+        msgParts.push(`Already existing rows: ${rows}`);
+        toast.info(`Rows already existed: ${rows}`);
+      }
 
-    const overallMessage = msgParts.join('. ') || 'Save completed.';
-    setMessage(overallMessage);
-    toast.success('Save completed.');
+      const overallMessage = msgParts.join('. ') || 'Save completed.';
+      setMessage(overallMessage);
+      toast.success('Save completed.');
     } catch (err) {
-      // improved error handling: show server message when available
       if (err.response) {
         console.error('Server responded:', err.response.status, err.response.data);
         setMessage('Error saving: ' + (err.response.data?.message || JSON.stringify(err.response.data)));
@@ -368,23 +422,35 @@ function Uploadsheet() {
                         {ALLOWED.map((h, idx) => (
                           <th key={idx}>{h}</th>
                         ))}
-                        <th>Flags</th>
+                        <th>Flags / Errors</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {previewRecords.map((rec, idx) => (
-                        <tr
-                          key={idx}
-                          className={rec.isDuplicate ? 'duplicate-row' : ''}
-                        >
-                          {ALLOWED.map((field, fidx) => (
-                            <td key={fidx}>{rec[field]}</td>
-                          ))}
-                          <td>
-                            {rec.isDuplicate ? 'DUPLICATE' : ''}
-                          </td>
-                        </tr>
-                      ))}
+                      {previewRecords.map((rec, idx) => {
+                        // see if this row had field errors
+                        const errObj = errorDetails.find(block => block.type === 'fieldErrors')?.items.find(e => e.rowIndex === idx);
+                        const hasFieldErr = !!errObj;
+                        return (
+                          <tr
+                            key={idx}
+                            className={
+                              rec.isDuplicate 
+                                ? 'duplicate-row' 
+                                : hasFieldErr 
+                                  ? 'field-error-row' 
+                                  : ''
+                            }
+                          >
+                            {ALLOWED.map((field, fidx) => (
+                              <td key={fidx}>{rec[field]}</td>
+                            ))}
+                            <td>
+                              {rec.isDuplicate && 'DUPLICATE'}
+                              {hasFieldErr && ` ERR: ${errObj.errors.join('; ')}`}
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 ) : (
@@ -421,6 +487,19 @@ function Uploadsheet() {
                           </ul>
                         </div>
                       );
+                    } else if (block.type === 'fieldErrors') {
+                      return (
+                        <div key={bi}>
+                          <h5>Rows with invalid field formats</h5>
+                          <ul>
+                            {block.items.map((e, i) => (
+                              <li key={i}>
+                                Row: <strong>{e.rowIndex + 1}</strong> — Errors: {e.errors.join('; ')}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      );
                     } else {
                       return null;
                     }
@@ -429,7 +508,6 @@ function Uploadsheet() {
               )}
 
               {message && <div className="alert alert-info mt-3">{message}</div>}
-
             </div>
           </main>
         </div>
