@@ -1,0 +1,68 @@
+/* ViewStudents.css */
+
+.vs-card {
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.vs-search-container {
+  margin-bottom: 1rem;
+}
+
+.vs-search-input {
+  width: 100%;
+  max-width: 400px;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+.vs-table-wrapper {
+  overflow-x: auto; /* allows horizontal scroll on small screens */
+}
+
+.vs-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 600px; /* ensure table has a minimum width before scrolling */
+}
+
+.vs-table thead {
+  background-color: green; /* header background */
+  color: #fff;
+}
+
+.vs-table th, .vs-table td {
+  padding: 0.75rem;
+  border: 1px solid #dee2e6;
+  text-align: left;
+}
+
+.vs-table tbody tr:nth-child(odd) {
+  background-color: #f8f9fa; /* zebra stripe */
+}
+
+.vs-table tbody tr:hover {
+  background-color: #e9ecef;
+}
+
+.vs-no-data td {
+  text-align: center;
+  padding: 1rem;
+  color: #666;
+}
+
+.vs-loading, .vs-error {
+  padding: 1rem;
+  text-align: center;
+  font-size: 1.2rem;
+}
+
+@media (max-width: 768px) {
+  .vs-table th, .vs-table td {
+    padding: 0.5rem;
+    font-size: 0.9rem;
+  }
+}

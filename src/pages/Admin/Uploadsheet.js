@@ -573,7 +573,7 @@ function Uploadsheet() {
                     </table>
                   </div>
                 ) : (
-                  <div>No preview yet.</div>
+                  <div className="alert alert-info mt-3" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>No preview yet.</div>
                 ) ) }
               </div>
 
@@ -637,3 +637,4 @@ function Uploadsheet() {
 }
 
 export default Uploadsheet;
+

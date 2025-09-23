@@ -61,6 +61,12 @@ function Adminmenu() {
               <i className="bi bi-file-earmark-excel-fill me-2" aria-hidden="true"></i>
               <span>Add sheet</span>
             </NavLink>
+
+            <NavLink to="/admin-dashboard/student-details" className={linkClass}>
+              <i className="bi bi-person-lines-fill me-2" aria-hidden="true"></i>
+              <span>View students</span>
+            </NavLink>
+
             <NavLink to="/admin-dashboard/about" className={linkClass}>
               <i className="bi bi-info-circle-fill me-2" aria-hidden="true"></i>
               <span>About</span>

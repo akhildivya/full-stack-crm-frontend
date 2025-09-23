@@ -18,6 +18,7 @@ import Allusers from "./pages/Admin/Allusers";
 import Myprofile from "./pages/Admin/Myprofile";
 import Profile from "./pages/user/Profile";
 import Uploadsheet from "./pages/Admin/Uploadsheet";
+import Viewstudents from "./pages/Admin/Viewstudents";
 
 function App() {
   return (
@@ -36,6 +37,7 @@ function App() {
           <Route path='upload-sheet' element={<Uploadsheet />} />
           <Route path='about' element={<About />}></Route>
           <Route path='contact' element={<Contact />}></Route>
+          <Route path='student-details' element={<Viewstudents />}> </Route>
         </Route>
         <Route path='/register' element={<Register />}></Route>
         <Route path='/login' element={<Login />}></Route>
