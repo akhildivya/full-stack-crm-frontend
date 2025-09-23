@@ -75,3 +75,21 @@
   font-size: 1.2rem;
   color: #333;
 }
+.controls-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;  /* equal gap between all children */
+}
+
+.search-box {
+  flex: 1 1 250px;
+}
+
+.dropdowns-group {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem; /* smaller gap between the two dropdowns */
+}
+
+

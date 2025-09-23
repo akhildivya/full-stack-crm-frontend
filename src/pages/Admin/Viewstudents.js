@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import Layout from '../../components/layout/Layout';
 import Adminmenu from '../../components/layout/Adminmenu';
 import axios from 'axios';
-import { Table, Dropdown } from 'react-bootstrap';
+import { Table, Dropdown, Button } from 'react-bootstrap';
 import '../../css/viewstudents.css';
 
 function Viewstudents() {
@@ -47,8 +47,19 @@ function Viewstudents() {
     };
 
     const handleSortChange = (column) => {
-        setSortColumn(column);
-        setSortOrder(prevOrder => prevOrder === 'asc' ? 'desc' : 'asc');
+        if (sortColumn === column) {
+            // toggle order
+            setSortOrder(prevOrder => prevOrder === 'asc' ? 'desc' : 'asc');
+        } else {
+            setSortColumn(column);
+            setSortOrder('asc');
+        }
+        setCurrentPage(1);
+    };
+
+    const handleRowsPerPageSelect = (num) => {
+        setRowsPerPage(num);
+        setCurrentPage(1);
     };
 
     // Filtered students based on search
@@ -105,42 +116,42 @@ function Viewstudents() {
                     </aside>
                     <main className="col-md-9">
                         <div className="card admin-card vs-card p-4">
-                            <div className="d-flex align-items-center mb-3">
-                                <div className="input-group me-2 flex-grow-1">
+                            <div className="controls-row mb-3">
+                                <div className="search-box flex-grow-1">
                                     <input
                                         type="text"
                                         className="form-control"
-                                        placeholder="Search by name, email, phone, etc."
+                                        placeholder="Search by name, email, phone, course, place etc…"
                                         value={searchTerm}
                                         onChange={handleSearchChange}
+                                        variant="outline-primary"
                                     />
                                 </div>
-                                <div className="input-group me-2">
+                                <div className="dropdowns-group">
                                     <Dropdown>
-                                        <Dropdown.Toggle variant="outline-secondary" id="dropdown-sort-column">
+                                        <Dropdown.Toggle variant="outline-primary" id="dropdown-sort-column">
                                             Sort by: {sortColumn.charAt(0).toUpperCase() + sortColumn.slice(1)}
                                         </Dropdown.Toggle>
                                         <Dropdown.Menu>
-                                            {['name', 'email', 'phone', 'course', 'place'].map(column => (
-                                                <Dropdown.Item key={column} onClick={() => handleSortChange(column)}>
-                                                    {column.charAt(0).toUpperCase() + column.slice(1)}
+                                            {['name', 'email', 'phone', 'course', 'place'].map(col => (
+                                                <Dropdown.Item key={col} onClick={() => handleSortChange(col)}>
+                                                    {col.charAt(0).toUpperCase() + col.slice(1)}
                                                 </Dropdown.Item>
                                             ))}
                                         </Dropdown.Menu>
                                     </Dropdown>
-                                </div>
-                                <div className="input-group">
                                     <Dropdown>
-                                        <Dropdown.Toggle variant="outline-secondary" id="dropdown-sort-order">
+                                        <Dropdown.Toggle variant="outline-primary" id="dropdown-sort-order">
                                             {sortOrder === 'asc' ? 'Ascending' : 'Descending'}
                                         </Dropdown.Toggle>
                                         <Dropdown.Menu>
-                                            <Dropdown.Item onClick={() => setSortOrder('asc')}>Ascending</Dropdown.Item>
-                                            <Dropdown.Item onClick={() => setSortOrder('desc')}>Descending</Dropdown.Item>
+                                            <Dropdown.Item onClick={() => { setSortOrder('asc'); setCurrentPage(1); }}>Ascending</Dropdown.Item>
+                                            <Dropdown.Item onClick={() => { setSortOrder('desc'); setCurrentPage(1); }}>Descending</Dropdown.Item>
                                         </Dropdown.Menu>
                                     </Dropdown>
                                 </div>
                             </div>
+
                             <div className="table-responsive vs-table-responsive">
                                 <Table className="custom-table table-hover align-middle">
                                     <thead className="table-header">
@@ -180,48 +191,54 @@ function Viewstudents() {
                             </div>
 
                             {/* Pagination Controls */}
-                            <div className="vs-pagination-container">
-                                <button
-                                    className="btn btn-outline-secondary btn-sm"
+                            <div className="vs-pagination-container d-flex align-items-center">
+                                <Button
+                                    variant="outline-secondary"
+                                    size="sm"
                                     onClick={() => goToPage(currentPage - 1)}
                                     disabled={currentPage === 1}
                                 >
                                     Previous
-                                </button>
+                                </Button>
 
                                 {[...Array(totalPages)].map((_, idx) => (
-                                    <button
+                                    <Button
                                         key={idx + 1}
-                                        className={`btn btn-sm ${currentPage === idx + 1 ? 'btn-primary' : 'btn-outline-secondary'} mx-1`}
+                                        variant={currentPage === idx + 1 ? 'primary' : 'outline-secondary'}
+                                        size="sm"
+                                        className="mx-1"
                                         onClick={() => goToPage(idx + 1)}
                                     >
                                         {idx + 1}
-                                    </button>
+                                    </Button>
                                 ))}
 
-                                <button
-                                    className="btn btn-outline-secondary btn-sm"
+                                <Button
+                                    variant="outline-secondary"
+                                    size="sm"
                                     onClick={() => goToPage(currentPage + 1)}
                                     disabled={currentPage === totalPages}
                                 >
                                     Next
-                                </button>
+                                </Button>
 
-                                <select
-                                    value={rowsPerPage}
-                                    onChange={e => {
-                                        setRowsPerPage(Number(e.target.value));
-                                        setCurrentPage(1);
-                                    }}
-                                    className="form-select form-select-sm vs-rows-per-page-select"
-                                    style={{ display: 'inline-block', width: 'auto', marginLeft: '1rem' }}
-                                >
-                                    {[5, 10, 20, 50].map(size => (
-                                        <option key={size} value={size}>
-                                            {size} / page
-                                        </option>
-                                    ))}
-                                </select>
+                                {/* Dropdown for rows per page */}
+                                <Dropdown className="ms-auto">
+                                    <Dropdown.Toggle variant="outline-secondary" size="sm" id="dropdown-rows-per-page">
+                                        {rowsPerPage} / page
+                                    </Dropdown.Toggle>
+                                    <Dropdown.Menu>
+                                        {[5, 10, 20, 50].map(size => (
+                                            <Dropdown.Item
+                                                key={size}
+                                                active={rowsPerPage === size}
+                                                onClick={() => handleRowsPerPageSelect(size)}
+                                            >
+                                                {size} / page
+                                            </Dropdown.Item>
+                                        ))}
+                                    </Dropdown.Menu>
+                                </Dropdown>
                             </div>
 
                         </div>
