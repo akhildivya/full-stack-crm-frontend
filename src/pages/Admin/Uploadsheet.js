@@ -67,7 +67,7 @@ function findHeaderRow(rows) {
       return i;
     }
   }
-  return 0;
+  return null;  // changed: return null if no header row found
 }
 
 function Uploadsheet() {
@@ -81,6 +81,7 @@ function Uploadsheet() {
   const [errorDetails, setErrorDetails] = useState([]);
   const [hasDuplicatesOrErrors, setHasDuplicatesOrErrors] = useState(false);
   const [hasOnlyHeaders, setHasOnlyHeaders] = useState(false);
+  const [noHeadersFound, setNoHeadersFound] = useState(false);
 
   const handleFile = (e) => {
     setTypeError(null);
@@ -92,6 +93,7 @@ function Uploadsheet() {
     setErrorDetails([]);
     setHasDuplicatesOrErrors(false);
     setHasOnlyHeaders(false);
+    setNoHeadersFound(false);
 
     const file = e.target.files[0];
     if (!file) {
@@ -129,6 +131,7 @@ function Uploadsheet() {
     setErrorDetails([]);
     setHasDuplicatesOrErrors(false);
     setHasOnlyHeaders(false);
+    setNoHeadersFound(false);
 
     if (!excelFile) {
       setMessage('No file loaded.');
@@ -137,12 +140,14 @@ function Uploadsheet() {
 
     try {
       const workbook = XLSX.read(excelFile, { type: 'buffer' });
-      let allCleaned = [];  // all records with sheet + row info
+      let allCleaned = [];  // all valid records with sheet + row info
       let previews = [];
       let headersFoundSet = new Set();
       let allFieldErrors = [];
       let duplicateRows = [];
       let missingValueRows = [];
+
+      let headersDetectedAtLeastOnce = false;
 
       workbook.SheetNames.forEach(sheetName => {
         const ws = workbook.Sheets[sheetName];
@@ -153,6 +158,14 @@ function Uploadsheet() {
 
         const rowsFilled = fillVerticalBlanks(rows);
         const headerRowIndex = findHeaderRow(rowsFilled);
+
+        if (headerRowIndex === null) {
+          // no non-empty row at all in this sheet => no headers
+          return;
+        }
+        // we have some header row
+        headersDetectedAtLeastOnce = true;
+
         const rawHeaders = rowsFilled[headerRowIndex].map(c => normalizeCell(c));
         const headersFilled = fillHeaderBlanks(rawHeaders).map(h => h.toLowerCase().trim());
 
@@ -208,12 +221,20 @@ function Uploadsheet() {
 
       setRawPreviews(previews);
 
+      if (!headersDetectedAtLeastOnce) {
+        // no headers found in any sheet
+        setNoHeadersFound(true);
+        setMessage('No headers found in the uploaded file. Please ensure the file has a header row with column names.');
+        setIsValidColumns(false);
+        return;
+      }
+
       // check if there is any valid data row at all
       const totalValidRows = allCleaned.length;
       if (totalValidRows === 0) {
         // Only headers, no data
         setHasOnlyHeaders(true);
-        setPreviewRecords([]);  // maybe set to [] so that table shows headers but no rows
+        setPreviewRecords([]);  // so table shows headers but no rows
         setMessage('No data rows found. Only headers are present.');
         setIsValidColumns(false);
         setHasDuplicatesOrErrors(false);
@@ -344,7 +365,6 @@ function Uploadsheet() {
       return;
     }
 
-    // Build payload (only allowed fields)
     const payload = previewRecords.map(rec => {
       const out = {};
       ALLOWED.forEach(f => {
@@ -353,7 +373,6 @@ function Uploadsheet() {
       return out;
     });
 
-    // Build quick lookup maps from client preview records
     const emailToRec = new Map();
     const phoneToRec = new Map();
     const namecpToRec = new Map();
@@ -473,9 +492,7 @@ function Uploadsheet() {
       <div className="container-fluid m-3 p-3 admin-root">
         <ToastContainer limit={3} />
         <div className="row">
-          <aside className="col-md-3">
-            <Adminmenu />
-          </aside>
+          <aside className="col-md-3"><Adminmenu /></aside>
           <main className="col-md-9">
             <div className="card admin-card p-4 upload-form">
               <h4>Upload Sheet</h4>
@@ -492,7 +509,7 @@ function Uploadsheet() {
               {typeError && <div className="alert alert-danger mt-2">{typeError}</div>}
               {columnsWarning && <div className="alert alert-warning mt-2">{columnsWarning}</div>}
 
-              {previewRecords.length > 0 && !hasOnlyHeaders && (
+              {(previewRecords.length > 0 && !hasOnlyHeaders) && (
                 <div className="mt-3">
                   <button
                     className="btn btn-primary btn-md"
@@ -505,7 +522,11 @@ function Uploadsheet() {
               )}
 
               <div className="viewer mt-3">
-                {(previewRecords.length > 0 || hasOnlyHeaders) ? (
+                { noHeadersFound ? (
+                  <div className="alert alert-warning">
+                    No headers found in the file. Please add a header row with column names like: {ALLOWED.join(', ')}.
+                  </div>
+                ) : ( (previewRecords.length > 0 || hasOnlyHeaders) ? (
                   <div className="table-container">
                     <table className="table table-sm">
                       <thead>
@@ -518,7 +539,7 @@ function Uploadsheet() {
                         </tr>
                       </thead>
                       <tbody>
-                        {previewRecords.length > 0 ? (
+                        { previewRecords.length > 0 ? (
                           previewRecords.map(rec => {
                             const dupErr = errorDetails.find(block => block.type === 'duplicates')?.items.find(e => (e.sheetName === rec.sheetName && e.rowIdxInSheet === rec.rowIdxInSheet));
                             const missErr = errorDetails.find(block => block.type === 'missing')?.items.find(e => (e.sheetName === rec.sheetName && e.rowIdxInSheet === rec.rowIdxInSheet));
@@ -542,7 +563,6 @@ function Uploadsheet() {
                             );
                           })
                         ) : (
-                          // no data rows but headers are present
                           <tr>
                             <td colSpan={ALLOWED.length + 2} style={{ textAlign: 'center' }}>
                               No data rows to display.
@@ -554,7 +574,7 @@ function Uploadsheet() {
                   </div>
                 ) : (
                   <div>No preview yet.</div>
-                )}
+                ) ) }
               </div>
 
               {errorDetails.length > 0 && (
@@ -606,7 +626,7 @@ function Uploadsheet() {
                 </div>
               )}
 
-              {message && <div className="alert alert-info mt-3" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{message}</div>}
+              { message && <div className="alert alert-info mt-3" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{message}</div> }
 
             </div>
           </main>
