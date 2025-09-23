@@ -80,6 +80,7 @@ function Uploadsheet() {
   const [message, setMessage] = useState('');
   const [errorDetails, setErrorDetails] = useState([]);
   const [hasDuplicatesOrErrors, setHasDuplicatesOrErrors] = useState(false);
+  const [hasOnlyHeaders, setHasOnlyHeaders] = useState(false);
 
   const handleFile = (e) => {
     setTypeError(null);
@@ -90,6 +91,7 @@ function Uploadsheet() {
     setMessage('');
     setErrorDetails([]);
     setHasDuplicatesOrErrors(false);
+    setHasOnlyHeaders(false);
 
     const file = e.target.files[0];
     if (!file) {
@@ -126,6 +128,7 @@ function Uploadsheet() {
     setIsValidColumns(false);
     setErrorDetails([]);
     setHasDuplicatesOrErrors(false);
+    setHasOnlyHeaders(false);
 
     if (!excelFile) {
       setMessage('No file loaded.');
@@ -144,7 +147,9 @@ function Uploadsheet() {
       workbook.SheetNames.forEach(sheetName => {
         const ws = workbook.Sheets[sheetName];
         const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' }); // array of arrays
-        if (!rows || rows.length === 0) return;
+        if (!rows || rows.length === 0) {
+          return;
+        }
 
         const rowsFilled = fillVerticalBlanks(rows);
         const headerRowIndex = findHeaderRow(rowsFilled);
@@ -176,7 +181,6 @@ function Uploadsheet() {
             obj[fh] = normalizeCell(row[ci]);
           }
           const anyNonEmpty = Object.values(obj).some(v => v !== '');
-          // compute a 1-based Excel-like row number for easier display (headerRowIndex is 0-based)
           return anyNonEmpty
             ? { rec: obj, sheetName, rowIdxInSheet: headerRowIndex + 1 + rowIdxInSlice }
             : null;
@@ -192,7 +196,6 @@ function Uploadsheet() {
               rec[field] = foundKey ? String(o.rec[foundKey]).trim() : '';
             }
           });
-          // store normalized values to ease matching later
           rec._normEmail = normalizeEmail(rec.email);
           rec._normPhone = normalizePhone(rec.phone);
           rec._nameCoursePlace = `${normalizeText(rec.name)}|${normalizeText(rec.course)}|${normalizeText(rec.place)}`;
@@ -204,6 +207,18 @@ function Uploadsheet() {
       });
 
       setRawPreviews(previews);
+
+      // check if there is any valid data row at all
+      const totalValidRows = allCleaned.length;
+      if (totalValidRows === 0) {
+        // Only headers, no data
+        setHasOnlyHeaders(true);
+        setPreviewRecords([]);  // maybe set to [] so that table shows headers but no rows
+        setMessage('No data rows found. Only headers are present.');
+        setIsValidColumns(false);
+        setHasDuplicatesOrErrors(false);
+        return;
+      }
 
       // check required columns
       const headersFound = Array.from(headersFoundSet);
@@ -221,7 +236,7 @@ function Uploadsheet() {
         const errs = [];
         if (!rec.name) {
           errs.push('name missing');
-        } else if (!/^[A-Za-z\s'-]{2,50}$/.test(rec.name)) {
+        } else if (!/^[A-Za-z\s\'-]{2,50}$/.test(rec.name)) {
           errs.push('name invalid; only letters, spaces, hyphens/apostrophes; length 2-50');
         }
         if (!rec.email) {
@@ -349,31 +364,26 @@ function Uploadsheet() {
       if (ne) emailToRec.set(ne, r);
       if (np) phoneToRec.set(np, r);
       if (ncp) namecpToRec.set(ncp, r);
-      // also store index for positional fallback
       r._payloadIndex = idx;
     });
 
     try {
       const response = await axios.post('http://localhost:4000/admin/upload-sheet', { data: payload }, { timeout: 60000 });
       const resp = response.data;
-      console.debug('server alreadyExisting:', resp.alreadyExisting); // debug
+      console.debug('server alreadyExisting:', resp.alreadyExisting);
       const msgParts = [];
       if (resp.insertedCount !== undefined) msgParts.push(`Inserted: ${resp.insertedCount}`);
       if (resp.modifiedCount !== undefined) msgParts.push(`Modified: ${resp.modifiedCount}`);
       if (resp.invalidCount !== undefined) msgParts.push(`Invalid rows: ${resp.invalidCount}`);
 
       if (resp.alreadyExisting && Array.isArray(resp.alreadyExisting) && resp.alreadyExisting.length > 0) {
-        // Create readable list of already existing rows (prefer server sheet/index, else match client)
         const serverItems = resp.alreadyExisting;
         const rowsListArr = serverItems.map((e, idx) => {
-          // try many possible server keys for sheet and row
           let sheet = e.sheetName || e.sheet || null;
           let rowNum = null;
-
-          // server might return different naming: rowIdxInSheet, rowIndex, row, index
           if (e.rowIdxInSheet !== undefined && e.rowIdxInSheet !== null) {
             const parsed = Number(e.rowIdxInSheet);
-            if (!Number.isNaN(parsed)) rowNum = parsed + 1; // assume zero-based -> make 1-based
+            if (!Number.isNaN(parsed)) rowNum = parsed + 1;
           } else if (e.rowIndex !== undefined && e.rowIndex !== null) {
             const parsed = Number(e.rowIndex);
             if (!Number.isNaN(parsed)) rowNum = parsed + 1;
@@ -385,7 +395,6 @@ function Uploadsheet() {
             if (!Number.isNaN(parsed)) rowNum = parsed + 1;
           }
 
-          // attempt to match by email/phone fields server might provide
           const keyEmail = normalizeEmail(e.email || e.mail || e._email || '');
           const keyPhone = normalizePhone(e.phone || e._phone || '');
           const keyNameCP = normalizeText((e.name || e.fullname || e.name_full || '') + '|' + (e.course || '') + '|' + (e.place || ''));
@@ -395,14 +404,12 @@ function Uploadsheet() {
           else if (keyPhone && phoneToRec.has(keyPhone)) matched = phoneToRec.get(keyPhone);
           else if (keyNameCP && namecpToRec.has(keyNameCP)) matched = namecpToRec.get(keyNameCP);
 
-          // If still not matched, try to find any preview record whose normalized values appear in the server item text.
           if (!matched) {
             try {
               const s = JSON.stringify(e).toLowerCase();
               for (let pr of previewRecords) {
                 if (pr._normEmail && s.includes(pr._normEmail)) { matched = pr; break; }
                 if (pr._normPhone && s.includes(pr._normPhone)) { matched = pr; break; }
-                // check name/course/place fragments
                 if (pr._nameCoursePlace) {
                   const frags = pr._nameCoursePlace.split('|').filter(Boolean);
                   let foundFrag = false;
@@ -413,11 +420,10 @@ function Uploadsheet() {
                 }
               }
             } catch (ex) {
-              // ignore stringify errors
+              // ignore
             }
           }
 
-          // positional fallback: if server returned same total length as payload, assume ordering corresponds
           if (!matched && serverItems.length === payload.length) {
             const pr = previewRecords[idx];
             if (pr) matched = pr;
@@ -425,25 +431,20 @@ function Uploadsheet() {
 
           if (matched) {
             sheet = sheet || matched.sheetName;
-            // prefer server-provided rowNum, else use client matched row
             if (!rowNum && matched.rowIdxInSheet) {
-              rowNum = matched.rowIdxInSheet; // this is already 1-based
+              rowNum = matched.rowIdxInSheet;
             }
           }
 
-          // final safe defaults
           sheet = sheet || 'UnknownSheet';
           rowNum = rowNum !== null && rowNum !== undefined ? rowNum : 'UnknownRow';
 
-          // DO NOT prepend literal "Sheet " — display the name directly to avoid "Sheet Sheet1"
           return `${sheet} Row ${rowNum}`;
         });
 
-        // create short display for toast (truncate if very long)
         const short = rowsListArr.slice(0, 10).join(', ');
         const suffix = rowsListArr.length > 10 ? `, and ${rowsListArr.length - 10} more...` : '';
         toast.info(`Rows already existed: ${short}${suffix}`, { autoClose: 8000 });
-        // put full list into page message (so user can scroll/copy)
         msgParts.push(`Already existing rows: ${rowsListArr.join(', ')}`);
       }
 
@@ -470,7 +471,7 @@ function Uploadsheet() {
   return (
     <Layout title={"CRM-Upload Sheet"}>
       <div className="container-fluid m-3 p-3 admin-root">
-        <ToastContainer limit={3} />  {/* limit to avoid flooding */}
+        <ToastContainer limit={3} />
         <div className="row">
           <aside className="col-md-3">
             <Adminmenu />
@@ -491,7 +492,7 @@ function Uploadsheet() {
               {typeError && <div className="alert alert-danger mt-2">{typeError}</div>}
               {columnsWarning && <div className="alert alert-warning mt-2">{columnsWarning}</div>}
 
-              {previewRecords.length > 0 && (
+              {previewRecords.length > 0 && !hasOnlyHeaders && (
                 <div className="mt-3">
                   <button
                     className="btn btn-primary btn-md"
@@ -504,7 +505,7 @@ function Uploadsheet() {
               )}
 
               <div className="viewer mt-3">
-                {previewRecords.length > 0 ? (
+                {(previewRecords.length > 0 || hasOnlyHeaders) ? (
                   <div className="table-container">
                     <table className="table table-sm">
                       <thead>
@@ -517,28 +518,37 @@ function Uploadsheet() {
                         </tr>
                       </thead>
                       <tbody>
-                        {previewRecords.map(rec => {
-                          const dupErr = errorDetails.find(block => block.type === 'duplicates')?.items.find(e => (e.sheetName === rec.sheetName && e.rowIdxInSheet === rec.rowIdxInSheet));
-                          const missErr = errorDetails.find(block => block.type === 'missing')?.items.find(e => (e.sheetName === rec.sheetName && e.rowIdxInSheet === rec.rowIdxInSheet));
-                          const fldErr = errorDetails.find(block => block.type === 'fieldErrors')?.items.find(e => (e.sheetName === rec.sheetName && e.rowIdxInSheet === rec.rowIdxInSheet));
+                        {previewRecords.length > 0 ? (
+                          previewRecords.map(rec => {
+                            const dupErr = errorDetails.find(block => block.type === 'duplicates')?.items.find(e => (e.sheetName === rec.sheetName && e.rowIdxInSheet === rec.rowIdxInSheet));
+                            const missErr = errorDetails.find(block => block.type === 'missing')?.items.find(e => (e.sheetName === rec.sheetName && e.rowIdxInSheet === rec.rowIdxInSheet));
+                            const fldErr = errorDetails.find(block => block.type === 'fieldErrors')?.items.find(e => (e.sheetName === rec.sheetName && e.rowIdxInSheet === rec.rowIdxInSheet));
 
-                          const errMessages = [];
-                          if (dupErr) errMessages.push(...dupErr.errors);
-                          if (missErr) errMessages.push(`missing: ${missErr.missingFields.join(', ')}`);
-                          if (fldErr) errMessages.push(...fldErr.errors);
+                            const errMessages = [];
+                            if (dupErr) errMessages.push(...dupErr.errors);
+                            if (missErr) errMessages.push(`missing: ${missErr.missingFields.join(', ')}`);
+                            if (fldErr) errMessages.push(...fldErr.errors);
 
-                          const rowClass = dupErr ? 'duplicate-row' : fldErr ? 'field-error-row' : '';
+                            const rowClass = dupErr ? 'duplicate-row' : fldErr ? 'field-error-row' : '';
 
-                          return (
-                            <tr key={`${rec.sheetName}-${rec.rowIdxInSheet}`} className={rowClass}>
-                              <td>{rec.sheetName} (Row {rec.rowIdxInSheet})</td>
-                              {ALLOWED.map((field, fidx) => (
-                                <td key={fidx}>{rec[field]}</td>
-                              ))}
-                              <td>{errMessages.join('; ')}</td>
-                            </tr>
-                          );
-                        })}
+                            return (
+                              <tr key={`${rec.sheetName}-${rec.rowIdxInSheet}`} className={rowClass}>
+                                <td>{rec.sheetName} (Row {rec.rowIdxInSheet})</td>
+                                {ALLOWED.map((field, fidx) => (
+                                  <td key={fidx}>{rec[field]}</td>
+                                ))}
+                                <td>{errMessages.join('; ')}</td>
+                              </tr>
+                            );
+                          })
+                        ) : (
+                          // no data rows but headers are present
+                          <tr>
+                            <td colSpan={ALLOWED.length + 2} style={{ textAlign: 'center' }}>
+                              No data rows to display.
+                            </td>
+                          </tr>
+                        )}
                       </tbody>
                     </table>
                   </div>
