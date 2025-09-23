@@ -130,7 +130,12 @@ function Myprofile() {
     }
   };
 
-  if (user == null) return <p>Loading...</p>;
+  if (user == null) return  <div className="loader-overlay">
+        <div className="loader-box">
+            <div className="spinner"></div>
+            <p className="loader-text">Loading...</p>
+        </div>
+    </div>
   {/* const handleDelete = async userId => {
     try {
       await axios.delete(`http://localhost:4000/delete-user/${userId}`);

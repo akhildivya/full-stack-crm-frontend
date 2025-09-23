@@ -1,68 +1,77 @@
 /* ViewStudents.css */
 
-.vs-card {
-  background-color: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+.vs-table-responsive {
+  margin-top: 1rem;
 }
 
-.vs-search-container {
-  margin-bottom: 1rem;
+.custom-table {
+  min-width: 700px; /* ensure table scrolls if too many columns */
+  border: 1px solid #dee2e6;
 }
 
+.custom-table thead.table-header {
+  background-color: #4a90e2; /* nice blue header */
+  color: #ffffff;
+}
+
+.custom-table th,
+.custom-table td {
+  padding: 0.75rem 1rem;
+  vertical-align: middle;
+}
+
+.custom-table tbody tr:nth-child(odd) {
+  background-color: #f9f9f9;
+}
+
+.custom-table tbody tr:hover {
+  background-color: #e1f5fe;
+}
+
+.vs-btn-action {
+  margin-right: 5px;
+  font-size: 0.8rem;
+}
+
+.vs-btn-action:last-child {
+  margin-right: 0;
+}
+
+/* Search input styling */
 .vs-search-input {
   width: 100%;
-  max-width: 400px;
+  max-width: 350px;
   padding: 0.5rem 0.75rem;
   border: 1px solid #ccc;
   border-radius: 4px;
-  font-size: 1rem;
+  font-size: 0.95rem;
 }
 
-.vs-table-wrapper {
-  overflow-x: auto; /* allows horizontal scroll on small screens */
+/* Responsive behaviour */
+@media (max-width: 768px) {
+  .custom-table thead.table-header th,
+  .custom-table tbody td {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.85rem;
+  }
+  
+  .vs-btn-action {
+    font-size: 0.7rem;
+    padding: 2px 6px;
+  }
 }
 
-.vs-table {
-  width: 100%;
-  border-collapse: collapse;
-  min-width: 600px; /* ensure table has a minimum width before scrolling */
-}
-
-.vs-table thead {
-  background-color: green; /* header background */
-  color: #fff;
-}
-
-.vs-table th, .vs-table td {
-  padding: 0.75rem;
-  border: 1px solid #dee2e6;
-  text-align: left;
-}
-
-.vs-table tbody tr:nth-child(odd) {
-  background-color: #f8f9fa; /* zebra stripe */
-}
-
-.vs-table tbody tr:hover {
-  background-color: #e9ecef;
-}
-
+/* No data row style */
 .vs-no-data td {
   text-align: center;
   padding: 1rem;
-  color: #666;
+  color: #777;
 }
 
+/* Loading and error styles */
 .vs-loading, .vs-error {
   padding: 1rem;
   text-align: center;
   font-size: 1.2rem;
-}
-
-@media (max-width: 768px) {
-  .vs-table th, .vs-table td {
-    padding: 0.5rem;
-    font-size: 0.9rem;
-  }
+  color: #333;
 }
