@@ -136,16 +136,7 @@ function Myprofile() {
             <p className="loader-text">Loading...</p>
         </div>
     </div>
-  {/* const handleDelete = async userId => {
-    try {
-      await axios.delete(`http://localhost:4000/delete-user/${userId}`);
-      navigate('/');
-      // Optionally, redirect or update UI
-    } catch (err) {
-      console.error(err.response?.data || err.message);
-    }
-    
-  };*/}
+ 
   const confirmDelete = async () => {
     if (!selectedUser) return;
 

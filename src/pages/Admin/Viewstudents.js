@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import Layout from '../../components/layout/Layout';
 import Adminmenu from '../../components/layout/Adminmenu';
 import axios from 'axios';
-import { Table, Dropdown, Button } from 'react-bootstrap';
+import { Table, Dropdown, Button, Modal, Form } from 'react-bootstrap';
 import '../../css/viewstudents.css';
 
 function Viewstudents() {
@@ -10,6 +10,9 @@ function Viewstudents() {
     const [searchTerm, setSearchTerm] = useState('');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [showModal, setShowModal] = useState(false);
+    const [selectedStudent, setSelectedStudent] = useState(null);
+    const [deletedStudentId, setDeletedStudentId] = useState(null);
 
     // Pagination state
     const [currentPage, setCurrentPage] = useState(1);
@@ -19,9 +22,8 @@ function Viewstudents() {
     const [sortColumn, setSortColumn] = useState('name');
     const [sortOrder, setSortOrder] = useState('asc');
 
-    const pollingInterval = 1000; // 1 second
-
     useEffect(() => {
+        document.title = 'CRM - Student Details';
         const fetchStudents = async () => {
             try {
                 const res = await axios.get('http://localhost:4000/admin/view-students');
@@ -35,10 +37,8 @@ function Viewstudents() {
         };
 
         fetchStudents();
-        const intervalId = setInterval(fetchStudents, pollingInterval);
-        return () => {
-            clearInterval(intervalId);
-        };
+        const intervalId = setInterval(fetchStudents, 1000);
+        return () => clearInterval(intervalId);
     }, []);
 
     const handleSearchChange = (e) => {
@@ -48,7 +48,6 @@ function Viewstudents() {
 
     const handleSortChange = (column) => {
         if (sortColumn === column) {
-            // toggle order
             setSortOrder(prevOrder => prevOrder === 'asc' ? 'desc' : 'asc');
         } else {
             setSortColumn(column);
@@ -62,7 +61,48 @@ function Viewstudents() {
         setCurrentPage(1);
     };
 
-    // Filtered students based on search
+    const handleEdit = (student) => {
+        setSelectedStudent(student);
+        setShowModal(true);
+    };
+
+    const handleDelete = async () => {
+        try {
+            await axios.delete(`http://localhost:4000/admin/delete-student/${deletedStudentId}`);
+            setStudents(students.filter(student => student._id !== deletedStudentId));
+            setDeletedStudentId(null);
+        } catch (err) {
+            console.error('Error deleting student', err);
+        }
+    };
+
+    const handleCloseModal = () => {
+        setShowModal(false);
+        setSelectedStudent(null);
+    };
+
+    const handleSaveChanges = async () => {
+        try {
+            await axios.put(`http://localhost:4000/admin/update-student/${selectedStudent._id}`, selectedStudent);
+            setStudents(students.map(student => student._id === selectedStudent._id ? selectedStudent : student));
+            handleCloseModal();
+        } catch (err) {
+            console.error('Error updating student', err);
+        }
+    };
+
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        setSelectedStudent(prevState => ({
+            ...prevState,
+            [name]: value
+        }));
+    };
+
+    const handleConfirmDelete = (id) => {
+        setDeletedStudentId(id);
+    };
+
     const filteredStudents = students.filter(student => {
         const lower = searchTerm.toLowerCase();
         return (
@@ -74,7 +114,6 @@ function Viewstudents() {
         );
     });
 
-    // Sorting the filtered students
     const sortedStudents = [...filteredStudents].sort((a, b) => {
         const aValue = a[sortColumn]?.toLowerCase() || '';
         const bValue = b[sortColumn]?.toLowerCase() || '';
@@ -85,7 +124,6 @@ function Viewstudents() {
         }
     });
 
-    // Compute pagination
     const indexOfLastRow = currentPage * rowsPerPage;
     const indexOfFirstRow = indexOfLastRow - rowsPerPage;
     const currentRows = sortedStudents.slice(indexOfFirstRow, indexOfLastRow);
@@ -124,7 +162,6 @@ function Viewstudents() {
                                         placeholder="Search by name, email, phone, course, place etc…"
                                         value={searchTerm}
                                         onChange={handleSearchChange}
-                                        variant="outline-primary"
                                     />
                                 </div>
                                 <div className="dropdowns-group">
@@ -176,8 +213,8 @@ function Viewstudents() {
                                                     <td>{student.course}</td>
                                                     <td>{student.place}</td>
                                                     <td className="vs-actions-td">
-                                                        <button className="btn btn-sm btn-primary vs-btn-action mt-1">Edit</button>
-                                                        <button className="btn btn-sm btn-danger vs-btn-action mt-1 ">Delete</button>
+                                                        <button className="btn btn-sm btn-primary vs-btn-action mt-1" onClick={() => handleEdit(student)}>Edit</button>
+                                                        <button className="btn btn-sm btn-danger vs-btn-action mt-1" onClick={() => handleConfirmDelete(student._id)}>Delete</button>
                                                     </td>
                                                 </tr>
                                             ))
@@ -190,7 +227,6 @@ function Viewstudents() {
                                 </Table>
                             </div>
 
-                            {/* Pagination Controls */}
                             <div className="vs-pagination-container d-flex align-items-center">
                                 <Button
                                     variant="outline-secondary"
@@ -222,13 +258,12 @@ function Viewstudents() {
                                     Next
                                 </Button>
 
-                                {/* Dropdown for rows per page */}
                                 <Dropdown className="ms-auto">
                                     <Dropdown.Toggle variant="outline-secondary" size="sm" id="dropdown-rows-per-page">
                                         {rowsPerPage} / page
                                     </Dropdown.Toggle>
                                     <Dropdown.Menu>
-                                        {[5, 10, 20, 50,75,100].map(size => (
+                                        {[5, 10, 20, 50, 75, 100].map(size => (
                                             <Dropdown.Item
                                                 key={size}
                                                 active={rowsPerPage === size}
@@ -240,13 +275,117 @@ function Viewstudents() {
                                     </Dropdown.Menu>
                                 </Dropdown>
                             </div>
-
                         </div>
                     </main>
                 </div>
             </div>
+
+            <Modal
+                show={showModal}
+                onHide={handleCloseModal}
+                dialogClassName="custom-modal-dialog"
+            >
+                <Modal.Header closeButton className="custom-modal-header">
+                    <Modal.Title>Edit Student</Modal.Title>
+                </Modal.Header>
+                <Modal.Body className="custom-modal-body">
+                    {selectedStudent && (
+                        <Form>
+                            <Form.Group controlId="formName">
+                                <Form.Label>Name</Form.Label>
+                                <Form.Control
+                                    type="text"
+                                    name="name"
+                                    value={selectedStudent.name}
+                                    onChange={handleInputChange}
+                                    placeholder="Enter name"
+                                    className="custom-form-control"
+                                />
+                            </Form.Group>
+
+                            <Form.Group controlId="formEmail">
+                                <Form.Label>Email</Form.Label>
+                                <Form.Control
+                                    type="email"
+                                    name="email"
+                                    value={selectedStudent.email}
+                                    onChange={handleInputChange}
+                                    placeholder="Enter email"
+                                    className="custom-form-control"
+                                />
+                            </Form.Group>
+
+                            <Form.Group controlId="formPhone">
+                                <Form.Label>Phone</Form.Label>
+                                <Form.Control
+                                    type="text"
+                                    name="phone"
+                                    value={selectedStudent.phone}
+                                    onChange={handleInputChange}
+                                    placeholder="Enter phone number"
+                                    className="custom-form-control"
+                                />
+                            </Form.Group>
+
+                            <Form.Group controlId="formCourse">
+                                <Form.Label>Course</Form.Label>
+                                <Form.Control
+                                    type="text"
+                                    name="course"
+                                    value={selectedStudent.course}
+                                    onChange={handleInputChange}
+                                    placeholder="Enter course"
+                                    className="custom-form-control"
+                                />
+                            </Form.Group>
+
+                            <Form.Group controlId="formPlace">
+                                <Form.Label>Place</Form.Label>
+                                <Form.Control
+                                    type="text"
+                                    name="place"
+                                    value={selectedStudent.place}
+                                    onChange={handleInputChange}
+                                    placeholder="Enter place"
+                                    className="custom-form-control"
+                                />
+                            </Form.Group>
+                        </Form>
+                    )}
+                </Modal.Body>
+                <Modal.Footer className="custom-modal-footer">
+                    <Button variant="secondary" onClick={handleCloseModal}>
+                        Close
+                    </Button>
+                    <Button variant="primary" onClick={handleSaveChanges}>
+                        Save Changes
+                    </Button>
+                </Modal.Footer>
+            </Modal>
+
+
+
+            {/* Confirm Delete Modal */}
+            <Modal show={deletedStudentId !== null} onHide={() => setDeletedStudentId(null)}>
+                <Modal.Header closeButton>
+                    <Modal.Title>Confirm Deletion</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    Are you sure you want to delete this student? This action cannot be undone.
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button variant="secondary" onClick={() => setDeletedStudentId(null)}>
+                        Cancel
+                    </Button>
+                    <Button variant="danger" onClick={handleDelete}>
+                        Delete
+                    </Button>
+                </Modal.Footer>
+            </Modal>
         </Layout>
     );
 }
 
 export default Viewstudents;
+
+
