@@ -52,7 +52,7 @@ function Adminmenu() {
 
             </NavLink>
             <NavLink to="/admin-dashboard/all-users" className={linkClass}>
-              <i className="bi bi-people-fill me-2" aria-hidden="true"></i>
+              <i className="bi bi-person-check-fill me-2" aria-hidden="true"></i>
               <span>Verify users</span>
             </NavLink>
 

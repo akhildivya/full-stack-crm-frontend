@@ -129,7 +129,7 @@ function Viewstudents() {
                                 </div>
                                 <div className="dropdowns-group">
                                     <Dropdown>
-                                        <Dropdown.Toggle variant="outline-primary" id="dropdown-sort-column">
+                                        <Dropdown.Toggle variant="outline-secondary" id="dropdown-sort-column">
                                             Sort by: {sortColumn.charAt(0).toUpperCase() + sortColumn.slice(1)}
                                         </Dropdown.Toggle>
                                         <Dropdown.Menu>
@@ -141,7 +141,7 @@ function Viewstudents() {
                                         </Dropdown.Menu>
                                     </Dropdown>
                                     <Dropdown>
-                                        <Dropdown.Toggle variant="outline-primary" id="dropdown-sort-order">
+                                        <Dropdown.Toggle variant="outline-secondary" id="dropdown-sort-order">
                                             {sortOrder === 'asc' ? 'Ascending' : 'Descending'}
                                         </Dropdown.Toggle>
                                         <Dropdown.Menu>
@@ -175,9 +175,9 @@ function Viewstudents() {
                                                     <td>{student.phone}</td>
                                                     <td>{student.course}</td>
                                                     <td>{student.place}</td>
-                                                    <td>
-                                                        <button className="btn btn-sm btn-primary vs-btn-action">Edit</button>
-                                                        <button className="btn btn-sm btn-danger vs-btn-action">Delete</button>
+                                                    <td className="vs-actions-td">
+                                                        <button className="btn btn-sm btn-primary vs-btn-action mt-1">Edit</button>
+                                                        <button className="btn btn-sm btn-danger vs-btn-action mt-1 ">Delete</button>
                                                     </td>
                                                 </tr>
                                             ))
@@ -228,7 +228,7 @@ function Viewstudents() {
                                         {rowsPerPage} / page
                                     </Dropdown.Toggle>
                                     <Dropdown.Menu>
-                                        {[5, 10, 20, 50].map(size => (
+                                        {[5, 10, 20, 50,75,100].map(size => (
                                             <Dropdown.Item
                                                 key={size}
                                                 active={rowsPerPage === size}

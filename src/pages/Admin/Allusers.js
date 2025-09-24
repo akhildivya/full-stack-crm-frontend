@@ -1,6 +1,8 @@
+// src/pages/admin/Allusers.js
+
 import React, { useEffect, useMemo, useState } from "react";
 import axios from "axios";
-import { Table, Dropdown } from "react-bootstrap";
+import { Table, Dropdown, Button } from "react-bootstrap";
 import Layout from '../../components/layout/Layout';
 import Adminmenu from '../../components/layout/Adminmenu';
 
@@ -10,15 +12,17 @@ function Allusers() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Sorting state using dropdowns
-  const [sortKey, setSortKey] = useState("name");   // default sort column
-  const [sortOrder, setSortOrder] = useState("asc"); // 'asc' or 'desc'
+  // Sorting state
+  const [sortKey, setSortKey] = useState("name");
+  const [sortOrder, setSortOrder] = useState("asc");
 
-  const pollingInterval = 1000; // milliseconds
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+
+  const pollingInterval = 1000;
 
   useEffect(() => {
-    let intervalId;
-
     const fetchUsers = async () => {
       try {
         const response = await axios.get("http://localhost:4000/all-users");
@@ -32,11 +36,8 @@ function Allusers() {
     };
 
     fetchUsers();
-    intervalId = setInterval(fetchUsers, pollingInterval);
-
-    return () => {
-      clearInterval(intervalId);
-    };
+    const intervalId = setInterval(fetchUsers, pollingInterval);
+    return () => clearInterval(intervalId);
   }, []);
 
   const handleVerify = (userId) => {
@@ -44,20 +45,44 @@ function Allusers() {
       .then(response => {
         setUsers(prev => prev.map(u => u._id === userId ? response.data : u));
       })
-      .catch(error => {
-        console.error("Error verifying user:", error);
+      .catch(err => {
+        console.error("Error verifying user:", err);
       });
   };
 
-  const normalized = searchTerm.trim().toLowerCase();
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+    setCurrentPage(1);
+  };
 
-  const filteredAndSorted = useMemo(() => {
-    // 1) Filter
-    const filtered = users.filter(user => {
+  const handleSortColumn = (col) => {
+    if (sortKey === col) {
+      setSortOrder(prev => (prev === "asc" ? "desc" : "asc"));
+    } else {
+      setSortKey(col);
+      setSortOrder("asc");
+    }
+    setCurrentPage(1);
+  };
+
+  const handleSortOrderChange = (order) => {
+    setSortOrder(order);
+    setCurrentPage(1);
+  };
+
+  const handleRowsPerPageChange = (num) => {
+    setRowsPerPage(num);
+    setCurrentPage(1);
+  };
+
+  // filtering
+  const normalized = searchTerm.trim().toLowerCase();
+  const filtered = useMemo(() => {
+    return users.filter(user => {
       if (!normalized) return true;
-      const name = String(user.username || user.name || '').toLowerCase();
-      const email = String(user.email || '').toLowerCase();
-      const phone = String(user.phone || '').toLowerCase();
+      const name = String(user.username || user.name || "").toLowerCase();
+      const email = String(user.email || "").toLowerCase();
+      const phone = String(user.phone || "").toLowerCase();
       const statusText = user.verified ? "verified" : "not verified";
       return (
         name.includes(normalized) ||
@@ -66,33 +91,44 @@ function Allusers() {
         statusText.includes(normalized)
       );
     });
+  }, [users, normalized]);
 
-    // 2) Sort
-    const sorted = [...filtered].sort((a, b) => {
+  // sorting
+  const sorted = useMemo(() => {
+    return [...filtered].sort((a, b) => {
       let cmp = 0;
-
       if (sortKey === "name") {
-        const aName = String(a.username || a.name || '');
-        const bName = String(b.username || b.name || '');
+        const aName = String(a.username || a.name || "");
+        const bName = String(b.username || b.name || "");
         cmp = aName.localeCompare(bName, undefined, { sensitivity: "base" });
       } else if (sortKey === "email") {
-        const aEmail = String(a.email || '');
-        const bEmail = String(b.email || '');
+        const aEmail = String(a.email || "");
+        const bEmail = String(b.email || "");
         cmp = aEmail.localeCompare(bEmail, undefined, { sensitivity: "base" });
       } else if (sortKey === "phone") {
-        const aPhone = String(a.phone || '');
-        const bPhone = String(b.phone || '');
+        const aPhone = String(a.phone || "");
+        const bPhone = String(b.phone || "");
         cmp = aPhone.localeCompare(bPhone, undefined, { sensitivity: "base" });
       } else if (sortKey === "status") {
-        // Verified first or not – you can decide whether verified = true is 'bigger' or 'smaller'
         cmp = (a.verified ? 1 : 0) - (b.verified ? 1 : 0);
       }
-
       return sortOrder === "asc" ? cmp : -cmp;
     });
+  }, [filtered, sortKey, sortOrder]);
 
-    return sorted;
-  }, [users, normalized, sortKey, sortOrder]);
+  // pagination calculations
+  const totalItems = sorted.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / rowsPerPage));
+  const idxLast = currentPage * rowsPerPage;
+  const idxFirst = idxLast - rowsPerPage;
+  const currentRows = sorted.slice(idxFirst, idxLast);
+
+  const goToPage = (pageNum) => {
+    let p = pageNum;
+    if (p < 1) p = 1;
+    if (p > totalPages) p = totalPages;
+    setCurrentPage(p);
+  };
 
   if (loading) {
     return (
@@ -136,26 +172,28 @@ function Allusers() {
           <main className="col-md-9">
             <div className="card admin-card p-4">
 
-              <div className="controls-row mb-3 d-flex flex-wrap align-items-center gap-2">
-                <div className="search-box flex-grow-1" style={{ minWidth: '200px' }}>
+              {/* Search + sort controls above the table */}
+              <div className="mb-3 d-flex flex-wrap align-items-center gap-2">
+                <div className="flex-grow-1" style={{ minWidth: '200px' }}>
                   <input
                     type="text"
                     className="form-control"
                     placeholder="Search by name, email, phone, status..."
                     value={searchTerm}
-                    onChange={e => setSearchTerm(e.target.value)}
+                    onChange={handleSearchChange}
                   />
                 </div>
-                <div className="dropdowns-group d-flex gap-2">
+
+                <div className="d-flex gap-2">
                   <Dropdown>
-                    <Dropdown.Toggle variant="outline-secondary" id="dropdown-sort-column">
+                    <Dropdown.Toggle variant="outline-secondary"  id="dropdown-sort-column">
                       Sort by: {sortKey.charAt(0).toUpperCase() + sortKey.slice(1)}
                     </Dropdown.Toggle>
                     <Dropdown.Menu>
                       {['name', 'email', 'phone', 'status'].map(col => (
                         <Dropdown.Item
                           key={col}
-                          onClick={() => setSortKey(col)}
+                          onClick={() => handleSortColumn(col)}
                         >
                           {col.charAt(0).toUpperCase() + col.slice(1)}
                         </Dropdown.Item>
@@ -164,12 +202,12 @@ function Allusers() {
                   </Dropdown>
 
                   <Dropdown>
-                    <Dropdown.Toggle variant="outline-secondary" id="dropdown-sort-order">
+                    <Dropdown.Toggle variant="outline-secondary"  id="dropdown-sort-order">
                       {sortOrder === 'asc' ? 'Ascending' : 'Descending'}
                     </Dropdown.Toggle>
                     <Dropdown.Menu>
-                      <Dropdown.Item onClick={() => setSortOrder('asc')}>Ascending</Dropdown.Item>
-                      <Dropdown.Item onClick={() => setSortOrder('desc')}>Descending</Dropdown.Item>
+                      <Dropdown.Item onClick={() => handleSortOrderChange('asc')}>Ascending</Dropdown.Item>
+                      <Dropdown.Item onClick={() => handleSortOrderChange('desc')}>Descending</Dropdown.Item>
                     </Dropdown.Menu>
                   </Dropdown>
                 </div>
@@ -188,33 +226,91 @@ function Allusers() {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredAndSorted.length > 0 ? (
-                      filteredAndSorted.map((user, index) => (
-                        <tr key={user._id || index}>
-                          <td>{index + 1}</td>
-                          <td>{user.username || user.name}</td>
-                          <td>{user.email}</td>
-                          <td>{user.phone}</td>
-                          <td>{user.verified ? 'Verified' : 'Not Verified'}</td>
-                          <td>
-                            {!user.verified && (
-                              <button
-                                onClick={() => handleVerify(user._id)}
-                                className="btn btn-sm btn-danger"
-                              >
-                                Verify
-                              </button>
-                            )}
-                          </td>
-                        </tr>
-                      ))
+                    {currentRows.length > 0 ? (
+                      currentRows.map((user, idx) => {
+                        const globalIndex = idxFirst + idx + 1;
+                        return (
+                          <tr key={user._id || globalIndex}>
+                            <td>{globalIndex}</td>
+                            <td>{user.username || user.name}</td>
+                            <td>{user.email}</td>
+                            <td>{user.phone}</td>
+                            <td>{user.verified ? "Verified" : "Not Verified"}</td>
+                            <td>
+                              {!user.verified && (
+                                <button
+                                  onClick={() => handleVerify(user._id)}
+                                  className="btn btn-sm btn-danger"
+                                >
+                                  Verify
+                                </button>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })
                     ) : (
                       <tr>
-                        <td colSpan="6" className="text-center">No users found.</td>
+                        <td colSpan="6" className="text-center">No matching records found.</td>
                       </tr>
                     )}
                   </tbody>
                 </Table>
+              </div>
+
+              {/* Pagination & rows-per-page below the table */}
+              <div className="mt-3 d-flex justify-content-between align-items-center">
+                <div>
+                  <Button
+                    variant="outline-secondary"
+                    size="sm"
+                    onClick={() => goToPage(currentPage - 1)}
+                    disabled={currentPage === 1}
+                  >
+                    Previous
+                  </Button>
+                  {[...Array(totalPages)].map((_, i) => {
+                    const pageNum = i + 1;
+                    return (
+                      <Button
+                        key={pageNum}
+                        variant={currentPage === pageNum ? "primary" : "outline-secondary"}
+                        size="sm"
+                        className="mx-1"
+                        onClick={() => goToPage(pageNum)}
+                      >
+                        {pageNum}
+                      </Button>
+                    );
+                  })}
+                  <Button
+                    variant="outline-secondary"
+                    size="sm"
+                    onClick={() => goToPage(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                  >
+                    Next
+                  </Button>
+                </div>
+
+                <div>
+                  <Dropdown>
+                    <Dropdown.Toggle variant="outline-secondary" size="sm" id="dropdown-rows-per-page">
+                      {rowsPerPage}
+                    </Dropdown.Toggle>
+                    <Dropdown.Menu>
+                      {[5, 10, 20, 50].map(num => (
+                        <Dropdown.Item
+                          key={num}
+                          active={rowsPerPage === num}
+                          onClick={() => handleRowsPerPageChange(num)}
+                        >
+                          {num}
+                        </Dropdown.Item>
+                      ))}
+                    </Dropdown.Menu>
+                  </Dropdown>
+                </div>
               </div>
 
             </div>
