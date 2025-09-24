@@ -463,13 +463,34 @@ function Uploadsheet() {
 
         const short = rowsListArr.slice(0, 10).join(', ');
         const suffix = rowsListArr.length > 10 ? `, and ${rowsListArr.length - 10} more...` : '';
-        toast.info(`Rows already existed: ${short}${suffix}`, { autoClose: 8000 });
+        const shortTrimmed = short.slice(0, 10);
+        toast.info(`Rows already existed: ${shortTrimmed}${suffix}`, {
+          position: "top-center",
+          autoClose: 5000,
+          hideProgressBar: false,
+          closeOnClick: false,
+          pauseOnHover: true,
+          draggable: true,
+          progress: undefined,
+          theme: "light",
+
+        });
         msgParts.push(`Already existing rows: ${rowsListArr.join(', ')}`);
       }
 
       const overallMessage = msgParts.join('. ') || 'Save completed.';
       setMessage(overallMessage);
-      toast.success('Save completed.');
+      toast.success('Save completed.', {
+        position: "top-center",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: false,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "light",
+
+      });
     } catch (err) {
       if (err.response) {
         console.error('Server responded:', err.response.status, err.response.data);
@@ -522,11 +543,11 @@ function Uploadsheet() {
               )}
 
               <div className="viewer mt-3">
-                { noHeadersFound ? (
+                {noHeadersFound ? (
                   <div className="alert alert-warning">
                     No headers found in the file. Please add a header row with column names like: {ALLOWED.join(', ')}.
                   </div>
-                ) : ( (previewRecords.length > 0 || hasOnlyHeaders) ? (
+                ) : ((previewRecords.length > 0 || hasOnlyHeaders) ? (
                   <div className="table-container">
                     <table className="table table-sm">
                       <thead>
@@ -539,7 +560,7 @@ function Uploadsheet() {
                         </tr>
                       </thead>
                       <tbody>
-                        { previewRecords.length > 0 ? (
+                        {previewRecords.length > 0 ? (
                           previewRecords.map(rec => {
                             const dupErr = errorDetails.find(block => block.type === 'duplicates')?.items.find(e => (e.sheetName === rec.sheetName && e.rowIdxInSheet === rec.rowIdxInSheet));
                             const missErr = errorDetails.find(block => block.type === 'missing')?.items.find(e => (e.sheetName === rec.sheetName && e.rowIdxInSheet === rec.rowIdxInSheet));
@@ -574,7 +595,7 @@ function Uploadsheet() {
                   </div>
                 ) : (
                   <div className="alert alert-info mt-3" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>No preview yet.</div>
-                ) ) }
+                ))}
               </div>
 
               {errorDetails.length > 0 && (
@@ -626,7 +647,7 @@ function Uploadsheet() {
                 </div>
               )}
 
-              { message && <div className="alert alert-info mt-3" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{message}</div> }
+              {message && <div className="alert alert-info mt-3" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{message}</div>}
 
             </div>
           </main>
