@@ -14,14 +14,11 @@ function Viewstudents() {
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [deletedStudentId, setDeletedStudentId] = useState(null);
 
-  // For multi-select delete
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
 
-  // Validation
   const [validationErrors, setValidationErrors] = useState({});
 
-  // Pagination & sorting
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [sortColumn, setSortColumn] = useState('name');
@@ -78,10 +75,8 @@ function Viewstudents() {
     setValidationErrors({});
   };
 
-  // Validation logic (same as before)
   const validateField = (name, value) => {
     let errorMsg = '';
-
     if (name === 'name') {
       if (!value) {
         errorMsg = 'Name is required';
@@ -95,7 +90,6 @@ function Viewstudents() {
         errorMsg = 'Letters and spaces only';
       }
     }
-
     if (name === 'email') {
       if (!value) {
         errorMsg = 'Email is required';
@@ -103,7 +97,6 @@ function Viewstudents() {
         errorMsg = 'Invalid email address';
       }
     }
-
     if (name === 'phone') {
       if (!value) {
         errorMsg = 'Mobile number is required';
@@ -115,7 +108,6 @@ function Viewstudents() {
         errorMsg = 'Invalid mobile number format';
       }
     }
-
     if (name === 'course') {
       if (!value) {
         errorMsg = 'Course is required';
@@ -125,7 +117,6 @@ function Viewstudents() {
         errorMsg = 'Course name too long';
       }
     }
-
     if (name === 'place') {
       if (!value) {
         errorMsg = 'Place is required';
@@ -135,7 +126,6 @@ function Viewstudents() {
         errorMsg = 'Place too long';
       }
     }
-
     return errorMsg;
   };
 
@@ -145,7 +135,6 @@ function Viewstudents() {
       ...prev,
       [name]: value
     }));
-
     const err = validateField(name, value);
     setValidationErrors(prevErrs => ({
       ...prevErrs,
@@ -182,7 +171,6 @@ function Viewstudents() {
       handleCloseModal();
     } catch (err) {
       console.error('Error updating student', err);
-      // you can set some error state to show general message
     }
   };
 
@@ -198,56 +186,6 @@ function Viewstudents() {
 
   const handleConfirmDeleteOne = (id) => {
     setDeletedStudentId(id);
-  };
-
-  // Bulk delete logic
-  const handleToggleSelect = (id) => {
-    setSelectedIds(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(id)) {
-        newSet.delete(id);
-      } else {
-        newSet.add(id);
-      }
-      return newSet;
-    });
-  };
-
-  const handleSelectAllCurrentPage = () => {
-    // select all rows currently shown
-    const idsOnPage = currentRows.map(stu => stu._id);
-    setSelectedIds(prev => {
-      const newSet = new Set(prev);
-      idsOnPage.forEach(id => newSet.add(id));
-      return newSet;
-    });
-  };
-
-  const handleUnselectAllCurrentPage = () => {
-    const idsOnPage = currentRows.map(stu => stu._id);
-    setSelectedIds(prev => {
-      const newSet = new Set(prev);
-      idsOnPage.forEach(id => newSet.delete(id));
-      return newSet;
-    });
-  };
-
-  const handleBulkDelete = async () => {
-    if (selectedIds.size === 0) {
-      return;
-    }
-    try {
-      // assuming your API endpoint supports bulk delete
-      await axios.delete('http://localhost:4000/admin/bulk-delete-students', {
-        data: { ids: Array.from(selectedIds) }
-      });
-      setStudents(students.filter(stu => !selectedIds.has(stu._id)));
-      setSelectedIds(new Set());
-      setShowBulkDeleteConfirm(false);
-    } catch (err) {
-      console.error('Error deleting students in bulk', err);
-      // optionally show error
-    }
   };
 
   const filteredStudents = students.filter(stu => {
@@ -278,6 +216,49 @@ function Viewstudents() {
     if (pageNum < 1) pageNum = 1;
     else if (pageNum > totalPages) pageNum = totalPages;
     setCurrentPage(pageNum);
+  };
+
+  const handleToggleSelect = (id) => {
+    setSelectedIds(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) newSet.delete(id);
+      else newSet.add(id);
+      return newSet;
+    });
+  };
+
+  const handleSelectAllCurrentPage = () => {
+    const idsOnPage = currentRows.map(stu => stu._id);
+    setSelectedIds(prev => {
+      const newSet = new Set(prev);
+      idsOnPage.forEach(id => newSet.add(id));
+      return newSet;
+    });
+  };
+
+  const handleUnselectAllCurrentPage = () => {
+    const idsOnPage = currentRows.map(stu => stu._id);
+    setSelectedIds(prev => {
+      const newSet = new Set(prev);
+      idsOnPage.forEach(id => newSet.delete(id));
+      return newSet;
+    });
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) {
+      return;
+    }
+    try {
+      await axios.delete('http://localhost:4000/admin/bulk-delete-students', {
+        data: { ids: Array.from(selectedIds) }
+      });
+      setStudents(students.filter(stu => !selectedIds.has(stu._id)));
+      setSelectedIds(new Set());
+      setShowBulkDeleteConfirm(false);
+    } catch (err) {
+      console.error('Error deleting students in bulk', err);
+    }
   };
 
   if (loading) {
@@ -391,39 +372,44 @@ function Viewstudents() {
                       <th>Phone</th>
                       <th>Course</th>
                       <th>Place</th>
-                      <th>Actions</th>
+                      <th style={{ minWidth: '140px' }}>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {currentRows.length > 0 ? (
                       currentRows.map((student, idx) => (
                         <tr key={student._id || idx}>
-                          <td>
+                          <td className="align-middle">
                             <input
                               type="checkbox"
                               checked={selectedIds.has(student._id)}
                               onChange={() => handleToggleSelect(student._id)}
                             />
                           </td>
-                          <td>{indexOfFirstRow + idx + 1}</td>
-                          <td>{student.name}</td>
-                          <td>{student.email}</td>
-                          <td>{student.phone}</td>
-                          <td>{student.course}</td>
-                          <td>{student.place}</td>
-                          <td className="vs-actions-td">
-                            <button
-                              className="btn btn-sm btn-primary vs-btn-action mt-1"
-                              onClick={() => handleEdit(student)}
-                            >
-                              Edit
-                            </button>
-                            <button
-                              className="btn btn-sm btn-danger vs-btn-action mt-1 ms-1"
-                              onClick={() => handleConfirmDeleteOne(student._id)}
-                            >
-                              Delete
-                            </button>
+                          <td className="align-middle">{indexOfFirstRow + idx + 1}</td>
+                          <td className="align-middle">{student.name}</td>
+                          <td className="align-middle">{student.email}</td>
+                          <td className="align-middle">{student.phone}</td>
+                          <td className="align-middle">{student.course}</td>
+                          <td className="align-middle">{student.place}</td>
+                          <td className="align-middle">
+                            <div className="d-flex justify-content-end">
+                              <Button
+                                variant="primary"
+                                size="sm"
+                                className="me-2"
+                                onClick={() => handleEdit(student)}
+                              >
+                                Edit
+                              </Button>
+                              <Button
+                                variant="danger"
+                                size="sm"
+                                onClick={() => handleConfirmDeleteOne(student._id)}
+                              >
+                                Delete
+                              </Button>
+                            </div>
                           </td>
                         </tr>
                       ))
@@ -486,7 +472,7 @@ function Viewstudents() {
         </div>
       </div>
 
-      {/* Edit Modal */}
+      {/* Modals below are the same as before */}
       <Modal show={showModal} onHide={handleCloseModal} dialogClassName="custom-modal-dialog">
         <Modal.Header closeButton className="custom-modal-header">
           <Modal.Title>Edit Student</Modal.Title>
@@ -527,11 +513,7 @@ function Viewstudents() {
         </Modal.Footer>
       </Modal>
 
-      {/* Single Delete Confirm Modal */}
-      <Modal
-        show={deletedStudentId !== null}
-        onHide={() => setDeletedStudentId(null)}
-      >
+      <Modal show={deletedStudentId !== null} onHide={() => setDeletedStudentId(null)}>
         <Modal.Header closeButton>
           <Modal.Title>Confirm Deletion</Modal.Title>
         </Modal.Header>
@@ -548,11 +530,7 @@ function Viewstudents() {
         </Modal.Footer>
       </Modal>
 
-      {/* Bulk Delete Confirm Modal */}
-      <Modal
-        show={showBulkDeleteConfirm}
-        onHide={() => setShowBulkDeleteConfirm(false)}
-      >
+      <Modal show={showBulkDeleteConfirm} onHide={() => setShowBulkDeleteConfirm(false)}>
         <Modal.Header closeButton>
           <Modal.Title>Confirm Delete Selected</Modal.Title>
         </Modal.Header>
@@ -568,6 +546,7 @@ function Viewstudents() {
           </Button>
         </Modal.Footer>
       </Modal>
+
     </Layout>
   );
 }

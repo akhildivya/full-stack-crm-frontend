@@ -144,3 +144,21 @@
   border-color: #007bff;
   box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
 }
+
+
+/* Ensure the “Actions” column stays wide enough */
+.custom-table th:last-child,
+.custom-table td:last-child {
+  /* You already set inline min-width; you can reinforce here */
+  min-width: 140px; 
+}
+
+/* Vertical alignment in cells */
+.custom-table td.align-middle {
+  vertical-align: middle !important;
+}
+
+/* Adjust padding if buttons push cell height too much */
+.custom-table td > .d-flex {
+  gap: 0.25rem; /* small gap between buttons */
+}
