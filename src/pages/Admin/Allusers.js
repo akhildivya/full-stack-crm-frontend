@@ -5,7 +5,7 @@ import axios from "axios";
 import { Table, Dropdown, Button } from "react-bootstrap";
 import Layout from '../../components/layout/Layout';
 import Adminmenu from '../../components/layout/Adminmenu';
-
+import {BASEURL} from '../../service/baseUrl'
 function Allusers() {
   const [searchTerm, setSearchTerm] = useState("");
   const [users, setUsers] = useState([]);
@@ -25,7 +25,7 @@ function Allusers() {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const response = await axios.get("http://localhost:4000/all-users");
+        const response = await axios.get(`${BASEURL}/all-users`);
         setUsers(response.data);
       } catch (err) {
         console.error("Error fetching users:", err);
@@ -41,7 +41,7 @@ function Allusers() {
   }, []);
 
   const handleVerify = (userId) => {
-    axios.put(`http://localhost:4000/verify/${userId}`)
+    axios.put(`${BASEURL}/verify/${userId}`)
       .then(response => {
         setUsers(prev => prev.map(u => u._id === userId ? response.data : u));
       })

@@ -7,7 +7,7 @@ import { useAuth } from '../../context/auth'
 import { editUserProfileApi } from '../../service/allApis'
 import { useNavigate } from 'react-router-dom'
 import ConfirmDeleteModal from './ConfirmDeleteModal'
-
+import {BASEURL} from '../../service/baseUrl'
 function Profile() {
   const navigate = useNavigate()
   const [auth, setAuth] = useAuth();
@@ -19,17 +19,11 @@ function Profile() {
   const [selectedUser, setSelectedUser] = useState(null);
 
 
-  {/*useEffect(() => {
-    axios.get('http://localhost:4000/my-profile')
-      .then(res => setUser(res.data))
-      .catch(err => console.error(err));
-  }, []);
-  console.log(user);*/}
   useEffect(() => {
   let mounted = true;
   const fetchProfile = async () => {
     try {
-      const res = await axios.get('http://localhost:4000/my-profile');
+      const res = await axios.get(`${BASEURL}/my-profile`);
       if (!mounted) return;
       setUser(res.data);
       // keep edit form in sync when not editing
@@ -105,15 +99,7 @@ function Profile() {
     const errorMsg = validate(name, value);
     setErrors((prev) => ({ ...prev, [name]: errorMsg }));
   };
-  /* const handleSave = () => {
-    axios.put('http://localhost:4000/my-profile', form)
-      .then(res => {
-        setUser(res.data);
-        setForm(res.data)
-        setEditing(false);
-      })
-      .catch(err => console.error(err));
-  };*/
+
 
   const handleSave = async () => {
     const newErrors = {};
@@ -154,21 +140,12 @@ function Profile() {
         <p className="loader-text">Loading...</p>
       </div>
     </div>
-  {/* const handleDelete = async userId => {
-    try {
-      await axios.delete(`http://localhost:4000/delete-user/${userId}`);
-      navigate('/');
-      // Optionally, redirect or update UI
-    } catch (err) {
-      console.error(err.response?.data || err.message);
-    }
-    
-  };*/}
+
   const confirmDelete = async () => {
     if (!selectedUser) return;
 
     try {
-      await axios.delete(`http://localhost:4000/delete-user/${selectedUser._id}`);
+      await axios.delete(`${BASEURL}/delete-user/${selectedUser._id}`);
       // Optionally update the UI list immediately:
      
       setAuth(prev => ({ ...prev, user: null, token: '' }));
@@ -192,8 +169,6 @@ function Profile() {
           <main className="col-md-9">
 
             <div className="card admin-card p-4">
-
-           
 
               <table className="profile-table table">
                 <thead>

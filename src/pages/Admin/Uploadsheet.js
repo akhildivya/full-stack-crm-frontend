@@ -6,7 +6,7 @@ import axios from 'axios';
 import '../../css/uploadsheet.css';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-
+import {BASEURL} from '../../service/baseUrl'
 const ALLOWED = ['name', 'email', 'phone', 'course', 'place'];
 const IGNORE_HEADERS = ['slno', 'sno', 's.no', 'srno', 'serialno', 'serial', 'id'];
 
@@ -387,7 +387,7 @@ function Uploadsheet() {
     });
 
     try {
-      const response = await axios.post('http://localhost:4000/admin/upload-sheet', { data: payload }, { timeout: 60000 });
+      const response = await axios.post(`${BASEURL}/admin/upload-sheet`, { data: payload }, { timeout: 60000 });
       const resp = response.data;
       console.debug('server alreadyExisting:', resp.alreadyExisting);
       const msgParts = [];

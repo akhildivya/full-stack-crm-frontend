@@ -6,7 +6,7 @@ import axios from 'axios'
 import { useAuth } from '../../context/auth'
 import { useNavigate } from 'react-router-dom'
 import AdminConfirmDelete from './AdminConfirmDelete'
-
+import {BASEURL} from '../../service/baseUrl'
 function Myprofile() {
   const navigate = useNavigate()
   const [auth, setAuth] = useAuth();
@@ -17,7 +17,7 @@ function Myprofile() {
   const [errors, setErrors] = useState({});
   const [selectedUser, setSelectedUser] = useState(null);
   useEffect(() => {
-    axios.get('http://localhost:4000/admin-profile')
+    axios.get(`${BASEURL}/admin-profile`)
       .then(res => setUser(res.data))
       .catch(err => console.error(err));
   }, []);
@@ -110,7 +110,7 @@ function Myprofile() {
 
     setEditing(false);
     try {
-      const res = await axios.put('http://localhost:4000/admin-profile', form); // adapt to your API
+      const res = await axios.put(`${BASEURL}/admin-profile`, form); // adapt to your API
 
       const updatedUser = res.data; // ensure this is the updated user object
 
@@ -141,7 +141,7 @@ function Myprofile() {
     if (!selectedUser) return;
 
     try {
-      await axios.delete(`http://localhost:4000/admin-delete/${selectedUser._id}`);
+      await axios.delete(`${BASEURL}/admin-delete/${selectedUser._id}`);
       // Optionally update the UI list immediately:
 
       setAuth(prev => ({ ...prev, user: null, token: '' }));

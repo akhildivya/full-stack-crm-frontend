@@ -4,7 +4,8 @@ import Adminmenu from '../../components/layout/Adminmenu';
 import axios from 'axios';
 import { Table, Dropdown, Button, Modal, Form } from 'react-bootstrap';
 import '../../css/viewstudents.css';
-
+import { toast } from 'react-toastify';
+import {BASEURL} from '../../service/baseUrl'
 function Viewstudents() {
   const [students, setStudents] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -24,11 +25,18 @@ function Viewstudents() {
   const [sortColumn, setSortColumn] = useState('name');
   const [sortOrder, setSortOrder] = useState('asc');
 
+
+  // --- New State for Assign Feature ---
+  const [showAssignModal, setShowAssignModal] = useState(false);
+  const [users, setUsers] = useState([]);
+  // --- New State for Assign Feature ---
+  const [selectedUserId, setSelectedUserId] = useState(null);
+
   useEffect(() => {
     document.title = 'CRM - Student Details';
     const fetchStudents = async () => {
       try {
-        const res = await axios.get('http://localhost:4000/admin/view-students');
+        const res = await axios.get(`${BASEURL}/admin/view-students`);
         setStudents(res.data);
       } catch (err) {
         console.error('Error fetching students', err);
@@ -42,6 +50,20 @@ function Viewstudents() {
     const intervalId = setInterval(fetchStudents, 1000);
     return () => clearInterval(intervalId);
   }, []);
+
+
+  // Fetch users for assign modal
+  const fetchUsers = async () => {
+    try {
+      const res = await axios.get(`${BASEURL}/admin/get-users`);
+      setUsers(res.data);
+      console.log(users);
+
+    } catch (err) {
+      console.error('Error fetching users', err);
+    }
+  };
+
 
   const handleSearchChange = (e) => {
     setSearchTerm(e.target.value);
@@ -162,7 +184,7 @@ function Viewstudents() {
     if (!canSave()) return;
     try {
       await axios.put(
-        `http://localhost:4000/admin/update-student/${selectedStudent._id}`,
+        `${BASEURL}/admin/update-student/${selectedStudent._id}`,
         selectedStudent
       );
       setStudents(students.map(stu =>
@@ -176,7 +198,7 @@ function Viewstudents() {
 
   const handleDeleteOne = async () => {
     try {
-      await axios.delete(`http://localhost:4000/admin/delete-student/${deletedStudentId}`);
+      await axios.delete(`${BASEURL}/admin/delete-student/${deletedStudentId}`);
       setStudents(students.filter(stu => stu._id !== deletedStudentId));
       setDeletedStudentId(null);
     } catch (err) {
@@ -189,19 +211,41 @@ function Viewstudents() {
   };
 
   const filteredStudents = students.filter(stu => {
-    const lower = searchTerm.toLowerCase();
-    return (
+    const lower = searchTerm.trim().toLowerCase();
+
+    // Match text fields
+    const matchesText =
       (stu.name && stu.name.toLowerCase().includes(lower)) ||
       (stu.email && stu.email.toLowerCase().includes(lower)) ||
       (stu.phone && stu.phone.toLowerCase().includes(lower)) ||
       (stu.course && stu.course.toLowerCase().includes(lower)) ||
-      (stu.place && stu.place.toLowerCase().includes(lower))
-    );
+      (stu.place && stu.place.toLowerCase().includes(lower));
+
+    // Status string
+    const status = stu.assignedTo ? 'assigned' : 'unassigned';
+    const matchesStatus =
+      status.startsWith(lower) || lower.startsWith(status);
+
+    // If empty search, show all
+    if (!lower) return true;
+    return matchesText || matchesStatus;
   });
 
+
+
+
+
   const sortedStudents = [...filteredStudents].sort((a, b) => {
-    const aVal = a[sortColumn]?.toString().toLowerCase() || '';
-    const bVal = b[sortColumn]?.toString().toLowerCase() || '';
+    let aVal, bVal;
+
+    if (sortColumn === 'status') {
+      aVal = a.assignedTo ? 'assigned' : 'unassigned';
+      bVal = b.assignedTo ? 'assigned' : 'unassigned';
+    } else {
+      aVal = a[sortColumn]?.toString().toLowerCase() || '';
+      bVal = b[sortColumn]?.toString().toLowerCase() || '';
+    }
+
     return sortOrder === 'asc'
       ? aVal.localeCompare(bVal)
       : bVal.localeCompare(aVal);
@@ -250,7 +294,7 @@ function Viewstudents() {
       return;
     }
     try {
-      await axios.delete('http://localhost:4000/admin/bulk-delete-students', {
+      await axios.delete(`${BASEURL}/admin/bulk-delete-students`, {
         data: { ids: Array.from(selectedIds) }
       });
       setStudents(students.filter(stu => !selectedIds.has(stu._id)));
@@ -290,7 +334,7 @@ function Viewstudents() {
                   <input
                     type="text"
                     className="form-control"
-                    placeholder="Find by name/email/phone/course/place"
+                    placeholder="Find by anything ...."
                     value={searchTerm}
                     onChange={handleSearchChange}
                   />
@@ -301,7 +345,7 @@ function Viewstudents() {
                       Sort by: {sortColumn.charAt(0).toUpperCase() + sortColumn.slice(1)}
                     </Dropdown.Toggle>
                     <Dropdown.Menu>
-                      {['name', 'email', 'phone', 'course', 'place'].map(col => (
+                      {['name', 'email', 'phone', 'course', 'place', 'status'].map(col => (
                         <Dropdown.Item key={col} onClick={() => handleSortChange(col)}>
                           {col.charAt(0).toUpperCase() + col.slice(1)}
                         </Dropdown.Item>
@@ -322,6 +366,16 @@ function Viewstudents() {
 
               {/* Bulk actions buttons row */}
               <div className="d-flex flex-wrap align-items-center gap-2 mb-3">
+
+                <Button
+                  variant="primary"
+                  size="sm"
+                  disabled={selectedIds.size === 0}
+                  onClick={() => { setShowAssignModal(true); fetchUsers(); }}
+                >
+                  Assign Selected ({selectedIds.size})
+                </Button>
+
                 <Button
                   variant="danger"
                   size="sm"
@@ -335,7 +389,7 @@ function Viewstudents() {
                   size="sm"
                   onClick={handleSelectAllCurrentPage}
                 >
-                  Select All Page
+                  Select Page
                 </Button>
                 <Button
                   variant="secondary"
@@ -372,6 +426,8 @@ function Viewstudents() {
                       <th>Phone</th>
                       <th>Course</th>
                       <th>Place</th>
+                      <th>Status</th>
+
                       <th style={{ minWidth: '140px' }}>Actions</th>
                     </tr>
                   </thead>
@@ -387,11 +443,20 @@ function Viewstudents() {
                             />
                           </td>
                           <td className="align-middle">{indexOfFirstRow + idx + 1}</td>
-                          <td className="align-middle">{student.name}</td>
+                          <td className={`align-middle ${student.assignedTo ? "assigned-name" : ""}`}>
+                            {student.name}
+                          </td>
                           <td className="align-middle">{student.email}</td>
                           <td className="align-middle">{student.phone}</td>
                           <td className="align-middle">{student.course}</td>
                           <td className="align-middle">{student.place}</td>
+                          <td className="align-middle">
+                            {student.assignedTo ? (
+                              <span className="badge bg-success">Assigned</span>
+                            ) : (
+                              <span className="badge bg-secondary">Unassigned</span>
+                            )}
+                          </td>
                           <td className="align-middle">
                             <div className="d-flex justify-content-end">
                               <Button
@@ -419,6 +484,7 @@ function Viewstudents() {
                       </tr>
                     )}
                   </tbody>
+
                 </Table>
               </div>
 
@@ -543,6 +609,74 @@ function Viewstudents() {
           </Button>
           <Button variant="danger" onClick={handleBulkDelete}>
             Delete All Selected
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+
+
+
+      <Modal show={showAssignModal} onHide={() => setShowAssignModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Assign Selected Students</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <p>Select a user to assign <strong>{selectedIds.size}</strong> student(s):</p>
+          {users.length > 0 ? (
+            <Form>
+              {users.map(user => (
+                <Form.Check
+                  type="radio"
+                  id={`user-${user._id}`}
+                  key={user._id}
+                  label={user.username}
+                  name="assignUser"
+                  value={user._id}
+                  checked={selectedUserId === user._id}
+                  onChange={() => setSelectedUserId(user._id)}
+                  className="mb-2"
+                />
+              ))}
+            </Form>
+          ) : <p>No users available</p>}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => { setShowAssignModal(false); setSelectedUserId(null); }}>Close</Button>
+          <Button
+            variant="primary"
+            onClick={async () => {
+              if (!selectedUserId) return alert('Please select a user!');
+
+              // 🔹 Check if selected students are already assigned
+              const alreadyAssigned = students.filter(
+                stu => selectedIds.has(stu._id) && stu.assignedTo
+              );
+
+              if (alreadyAssigned.length > 0) {
+                toast.info(
+                  `The following student(s) are already assigned: ${alreadyAssigned
+                    .map(stu => stu.name)
+                    .join(', ')}`
+                );
+                return;
+              }
+
+              try {
+                await axios.put(`${BASEURL}/admin/assign-students`, {
+                  studentIds: Array.from(selectedIds),
+                  userId: selectedUserId
+                });
+                const res = await axios.get(`${BASEURL}/admin/view-students`);
+                setStudents(res.data);
+                setSelectedIds(new Set());
+                setSelectedUserId(null);
+                setShowAssignModal(false);
+              } catch (err) {
+                console.error('Error assigning students', err);
+              }
+            }}
+          >
+            Save
           </Button>
         </Modal.Footer>
       </Modal>

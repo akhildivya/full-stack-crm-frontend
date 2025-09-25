@@ -207,4 +207,8 @@
   vertical-align: middle !important;
 }
 
-
+.custom-table td.assigned-name {
+  color: #FF0000 !important;  /* Use !important to override Bootstrap */
+  font-style: italic;
+  opacity: 0.8;           /* Optional: slightly dim */
+}
