@@ -162,3 +162,49 @@
 .custom-table td > .d-flex {
   gap: 0.25rem; /* small gap between buttons */
 }
+
+
+@media (max-width: 576px) {
+  .vs-card .d-flex.flex-wrap.align-items-center.mb-3 {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .vs-card .d-flex.align-items-center {
+    margin-top: 0.5rem;
+  }
+}
+
+/* Make the search container full width at small screens */
+@media (max-width: 576px) {
+  .search-container {
+    width: 100% !important;
+    margin-bottom: 0.75rem;
+  }
+  .sort-controls {
+    width: 100%;
+    justify-content: flex-start;
+    margin-top: 0.5rem;
+  }
+}
+
+/* For desktop / medium and above, keep the original behavior */
+@media (min-width: 577px) {
+  .search-container {
+    width: auto; /* revert to flex-grow behavior */
+  }
+  .sort-controls {
+    width: auto;
+  }
+}
+
+/* Ensure Actions column has enough width and vertical centering */
+.custom-table th:last-child,
+.custom-table td:last-child {
+  min-width: 140px;
+}
+
+.custom-table td.align-middle {
+  vertical-align: middle !important;
+}
+
+

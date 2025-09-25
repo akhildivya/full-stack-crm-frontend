@@ -67,6 +67,9 @@ function Adminmenu() {
               <span>Students list</span>
             </NavLink>
 
+
+          
+
             <NavLink to="/admin-dashboard/about" className={linkClass}>
               <i className="bi bi-info-circle-fill me-2" aria-hidden="true"></i>
               <span>About</span>

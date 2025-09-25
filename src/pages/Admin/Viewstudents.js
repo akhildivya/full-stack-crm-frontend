@@ -284,18 +284,19 @@ function Viewstudents() {
           </aside>
           <main className="col-md-9">
             <div className="card admin-card vs-card p-4">
-              <div className="controls-row mb-3 d-flex align-items-center">
-                <div className="search-box flex-grow-1">
+              {/* Top control: search + sort */}
+              <div className="d-flex flex-wrap align-items-center mb-3">
+                <div className="search-container flex-grow-1 me-3">
                   <input
                     type="text"
                     className="form-control"
-                    placeholder="Search by name, email, phone, course, place etc…"
+                    placeholder="Find by name/email/phone/course/place"
                     value={searchTerm}
                     onChange={handleSearchChange}
                   />
                 </div>
-                <div className="dropdowns-group ms-3">
-                  <Dropdown>
+                <div className="d-flex align-items-center sort-controls">
+                  <Dropdown className="me-2">
                     <Dropdown.Toggle variant="outline-secondary" id="dropdown-sort-column">
                       Sort by: {sortColumn.charAt(0).toUpperCase() + sortColumn.slice(1)}
                     </Dropdown.Toggle>
@@ -307,7 +308,7 @@ function Viewstudents() {
                       ))}
                     </Dropdown.Menu>
                   </Dropdown>
-                  <Dropdown className="ms-2">
+                  <Dropdown>
                     <Dropdown.Toggle variant="outline-secondary" id="dropdown-sort-order">
                       {sortOrder === 'asc' ? 'Ascending' : 'Descending'}
                     </Dropdown.Toggle>
@@ -319,7 +320,8 @@ function Viewstudents() {
                 </div>
               </div>
 
-              <div className="mb-2">
+              {/* Bulk actions buttons row */}
+              <div className="d-flex flex-wrap align-items-center gap-2 mb-3">
                 <Button
                   variant="danger"
                   size="sm"
@@ -331,7 +333,6 @@ function Viewstudents() {
                 <Button
                   variant="secondary"
                   size="sm"
-                  className="ms-2"
                   onClick={handleSelectAllCurrentPage}
                 >
                   Select All Page
@@ -339,7 +340,6 @@ function Viewstudents() {
                 <Button
                   variant="secondary"
                   size="sm"
-                  className=" ms-2 "
                   onClick={handleUnselectAllCurrentPage}
                 >
                   Unselect Page
@@ -472,7 +472,7 @@ function Viewstudents() {
         </div>
       </div>
 
-      {/* Modals below are the same as before */}
+      {/* Edit / Delete modals unchanged */}
       <Modal show={showModal} onHide={handleCloseModal} dialogClassName="custom-modal-dialog">
         <Modal.Header closeButton className="custom-modal-header">
           <Modal.Title>Edit Student</Modal.Title>
@@ -546,7 +546,6 @@ function Viewstudents() {
           </Button>
         </Modal.Footer>
       </Modal>
-
     </Layout>
   );
 }
