@@ -1,0 +1,47 @@
+/* Greeting.css */
+.greeting {
+  font-size: 2rem;
+  font-weight: bold;
+  text-align: center;
+  padding: 20px;
+  border-radius: 10px;
+  transition: all 0.3s ease-in-out;
+  margin-top: 20px;
+  width: 100%;
+  max-width: 400px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Morning */
+.morning {
+  background-color: #ffecb3;
+  color: #ff9800;
+  box-shadow: 0 4px 10px rgba(255, 152, 0, 0.5);
+}
+
+/* Afternoon */
+.afternoon {
+  background-color: #c8e6c9;
+  color: #388e3c;
+  box-shadow: 0 4px 10px rgba(56, 142, 108, 0.5);
+}
+
+/* Evening */
+.evening {
+  background-color: #bbdefb;
+  color: #1976d2;
+  box-shadow: 0 4px 10px rgba(25, 118, 210, 0.5);
+}
+
+/* Night */
+.night {
+  background-color: #e1bee7;
+  color: #8e24aa;
+  box-shadow: 0 4px 10px rgba(142, 36, 170, 0.5);
+}
+
+.greeting:hover {
+  transform: scale(1.05);
+  opacity: 0.9;
+}

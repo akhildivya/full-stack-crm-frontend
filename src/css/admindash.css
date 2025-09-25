@@ -1,0 +1,37 @@
+.admin-card {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.new-users-alert {
+  border-left: 5px solid #ffbe33;
+  position: relative;
+}
+
+.new-users-alert .actions {
+  margin-top: 1rem;
+}
+
+.metric-card {
+  text-align: center;
+  transition: transform 0.2s;
+}
+.metric-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+.no-unverified {
+  padding: 1rem;
+  margin-top: 1.5rem;
+  border-left: 5px solid #17a2b8; /* bright accent color, “info” blue */
+  background-color: #f1faff;        /* very light blue background */
+  color: #0c5460;                    /* darker readable blue color */
+  font-size: 1rem;
+  font-style: normal;
+  border-radius: 4px;
+}
+
+.no-unverified:hover {
+  background-color: #e0f7ff;
+}
