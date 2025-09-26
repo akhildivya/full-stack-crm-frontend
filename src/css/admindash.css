@@ -53,3 +53,64 @@
 .no-unverified:hover {
   background-color: #e0f7ff;
 }
+
+
+
+/* Metrics Container */
+.metrics {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  gap: 2rem;
+  background: #fff;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  flex-wrap: wrap; /* For responsiveness */
+}
+
+/* Individual Metric */
+.metric {
+  text-align: center;
+  flex: 1;
+  min-width: 120px;
+}
+
+/* Animated Number */
+.metric strong {
+  display: block;
+  font-size: 2.5rem;       /* Bigger font size */
+  font-weight: 700;
+  color: #1e90ff;          /* Bold Blue */
+  transition: transform 0.3s ease-in-out, color 0.3s ease-in-out;
+}
+
+.metric strong span {
+  color: #1e90ff;       /* Blue color */
+  font-size: 3rem;      /* Bigger font size */
+  font-weight: 500;
+}
+
+/* Optional hover effect */
+.metric strong:hover {
+  transform: scale(1.1);
+  color: #0056b3; /* Darker blue on hover */
+}
+
+/* Metric Label */
+.metric span {
+  display: block;
+  margin-top: 6px;
+  font-size: 1rem;  /* Slightly larger for readability */
+  color: #666;
+}
+
+
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .metrics {
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+}

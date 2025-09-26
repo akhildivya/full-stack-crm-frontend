@@ -7,17 +7,51 @@ function HomePage() {
     const [auth, setAuth] = useAuth()
     return (
 
-        <Layout title={"CRM - Superhhero Learning"}>
-            <div class="homepage-container">
-                <div class="text-section">
-                    <h1>The Smart Simple <br /> Online CRM</h1>
-                    <p><b>Build stronger customer relationships, make more sales and save time.</b></p>
-                </div>
-                <div class="image-section">
-                    <img src="https://i.postimg.cc/g21fVZKh/25644134-7015971-removebg-preview.png" alt="ChatGPT Illustration" />
-                </div>
+        <Layout title={"CRM - Superhero Learning"}>
+            <div className="homepage-container">
+                {/* Hero Section */}
+                <section className="hero-section">
+                    <div className="hero-text">
+                        <h1>The Smart, Simple <br /> Online CRM</h1>
+                        <p>Build stronger customer relationships, make more sales, and save time effortlessly.</p>
+                        <div className="hero-cta">
+                            <button className="btn-primary">Get Started</button>
+                            <button className="btn-secondary">Learn More</button>
+                        </div>
+                    </div>
+                    <div className="hero-slider">
+                        <div className="slider">
+                            <img src="https://i.postimg.cc/g21fVZKh/25644134-7015971-removebg-preview.png" alt="CRM Illustration 1" />
+                            <img src="https://i.postimg.cc/m2G3P3Tr/illustration2.png" alt="CRM Illustration 2" />
+                            <img src="https://i.postimg.cc/3x3K9n3v/illustration3.png" alt="CRM Illustration 3" />
+                        </div>
+                    </div>
+                </section>
+
+                {/* Features Section */}
+                <section className="features-section">
+                    <h2>Why Choose Superhhero CRM?</h2>
+                    <div className="features-grid">
+                        <div className="feature-card">
+                            <i className="bi bi-people-fill feature-icon"></i>
+                            <h3>Manage Customers</h3>
+                            <p>Keep all your customer data in one place for smarter decision-making.</p>
+                        </div>
+                        <div className="feature-card">
+                            <i className="bi bi-bar-chart-fill feature-icon"></i>
+                            <h3>Sales Analytics</h3>
+                            <p>Track sales performance and identify growth opportunities easily.</p>
+                        </div>
+                        <div className="feature-card">
+                            <i className="bi bi-clock-fill feature-icon"></i>
+                            <h3>Save Time</h3>
+                            <p>Automate repetitive tasks so your team can focus on what matters.</p>
+                        </div>
+                    </div>
+                </section>
             </div>
         </Layout>
+
     )
 }
 

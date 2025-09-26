@@ -149,7 +149,7 @@ function Allusers() {
 
   if (error) {
     return (
-      <Layout title={"CRM - All Users"}>
+      <Layout title={"CRM - Verify users"}>
         <div className="container-fluid m-3 p-3 admin-root">
           <div className="row">
             <aside className="col-md-3"><Adminmenu /></aside>

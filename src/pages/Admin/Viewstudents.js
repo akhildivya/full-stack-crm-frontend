@@ -5,7 +5,7 @@ import axios from 'axios';
 import { Table, Dropdown, Button, Modal, Form } from 'react-bootstrap';
 import '../../css/viewstudents.css';
 import { toast } from 'react-toastify';
-import {BASEURL} from '../../service/baseUrl'
+import { BASEURL } from '../../service/baseUrl'
 function Viewstudents() {
   const [students, setStudents] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -574,40 +574,54 @@ function Viewstudents() {
             Close
           </Button>
           <Button variant="primary" onClick={handleSaveChanges}>
-            Save Changes
+            Update
           </Button>
         </Modal.Footer>
       </Modal>
-
-      <Modal show={deletedStudentId !== null} onHide={() => setDeletedStudentId(null)}>
-        <Modal.Header closeButton>
-          <Modal.Title>Confirm Deletion</Modal.Title>
+      <Modal
+        show={deletedStudentId !== null}
+        onHide={() => setDeletedStudentId(null)}
+        dialogClassName="confirm-delete-modal-dialog"
+        contentClassName="confirm-delete-modal-content"
+        backdropClassName="confirm-delete-modal-backdrop"
+        centered
+      >
+        <Modal.Header className="confirm-delete-modal-header" closeButton>
+          <Modal.Title className="modal-title-custom">Confirm Deletion</Modal.Title>
         </Modal.Header>
-        <Modal.Body>
-          Are you sure you want to delete this student? This action cannot be undone.
+        <Modal.Body className="confirm-delete-modal-body">
+          Are you sure you want to delete?
         </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setDeletedStudentId(null)}>
+        <Modal.Footer className="confirm-delete-modal-footer">
+          <Button className="btn-cancel" variant="secondary" onClick={() => setDeletedStudentId(null)}>
             Cancel
           </Button>
-          <Button variant="danger" onClick={handleDeleteOne}>
+          <Button className="btn-confirm" variant="danger" onClick={handleDeleteOne}>
             Delete
           </Button>
         </Modal.Footer>
       </Modal>
 
-      <Modal show={showBulkDeleteConfirm} onHide={() => setShowBulkDeleteConfirm(false)}>
-        <Modal.Header closeButton>
-          <Modal.Title>Confirm Delete Selected</Modal.Title>
+      {/* Bulk Delete Modal */}
+      <Modal
+        show={showBulkDeleteConfirm}
+        onHide={() => setShowBulkDeleteConfirm(false)}
+        dialogClassName="confirm-delete-modal-dialog"
+        contentClassName="confirm-delete-modal-content"
+        backdropClassName="confirm-delete-modal-backdrop"
+        centered
+      >
+        <Modal.Header className="confirm-delete-modal-header" closeButton>
+          <Modal.Title className="modal-title-custom">Confirm Delete Selected</Modal.Title>
         </Modal.Header>
-        <Modal.Body>
-          Are you sure you want to delete <strong>{selectedIds.size}</strong> selected student(s)? This action cannot be undone.
+        <Modal.Body className="confirm-delete-modal-body">
+          Are you sure you want to bulk delete <strong>{selectedIds.size}</strong> {selectedIds.size < 2 ? 'selected student' : ' selected student\'s'}?
         </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowBulkDeleteConfirm(false)}>
+        <Modal.Footer className="confirm-delete-modal-footer">
+          <Button className="btn-cancel" variant="secondary" onClick={() => setShowBulkDeleteConfirm(false)}>
             Cancel
           </Button>
-          <Button variant="danger" onClick={handleBulkDelete}>
+          <Button className="btn-confirm" variant="danger" onClick={handleBulkDelete}>
             Delete All Selected
           </Button>
         </Modal.Footer>
@@ -615,13 +629,14 @@ function Viewstudents() {
 
 
 
-
       <Modal show={showAssignModal} onHide={() => setShowAssignModal(false)}>
         <Modal.Header closeButton>
-          <Modal.Title>Assign Selected Students</Modal.Title>
+          <Modal.Title>Assign Leads</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <p>Select a user to assign <strong>{selectedIds.size}</strong> student(s):</p>
+          <p>
+            Select a user to assign <strong>{selectedIds.size}</strong> {selectedIds.size < 2 ? 'student' : 'students'}
+          </p>
           {users.length > 0 ? (
             <Form>
               {users.map(user => (
@@ -680,6 +695,8 @@ function Viewstudents() {
           </Button>
         </Modal.Footer>
       </Modal>
+
+
     </Layout>
   );
 }

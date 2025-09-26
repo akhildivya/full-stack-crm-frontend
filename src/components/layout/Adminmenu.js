@@ -67,8 +67,11 @@ function Adminmenu() {
               <span>Students list</span>
             </NavLink>
 
+            <NavLink to="/admin-dashboard/alloted-duties" className={linkClass}>
+              <i className="bi bi-list-task me-2" aria-hidden="true"></i>
+              <span>Allotted Duties</span>
+            </NavLink>
 
-          
 
             <NavLink to="/admin-dashboard/about" className={linkClass}>
               <i className="bi bi-info-circle-fill me-2" aria-hidden="true"></i>
