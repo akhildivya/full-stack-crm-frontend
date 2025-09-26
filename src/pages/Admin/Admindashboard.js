@@ -132,21 +132,21 @@ function AdminDashboard() {
                 <p className="no-unverified">No pending verifications at this time.</p>
               )}
 
-              <div className="row mt-4">
+              <div className="row mt-4 gx-3 gy-3">
                 <div className="col-md-4">
-                  <div className="metric-card p-3 bg-light rounded">
+                  <div className="metric-card p-3 card-total-users">
                     <h5>Total Users</h5>
                     <p className="fs-4">{totalUsers}</p>
                   </div>
                 </div>
                 <div className="col-md-4">
-                  <div className="metric-card p-3 bg-light rounded">
+                  <div className="metric-card p-3 card-verified-users">
                     <h5>Verified</h5>
                     <p className="fs-4">{verifiedUsers}</p>
                   </div>
                 </div>
                 <div className="col-md-4">
-                  <div className="metric-card p-3 bg-light rounded">
+                  <div className="metric-card p-3 card-pending-users">
                     <h5>Pending</h5>
                     <p className="fs-4">{pendingUsers}</p>
                   </div>

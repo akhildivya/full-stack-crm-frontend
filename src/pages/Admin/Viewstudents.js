@@ -373,7 +373,7 @@ function Viewstudents() {
                   disabled={selectedIds.size === 0}
                   onClick={() => { setShowAssignModal(true); fetchUsers(); }}
                 >
-                  Assign Selected ({selectedIds.size})
+                  Assign Leads ({selectedIds.size})
                 </Button>
 
                 <Button

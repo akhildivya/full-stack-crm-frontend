@@ -16,11 +16,29 @@
 .metric-card {
   text-align: center;
   transition: transform 0.2s;
+  border-radius: 8px;
+  color: #fff;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
+
 .metric-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
 }
+
+.card-total-users {
+  background: linear-gradient(135deg, #6D80FE, #23D2FD);
+}
+
+.card-verified-users {
+  background: linear-gradient(135deg, #09AFE8, #29F499);
+}
+
+.card-pending-users {
+  background: linear-gradient(135deg, #FF998B, #FF6D88);
+}
+
 .no-unverified {
   padding: 1rem;
   margin-top: 1.5rem;
