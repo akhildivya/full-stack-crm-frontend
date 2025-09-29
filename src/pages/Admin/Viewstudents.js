@@ -8,6 +8,10 @@ import { toast } from 'react-toastify';
 import { BASEURL } from '../../service/baseUrl'
 function Viewstudents() {
   const [students, setStudents] = useState([]);
+  const [assignedStudents, setAssignedStudents] = useState([]); // new
+  const [showAssignedModal, setShowAssignedModal] = useState(false); // new
+
+
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -209,7 +213,15 @@ function Viewstudents() {
   const handleConfirmDeleteOne = (id) => {
     setDeletedStudentId(id);
   };
-
+  const fetchAssigned = async () => {
+    try {
+      const res = await axios.get(`${BASEURL}/admin/view-assigned-students`);
+      setAssignedStudents(res.data);
+    } catch (err) {
+      console.error('Error fetching assigned students', err);
+      toast.error('Failed to load assigned students');
+    }
+  };
   const filteredStudents = students.filter(stu => {
     const lower = searchTerm.trim().toLowerCase();
 
@@ -319,6 +331,16 @@ function Viewstudents() {
     return <div className="vs-error">{error}</div>;
   }
 
+  function formatDateDDMMMYYYY(dateValue) {
+  if (!dateValue) return '—';
+  const d = new Date(dateValue);
+  const day = d.getDate().toString().padStart(2, '0');
+  const year = d.getFullYear();
+  const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const month = monthNames[d.getMonth()];
+  return `${day}-${month}-${year}`;
+}
+
   return (
     <Layout title={"CRM - Student Details"}>
       <div className="container-fluid m-3 p-3 admin-root">
@@ -376,6 +398,13 @@ function Viewstudents() {
                   Assign Leads ({selectedIds.size})
                 </Button>
 
+                <Button
+                  variant="info"
+                  size="sm"
+                  onClick={() => { fetchAssigned(); setShowAssignedModal(true); }}
+                >
+                  View Assigned
+                </Button>
                 <Button
                   variant="danger"
                   size="sm"
@@ -693,6 +722,69 @@ function Viewstudents() {
           >
             Save
           </Button>
+        </Modal.Footer>
+      </Modal>
+
+
+      {/* NEW: Assigned students modal */}
+      <Modal
+        show={showAssignedModal}
+        onHide={() => setShowAssignedModal(false)}
+        size="lg"
+        dialogClassName="assigned-modal-dialog"
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Assigned Students</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <div className="table-responsive">
+            <Table className="table-hover align-middle">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Phone</th>
+                  <th>Course</th>
+                  <th>Place</th>
+                  <th>Status (UserId)</th> {/* replaced Status column */}
+                  <th>Assigned Date</th> {/* new column */}
+                </tr>
+              </thead>
+              <tbody>
+                {assignedStudents.length > 0 ? assignedStudents.map((stu, i) => (
+                  <tr key={stu._id || i}>
+                    <td>{i + 1}</td>
+                    <td>{stu.name}</td>
+                    <td>{stu.email}</td>
+                    <td>{stu.phone}</td>
+                    <td>{stu.course}</td>
+                    <td>{stu.place}</td>
+                    <td style={{ wordBreak: 'break-word', maxWidth: 200 }}>
+                      <div style={{ fontSize: 14, fontWeight: 'bold' }}>
+                        {stu.assignedTo?.username || stu.assignedTo?._id}
+                      </div>
+                      {stu.assignedTo?.email && (
+                        <div style={{ fontSize: 12, color: '#666' }}>
+                          {stu.assignedTo.email}
+                        </div>
+                      )}
+                    </td>
+                    <td>
+                      {stu.assignedAt ? new Date(stu.assignedAt).toLocaleString() : '—'}
+                    </td>
+                  </tr>
+                )) : (
+                  <tr>
+                    <td colSpan="8">No assigned students found.</td>
+                  </tr>
+                )}
+              </tbody>
+            </Table>
+          </div>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowAssignedModal(false)}>Close</Button>
         </Modal.Footer>
       </Modal>
 
