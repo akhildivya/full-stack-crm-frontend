@@ -2,11 +2,13 @@ import React, { useEffect, useState } from 'react';
 import Layout from '../../components/layout/Layout';
 import Adminmenu from '../../components/layout/Adminmenu';
 import axios from 'axios';
-import { Table, Dropdown, Button, Modal, Form,Pagination } from 'react-bootstrap';
+import { Table, Dropdown, Button, Modal, Form } from 'react-bootstrap';
 import '../../css/viewstudents.css';
 import { toast } from 'react-toastify';
 import { BASEURL } from '../../service/baseUrl'
 function Viewstudents() {
+
+
   const [students, setStudents] = useState([]);
   const [assignedStudents, setAssignedStudents] = useState([]); // new
   const [showAssignedModal, setShowAssignedModal] = useState(false); // new
@@ -35,6 +37,8 @@ function Viewstudents() {
   const [users, setUsers] = useState([]);
   // --- New State for Assign Feature ---
   const [selectedUserId, setSelectedUserId] = useState(null);
+
+  
 
   useEffect(() => {
     document.title = 'CRM - Student Details';
@@ -331,15 +335,6 @@ function Viewstudents() {
     return <div className="vs-error">{error}</div>;
   }
 
-  function formatDateDDMMMYYYY(dateValue) {
-  if (!dateValue) return '—';
-  const d = new Date(dateValue);
-  const day = d.getDate().toString().padStart(2, '0');
-  const year = d.getFullYear();
-  const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-  const month = monthNames[d.getMonth()];
-  return `${day}-${month}-${year}`;
-}
 
   return (
     <Layout title={"CRM - Student Details"}>

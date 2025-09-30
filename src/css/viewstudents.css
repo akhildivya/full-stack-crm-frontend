@@ -214,4 +214,76 @@
 }
  /*modal design*/
 
- 
+ /* Modal width and look */
+.custom-modal .modal-dialog {
+  max-width: 90%;   /* wider modal */
+}
+
+.custom-modal .modal-content {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* Table styles */
+.custom-table {
+  background: #fff;
+}
+
+.custom-table thead {
+  background-color: #007bff;  /* Bootstrap primary blue */
+  color: white;
+}
+
+.custom-table thead th {
+  border: none;
+  padding: 12px 8px;
+  text-transform: none !important;
+  font-size: 0.9rem;
+}
+
+.custom-table tbody tr {
+  transition: background-color 0.2s ease;
+}
+
+.custom-table tbody tr:hover {
+  background-color: #f5f5f5;
+}
+
+.custom-table tbody td {
+  padding: 10px 8px;
+  vertical-align: middle;
+  border-top: 1px solid #e8e8e8;
+}
+
+/* Status cell styling */
+.status-username {
+  font-size: 0.94rem;
+  font-weight: 600;
+  color: #343a40;
+}
+
+.status-email {
+  font-size: 0.82rem;
+  color: #6c757d;
+  margin-top: 2px;
+}
+
+/* Pagination custom look (optional) */
+.custom-modal .pagination {
+  margin: 0;
+}
+
+.custom-modal .pagination .page-link {
+  color: #007bff;
+  border-radius: 4px;
+}
+.custom-modal .pagination .page-item.active .page-link {
+  background-color: #007bff;
+  border-color: #007bff;
+  color: white;
+}
+.custom-modal .pagination .page-link:hover {
+  background-color: #e9ecef;
+}
+
+

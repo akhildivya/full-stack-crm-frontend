@@ -1,0 +1,57 @@
+/* --- Overview stat boxes --- */
+.overview-stats {
+  display: flex;
+  flex-wrap: wrap;
+  /* spacing between boxes, you can tweak */
+  margin-left: -8px;
+  margin-right: -8px;
+}
+
+.stat-box-col {
+  padding-left: 8px;
+  padding-right: 8px;
+  margin-bottom: 16px;
+}
+
+/* the box itself */
+.stat-box {
+  background: #ffffff;
+  border: 1px solid #e1e7ed;
+  border-radius: 8px;
+  padding: 20px 16px;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.stat-box:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+}
+
+.stat-title {
+  font-size: 0.9rem;
+  color: #4f5a6b;
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.stat-value {
+  font-size: 1.9rem;
+  color: #0d1b2a;
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* Responsive tweaks */
+@media (max-width: 767px) {
+  .stat-box {
+    padding: 16px 12px;
+  }
+  .stat-value {
+    font-size: 1.6rem;
+  }
+  .stat-title {
+    font-size: 0.85rem;
+  }
+}
