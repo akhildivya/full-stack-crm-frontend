@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import Layout from '../../components/layout/Layout';
 import Adminmenu from '../../components/layout/Adminmenu';
 import axios from 'axios';
-import { Table, Dropdown, Button, Modal, Form } from 'react-bootstrap';
+import { Table, Dropdown, Button, Modal, Form,Pagination } from 'react-bootstrap';
 import '../../css/viewstudents.css';
 import { toast } from 'react-toastify';
 import { BASEURL } from '../../service/baseUrl'
