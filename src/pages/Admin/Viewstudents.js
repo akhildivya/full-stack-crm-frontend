@@ -6,8 +6,11 @@ import { Table, Dropdown, Button, Modal, Form } from 'react-bootstrap';
 import '../../css/viewstudents.css';
 import { toast } from 'react-toastify';
 import { BASEURL } from '../../service/baseUrl'
-function Viewstudents() {
+import { jsPDF } from 'jspdf';
+import { autoTable } from 'jspdf-autotable';
+import { FaFilePdf } from 'react-icons/fa';
 
+function Viewstudents() {
 
   const [students, setStudents] = useState([]);
   const [assignedStudents, setAssignedStudents] = useState([]); // new
@@ -32,13 +35,13 @@ function Viewstudents() {
   const [sortOrder, setSortOrder] = useState('asc');
 
 
-  // --- New State for Assign Feature ---
+
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [users, setUsers] = useState([]);
-  // --- New State for Assign Feature ---
+
   const [selectedUserId, setSelectedUserId] = useState(null);
 
-  
+
 
   useEffect(() => {
     document.title = 'CRM - Student Details';
@@ -321,6 +324,77 @@ function Viewstudents() {
     }
   };
 
+  const exportToPDF = () => {
+    const doc = new jsPDF({
+      unit: 'pt',
+      format: 'a4',
+    });
+
+    const margin = { top: 60, bottom: 40, left: 40, right: 40 };
+    const pageWidth = doc.internal.pageSize.getWidth();
+
+    // Prepare the data rows
+    const tableData = currentRows.map((stu, idx) => {
+      // for status, convert boolean or presence
+      const statusText = stu.assignedTo ? 'Assigned' : 'Unassigned';
+      return [
+        indexOfFirstRow + idx + 1,
+        stu.name || '',
+        stu.email || '',
+        stu.phone || '',
+        stu.place || '',
+        stu.course || '',
+        statusText,
+      ];
+    });
+
+    // Header labels
+    const head = [
+      ['#', 'Name', 'Email', 'Phone', 'Place', 'Course', 'Status']
+    ];
+
+    autoTable(doc, {
+      startY: margin.top,
+      margin: margin,
+      head: head,
+      body: tableData,
+      theme: 'striped',
+      headStyles: {
+        fillColor: [0, 123, 255],
+        textColor: [255, 255, 255],
+        halign: 'center',
+      },
+      styles: {
+        fontSize: 10,
+        cellPadding: 4,
+        overflow: 'linebreak',
+      },
+      bodyStyles: {
+        fillColor: [245, 247, 250],
+      },
+      didDrawPage: (data) => {
+        // title header
+        doc.setFontSize(14);
+        doc.setTextColor(40);
+        doc.text(
+          "Student List Report",
+          pageWidth / 2,
+          margin.top - 30,
+          { align: 'center' }
+        );
+
+        // footer with page numbers
+        const pageCount = doc.internal.getNumberOfPages();
+        doc.setFontSize(10);
+        const footerText = `Page ${doc.internal.getCurrentPageInfo().pageNumber} of ${pageCount}`;
+        const y = doc.internal.pageSize.getHeight() - 10;
+        doc.text(footerText, pageWidth / 2, y, { align: 'center' });
+      }
+    });
+
+    doc.save('students_report.pdf');
+  };
+
   if (loading) {
     return (
       <div className="loader-overlay">
@@ -512,52 +586,57 @@ function Viewstudents() {
                 </Table>
               </div>
 
-              <div className="vs-pagination-container d-flex align-items-center">
-                <Button
-                  variant="outline-secondary"
-                  size="sm"
-                  onClick={() => goToPage(currentPage - 1)}
-                  disabled={currentPage === 1}
-                >
-                  Previous
-                </Button>
-                {[...Array(totalPages)].map((_, idx) => (
-                  <Button
-                    key={idx + 1}
-                    variant={currentPage === idx + 1 ? 'primary' : 'outline-secondary'}
-                    size="sm"
-                    className="mx-1"
-                    onClick={() => goToPage(idx + 1)}
-                  >
-                    {idx + 1}
+              <div className="d-flex flex-column flex-sm-row justify-content-between align-items-center mt-4">
+                <div className="mb-2 mb-sm-0">
+                  <Button variant="outline-secondary" size="sm" onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1}>
+                    &lt; Prev
                   </Button>
-                ))}
-                <Button
-                  variant="outline-secondary"
-                  size="sm"
-                  onClick={() => goToPage(currentPage + 1)}
-                  disabled={currentPage === totalPages}
-                >
-                  Next
-                </Button>
-                <Dropdown className="ms-auto">
-                  <Dropdown.Toggle variant="outline-secondary" size="sm" id="dropdown-rows-per-page">
-                    {rowsPerPage} / page
-                  </Dropdown.Toggle>
-                  <Dropdown.Menu>
-                    {[5, 10, 20, 50, 75, 100].map(size => (
-                      <Dropdown.Item
-                        key={size}
-                        active={rowsPerPage === size}
-                        onClick={() => handleRowsPerPageSelect(size)}
+                  {[...Array(totalPages)].map((_, i) => {
+                    const pageNum = i + 1;
+                    return (
+                      <Button
+                        key={pageNum}
+                        variant={currentPage === pageNum ? "primary" : "outline-secondary"}
+                        size="sm"
+                        className="mx-1"
+                        onClick={() => goToPage(pageNum)}
                       >
-                        {size} / page
-                      </Dropdown.Item>
-                    ))}
-                  </Dropdown.Menu>
-                </Dropdown>
+                        {pageNum}
+                      </Button>
+                    );
+                  })}
+                  <Button variant="outline-secondary" size="sm" onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages}>
+                    Next &gt;
+                  </Button>
+                </div>
+                <div>
+                  <Dropdown>
+                    <Dropdown.Toggle variant="outline-secondary" size="sm" id="dropdown-rows-per-page">
+                      {rowsPerPage}
+                    </Dropdown.Toggle>
+                    <Dropdown.Menu>
+                      {[1, 2, 5, 10, 20, 50, 100].map(num => (
+                        <Dropdown.Item key={num} active={rowsPerPage === num} onClick={() => { setRowsPerPage(num); setCurrentPage(1); }}>
+                          {num}
+                        </Dropdown.Item>
+                      ))}
+                    </Dropdown.Menu>
+                  </Dropdown>
+                </div>
+              </div>
+              <div className="me-2 mt-2">
+                <Button
+                  variant="outline-primary"
+                  className="icon-only-btn p-0"
+                  onClick={exportToPDF}
+                  aria-label="Download PDF"
+                  title="Download PDF"
+                >
+                  <FaFilePdf size={14} />
+                </Button>
               </div>
             </div>
+
           </main>
         </div>
       </div>
@@ -653,7 +732,7 @@ function Viewstudents() {
 
 
 
-      <Modal show={showAssignModal} onHide={() => setShowAssignModal(false)}>
+      <Modal className="assign-leads-modal" show={showAssignModal} onHide={() => setShowAssignModal(false)} >
         <Modal.Header closeButton>
           <Modal.Title>Assign Leads</Modal.Title>
         </Modal.Header>
@@ -684,7 +763,16 @@ function Viewstudents() {
           <Button
             variant="primary"
             onClick={async () => {
-              if (!selectedUserId) return alert('Please select a user!');
+              if (!selectedUserId) return toast.warning('Please select a user!', {
+                position: "top-center",
+                autoClose: 5000,
+                hideProgressBar: false,
+                closeOnClick: false,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+                theme: "light",
+              });
 
               // 🔹 Check if selected students are already assigned
               const alreadyAssigned = students.filter(
@@ -692,10 +780,21 @@ function Viewstudents() {
               );
 
               if (alreadyAssigned.length > 0) {
+                const studentCount = alreadyAssigned.length;
+                const studentLabel = studentCount > 1 ? 'students' : 'student';
                 toast.info(
-                  `The following student(s) are already assigned: ${alreadyAssigned
+                  `The following ${studentLabel} are already assigned: ${alreadyAssigned
                     .map(stu => stu.name)
-                    .join(', ')}`
+                    .join(', ')}`, {
+                  position: "top-center",
+                  autoClose: 5000,
+                  hideProgressBar: false,
+                  closeOnClick: false,
+                  pauseOnHover: true,
+                  draggable: true,
+                  progress: undefined,
+                  theme: "light",
+                }
                 );
                 return;
               }

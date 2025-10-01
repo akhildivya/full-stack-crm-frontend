@@ -1,4 +1,4 @@
-// src/pages/admin/Duties.jsx
+
 import React, { useEffect, useMemo, useState } from 'react';
 import Layout from '../../components/layout/Layout';
 import Adminmenu from '../../components/layout/Adminmenu';
@@ -9,7 +9,6 @@ import '../../css/duties.css';
 import { jsPDF } from 'jspdf';
 import { autoTable } from 'jspdf-autotable';
 import { FaFilePdf } from 'react-icons/fa';
-
 
 function Duties() {
   const [stats, setStats] = useState([]);
@@ -83,28 +82,60 @@ function Duties() {
   }, []);
 
 
-  const exportToPDF = () => {
+ const exportToPDF = () => {
+  const doc = new jsPDF({
+    unit: 'pt',
+    format: 'a4',
+  });
 
-    const doc = new jsPDF();
-    const tableData = currentRows.map((u, idx) => [
-      idxFirst + idx + 1,
-      u.username,
-      u.email,
-      u.count,
-      formatDate(u.lastAssigned),
-    ]);
+  const margin = { top: 60, bottom: 40, left: 40, right: 40 };
 
-    autoTable(doc, {
-      head: [['#', 'Name', 'Email', 'Assigned Count', 'Last Assigned Date']],
-      body: tableData,
-      startY: 20,
-      theme: 'striped',
-      headStyles: { fillColor: [0, 123, 255], textColor: [255, 255, 255] },
-      bodyStyles: { fillColor: [245, 247, 250] },
-    });
+  const tableData = currentRows.map((u, idx) => [
+    idxFirst + idx + 1,
+    u.username,
+    u.email,
+    u.count,
+    formatDate(u.lastAssigned),
+  ]);
 
-    doc.save('duties_report.pdf');
-  };
+  const totalPagesExp = "{total_pages_count_string}";
+
+  autoTable(doc, {
+    startY: margin.top,
+    margin: margin,
+    head: [['#', 'Name', 'Email', 'Assigned Count', 'Last Assigned Date']],
+    body: tableData,
+    theme: 'grid',
+    styles: { overflow: 'linebreak', cellWidth: 'wrap' },
+    headStyles: { fillColor: [0, 123, 255], textColor: [255, 255, 255] },
+    bodyStyles: { fillColor: [245, 247, 250], textColor: [20, 20, 20] },
+    didDrawPage: (data) => {
+      // Header
+      doc.setFontSize(12);
+      doc.setTextColor(40);
+      doc.text("CRM-User Assignment Statistics", margin.left, margin.top - 20,);
+
+      // Footer — page number
+      const pageNo = doc.internal.getNumberOfPages();
+      doc.setFontSize(10);
+      const footer = `Page ${pageNo} of ${totalPagesExp}`;
+      const pageWidth = doc.internal.pageSize.getWidth();
+      doc.text(footer, pageWidth / 2, doc.internal.pageSize.getHeight() - 10, {
+        align: 'center'
+      });
+    },
+    willDrawCell: (data) => {
+      // you could do custom styling per cell if needed
+    },
+  });
+
+  // Replace the placeholder for total pages
+  if (typeof doc.putTotalPages === 'function') {
+    doc.putTotalPages(totalPagesExp);
+  }
+
+  doc.save('Assign_Lead_Statistics.pdf');
+};
 
   // Filtering, sorting, pagination as before...
   const normalized = searchTerm.trim().toLowerCase();
@@ -301,50 +332,55 @@ function Duties() {
               </div>
 
               {/* Pagination & rows-per-page */}
-              <div className="mt-3 d-flex justify-content-between align-items-center">
-                <div>
-                  <Button variant="outline-secondary" size="sm" onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1}>Previous</Button>
-                  {[...Array(totalPages)].map((_, i) => {
-                    const pageNum = i + 1;
-                    return (
-                      <Button
-                        key={pageNum}
-                        variant={currentPage === pageNum ? "primary" : "outline-secondary"}
-                        size="sm"
-                        className="mx-1"
-                        onClick={() => goToPage(pageNum)}
-                      >
-                        {pageNum}
-                      </Button>
-                    );
-                  })}
-                  <Button variant="outline-secondary" size="sm" onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages}>Next</Button>
-                </div>
-                <div>
-                  <Dropdown>
-                    <Dropdown.Toggle variant="outline-secondary" size="sm" id="dropdown-rows-per-page">
-                      {rowsPerPage}
-                    </Dropdown.Toggle>
-                    <Dropdown.Menu>
-                      {[5, 10, 20, 50].map(num => (
-                        <Dropdown.Item key={num} active={rowsPerPage === num} onClick={() => { setRowsPerPage(num); setCurrentPage(1); }}>
-                          {num}
-                        </Dropdown.Item>
-                      ))}
-                    </Dropdown.Menu>
-                  </Dropdown>
-                </div>
+                <div className="d-flex flex-column flex-sm-row justify-content-between align-items-center mt-4">
+                              <div className="mb-2 mb-sm-0">
+                                <Button variant="outline-secondary" size="sm" onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1}>
+                                  &lt; Prev
+                                </Button>
+                                {[...Array(totalPages)].map((_, i) => {
+                                  const pageNum = i + 1;
+                                  return (
+                                    <Button
+                                      key={pageNum}
+                                      variant={currentPage === pageNum ? "primary" : "outline-secondary"}
+                                      size="sm"
+                                      className="mx-1"
+                                      onClick={() => goToPage(pageNum)}
+                                    >
+                                      {pageNum}
+                                    </Button>
+                                  );
+                                })}
+                                <Button variant="outline-secondary" size="sm" onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages}>
+                                  Next &gt;
+                                </Button>
+                              </div>
+                              <div>
+                                <Dropdown>
+                                  <Dropdown.Toggle variant="outline-secondary" size="sm" id="dropdown-rows-per-page">
+                                    {rowsPerPage}
+                                  </Dropdown.Toggle>
+                                  <Dropdown.Menu>
+                                    {[1, 2, 5, 10, 20, 50,100].map(num => (
+                                      <Dropdown.Item key={num} active={rowsPerPage === num} onClick={() => { setRowsPerPage(num); setCurrentPage(1); }}>
+                                        {num}
+                                      </Dropdown.Item>
+                                    ))}
+                                  </Dropdown.Menu>
+                                </Dropdown>
+                              </div>
+                            </div>
+              <div className="me-2 mt-2">
+                <Button
+                  variant="outline-primary"
+                  className="icon-only-btn p-0"
+                  onClick={exportToPDF}
+                  aria-label="Download PDF"
+                  title="Download PDF"
+                >
+                  <FaFilePdf size={14} />
+                </Button>
               </div>
-              <Button
-                variant="outline-primary"
-                size="sm"
-                className="p-1 d-inline-flex align-items-center justify-content-center"
-                onClick={exportToPDF}
-                aria-label="Download PDF"
-                title="Download PDF"
-              >
-                <FaFilePdf size={14} />
-              </Button>
             </div>
           </main>
         </div>

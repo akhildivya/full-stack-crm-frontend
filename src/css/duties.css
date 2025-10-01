@@ -55,3 +55,20 @@
     font-size: 0.85rem;
   }
 }
+/* small square icon button */
+.icon-only-btn {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+}
+
+/* optional: small text under icon on larger screens */
+.icon-label {
+  font-size: 12px;
+  color: #6c757d; /* muted */
+  margin-left: 8px;
+}

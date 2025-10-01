@@ -5,7 +5,7 @@ import axios from "axios";
 import { Table, Dropdown, Button } from "react-bootstrap";
 import Layout from '../../components/layout/Layout';
 import Adminmenu from '../../components/layout/Adminmenu';
-import {BASEURL} from '../../service/baseUrl'
+import { BASEURL } from '../../service/baseUrl'
 function Allusers() {
   const [searchTerm, setSearchTerm] = useState("");
   const [users, setUsers] = useState([]);
@@ -186,7 +186,7 @@ function Allusers() {
 
                 <div className="d-flex gap-2">
                   <Dropdown>
-                    <Dropdown.Toggle variant="outline-secondary"  id="dropdown-sort-column">
+                    <Dropdown.Toggle variant="outline-secondary" id="dropdown-sort-column">
                       Sort by: {sortKey.charAt(0).toUpperCase() + sortKey.slice(1)}
                     </Dropdown.Toggle>
                     <Dropdown.Menu>
@@ -202,7 +202,7 @@ function Allusers() {
                   </Dropdown>
 
                   <Dropdown>
-                    <Dropdown.Toggle variant="outline-secondary"  id="dropdown-sort-order">
+                    <Dropdown.Toggle variant="outline-secondary" id="dropdown-sort-order">
                       {sortOrder === 'asc' ? 'Ascending' : 'Descending'}
                     </Dropdown.Toggle>
                     <Dropdown.Menu>
@@ -258,16 +258,12 @@ function Allusers() {
                 </Table>
               </div>
 
-              {/* Pagination & rows-per-page below the table */}
-              <div className="mt-3 d-flex justify-content-between align-items-center">
-                <div>
-                  <Button
-                    variant="outline-secondary"
-                    size="sm"
-                    onClick={() => goToPage(currentPage - 1)}
-                    disabled={currentPage === 1}
-                  >
-                    Previous
+
+              {/* Pagination & rows-per-page */}
+              <div className="d-flex flex-column flex-sm-row justify-content-between align-items-center mt-4 mt-md-2">
+                <div className="mb-2 mb-sm-0">
+                  <Button variant="outline-secondary" size="sm" onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1}>
+                    &lt; Prev
                   </Button>
                   {[...Array(totalPages)].map((_, i) => {
                     const pageNum = i + 1;
@@ -283,28 +279,18 @@ function Allusers() {
                       </Button>
                     );
                   })}
-                  <Button
-                    variant="outline-secondary"
-                    size="sm"
-                    onClick={() => goToPage(currentPage + 1)}
-                    disabled={currentPage === totalPages}
-                  >
-                    Next
+                  <Button variant="outline-secondary" size="sm" onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages}>
+                    Next &gt;
                   </Button>
                 </div>
-
                 <div>
                   <Dropdown>
                     <Dropdown.Toggle variant="outline-secondary" size="sm" id="dropdown-rows-per-page">
                       {rowsPerPage}
                     </Dropdown.Toggle>
                     <Dropdown.Menu>
-                      {[5, 10, 20, 50].map(num => (
-                        <Dropdown.Item
-                          key={num}
-                          active={rowsPerPage === num}
-                          onClick={() => handleRowsPerPageChange(num)}
-                        >
+                      {[1, 2, 5, 10, 20, 50, 100].map(num => (
+                        <Dropdown.Item key={num} active={rowsPerPage === num} onClick={() => { setRowsPerPage(num); setCurrentPage(1); }}>
                           {num}
                         </Dropdown.Item>
                       ))}

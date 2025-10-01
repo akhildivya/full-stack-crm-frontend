@@ -287,3 +287,138 @@
 }
 
 
+.vs-error {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: #f8d7da;
+  color: #721c24;
+  padding: 20px;
+  border-radius: 5px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  font-size: 16px;
+  font-weight: bold;
+  z-index: 1000;
+}
+ /*new*/
+
+/* Custom Modal Styling */
+.assigned-modal-dialog .modal-content {
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.assigned-modal-dialog .modal-header {
+  background-color: #007bff;
+  color: white;
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+}
+
+.assigned-modal-dialog .modal-title {
+  font-size: 1.25rem;
+  font-weight: bold;
+}
+
+.assigned-modal-dialog .modal-body {
+  background-color: #f8f9fa;
+  padding: 20px;
+  border-radius: 5px;
+}
+
+.assigned-modal-dialog .modal-footer {
+  background-color: #f1f1f1;
+  border-top: 1px solid #ddd;
+  padding: 10px;
+  border-bottom-left-radius: 8px;
+  border-bottom-right-radius: 8px;
+}
+
+.assigned-modal-dialog .btn-secondary {
+  background-color: #6c757d;
+  border-color: #6c757d;
+  font-weight: bold;
+}
+
+.assigned-modal-dialog .table-hover tbody tr:hover {
+  background-color: #f1f1f1;
+}
+
+.assigned-modal-dialog .table-hover tbody tr:hover td {
+  cursor: pointer;
+}
+
+.assigned-modal-dialog .table-hover tbody tr:hover td a {
+  text-decoration: underline;
+  color: #007bff;
+}
+
+.assigned-modal-dialog .table-hover tbody tr:hover td a:hover {
+  color: #0056b3;
+}
+
+
+/* Custom Modal Styling */
+.assign-leads-modal .modal-content {
+  border-radius: 16px;
+  border: 2px solid #0066ff;
+  box-shadow: 0 8px 32px rgba(0, 102, 255, 0.08);
+}
+
+.assign-leads-modal .modal-header {
+  background: #f0f6ff;
+  border-bottom: none;
+  padding-bottom: 0.5rem;
+}
+
+.assign-leads-modal .modal-title {
+  font-weight: 600;
+  color: #003366;
+}
+
+.assign-leads-modal .modal-body {
+  background: #f8fbff;
+  font-size: 1rem;
+  color: #222a35;
+}
+
+.assign-leads-modal .form-check-label {
+  color: #0056b3;
+  font-weight: 500;
+  
+}
+
+.assign-leads-modal .form-check-input[type="radio"]:checked {
+  background-color: #0066ff;
+  border-color: #0066ff;
+}
+
+.assign-leads-modal .modal-footer {
+  border-top: none;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  background: #f0f6ff;
+}
+
+.assign-leads-modal .btn-primary {
+  background-color: #0066ff;
+  border: none;
+}
+
+.assign-leads-modal .btn-secondary {
+  background-color: #b0b9c6;
+  border: none;
+  color: #222a35;
+}
+
+.assign-leads-modal .form-check {
+  transition: background 0.18s;
+  border-radius: 8px;
+}
+
+/* Highlight background when hovering over the row */
+.assign-leads-modal .form-check:hover {
+  background: #e6f2ff;
+}
