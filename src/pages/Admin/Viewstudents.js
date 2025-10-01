@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import Layout from '../../components/layout/Layout';
 import Adminmenu from '../../components/layout/Adminmenu';
 import axios from 'axios';
-import { Table, Dropdown, Button, Modal, Form } from 'react-bootstrap';
+import { Table, Dropdown, Button, Modal, Form, Pagination } from 'react-bootstrap';
 import '../../css/viewstudents.css';
 import { toast } from 'react-toastify';
 import { BASEURL } from '../../service/baseUrl'
@@ -43,6 +43,20 @@ function Viewstudents() {
 
 
 
+  const [assignedPage, setAssignedPage] = useState(1);
+  const [assignedRowsPerPage, setAssignedRowsPerPage] = useState(10);
+
+  // derive pagination slices for assignedStudents
+  const assignedTotalPages = Math.ceil(assignedStudents.length / assignedRowsPerPage);
+  const assignedIdxFirst = (assignedPage - 1) * assignedRowsPerPage;
+  const assignedIdxLast = assignedIdxFirst + assignedRowsPerPage;
+  const assignedCurrentRows = assignedStudents.slice(assignedIdxFirst, assignedIdxLast);
+
+  const handleAssignPageChange = (pageNum) => {
+    if (pageNum < 1) pageNum = 1;
+    if (pageNum > assignedTotalPages) pageNum = assignedTotalPages;
+    setAssignedPage(pageNum);
+  }
   useEffect(() => {
     document.title = 'CRM - Student Details';
     const fetchStudents = async () => {
@@ -394,7 +408,71 @@ function Viewstudents() {
 
     doc.save('students_report.pdf');
   };
+  const exportAssignedToPDF = () => {
+    const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+    const margin = { top: 60, bottom: 40, left: 10, right: 10 };
+    const pageWidth = doc.internal.pageSize.getWidth();
 
+    // you can choose assignedCurrentRows or assignedStudents
+    const dataRows = assignedCurrentRows.map((stu, idx) => [
+      assignedIdxFirst + idx + 1,
+      stu.name || '',
+      stu.email || '',
+      stu.phone || '',
+      stu.course || '',
+      stu.place || '',
+      (stu.assignedTo?.username || stu.assignedTo?._id) + '',
+      formatAssignedDate(stu.assignedAt)
+    ]);
+
+    autoTable(doc, {
+      startY: margin.top,
+      margin,
+      head: [
+        ['#', 'Name', 'Email', 'Phone', 'Course', 'Place', 'User', 'Assigned Date']
+      ],
+      body: dataRows,
+      theme: 'striped',
+      headStyles: { fillColor: [0, 123, 255], textColor: [255, 255, 255] },
+      didDrawPage: (data) => {
+        doc.setFontSize(14);
+        doc.setTextColor(40);
+        doc.text("Assigned Students Report", pageWidth / 2, margin.top - 30, { align: 'center' });
+
+        const pageCount = doc.internal.getNumberOfPages();
+        doc.setFontSize(10);
+        const footer = `Page ${doc.internal.getCurrentPageInfo().pageNumber} of ${pageCount}`;
+        doc.text(footer, pageWidth / 2, doc.internal.pageSize.getHeight() - 10, { align: 'center' });
+      }
+    });
+
+    doc.save('assigned_students_report.pdf');
+  };
+
+  function formatAssignedDate(dateString) {
+    if (!dateString) return '—';
+    const d = new Date(dateString);
+
+    const day = String(d.getDate()).padStart(2, '0');
+    const monthNames = [
+      "Jan", "Feb", "Mar", "Apr",
+      "May", "Jun", "Jul", "Aug",
+      "Sept", "Oct", "Nov", "Dec"
+    ];
+    const month = monthNames[d.getMonth()];
+    const year = d.getFullYear();
+
+    // Hours, minutes, seconds in 12-hour format with AM/PM
+    let hours = d.getHours();
+    const minutes = String(d.getMinutes()).padStart(2, '0');
+    const seconds = String(d.getSeconds()).padStart(2, '0');
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12;
+    hours = hours ? hours : 12; // the hour '0' should be '12'
+    const hourStr = String(hours).padStart(2, '0');
+
+    return `${day}-${month}-${year} ${hourStr}:${minutes}:${seconds} ${ampm}`;
+  }
   if (loading) {
     return (
       <div className="loader-overlay">
@@ -405,6 +483,12 @@ function Viewstudents() {
       </div>
     );
   }
+  const groupedUsers = users.reduce((acc, user) => {
+    acc[user.username] = acc[user.username] || [];
+    acc[user.username].push(user);
+    return acc;
+  }, {});
+
   if (error) {
     return <div className="vs-error">{error}</div>;
   }
@@ -733,6 +817,7 @@ function Viewstudents() {
 
 
       <Modal className="assign-leads-modal" show={showAssignModal} onHide={() => setShowAssignModal(false)} >
+
         <Modal.Header closeButton>
           <Modal.Title>Assign Leads</Modal.Title>
         </Modal.Header>
@@ -742,19 +827,33 @@ function Viewstudents() {
           </p>
           {users.length > 0 ? (
             <Form>
-              {users.map(user => (
-                <Form.Check
-                  type="radio"
-                  id={`user-${user._id}`}
-                  key={user._id}
-                  label={user.username}
-                  name="assignUser"
-                  value={user._id}
-                  checked={selectedUserId === user._id}
-                  onChange={() => setSelectedUserId(user._id)}
-                  className="mb-2"
-                />
-              ))}
+              {Object.values(groupedUsers).map((userGroup, index) => {
+                const firstUser = userGroup[0];
+                const isDuplicate = userGroup.length > 1;
+
+                return (
+                  <div key={index}>
+                    {userGroup.map((user) => (
+                      <Form.Check
+                        type="radio"
+                        id={`user-${user._id}`}
+                        key={user._id}
+                        name="assignUser"
+                        value={user._id}
+                        checked={selectedUserId === user._id}
+                        onChange={() => setSelectedUserId(user._id)}
+                        className="mb-2"
+                        label={
+                          <div>
+                            <span>{user.username}</span>
+                            {isDuplicate && <small className="text-muted ms-2">{user.email}</small>}
+                          </div>
+                        }
+                      />
+                    ))}
+                  </div>
+                );
+              })}
             </Form>
           ) : <p>No users available</p>}
         </Modal.Body>
@@ -846,9 +945,9 @@ function Viewstudents() {
                 </tr>
               </thead>
               <tbody>
-                {assignedStudents.length > 0 ? assignedStudents.map((stu, i) => (
+                {assignedCurrentRows.length > 0 ? assignedCurrentRows.map((stu, i) => (
                   <tr key={stu._id || i}>
-                    <td>{i + 1}</td>
+                    <td>{assignedIdxFirst + i + 1}</td>
                     <td>{stu.name}</td>
                     <td>{stu.email}</td>
                     <td>{stu.phone}</td>
@@ -865,7 +964,7 @@ function Viewstudents() {
                       )}
                     </td>
                     <td>
-                      {stu.assignedAt ? new Date(stu.assignedAt).toLocaleString() : '—'}
+                      {formatAssignedDate(stu.assignedAt)}
                     </td>
                   </tr>
                 )) : (
@@ -877,7 +976,30 @@ function Viewstudents() {
             </Table>
           </div>
         </Modal.Body>
-        <Modal.Footer>
+        <Modal.Footer className="d-flex flex-column flex-md-row justify-content-between align-items-center">
+          {/* PDF Export Icon */}
+          <Button variant="outline-primary" className="me-3 mb-2 mb-md-0" onClick={exportAssignedToPDF} title="Export to PDF">
+            <FaFilePdf size={16} /> Export
+          </Button>
+
+          {/* Pagination controls */}
+          <Pagination>
+            <Pagination.Prev disabled={assignedPage === 1} onClick={() => handleAssignPageChange(assignedPage - 1)} />
+            {[...Array(assignedTotalPages)].map((_, idx) => {
+              const num = idx + 1;
+              return (
+                <Pagination.Item
+                  key={num}
+                  active={num === assignedPage}
+                  onClick={() => handleAssignPageChange(num)}
+                >
+                  {num}
+                </Pagination.Item>
+              );
+            })}
+            <Pagination.Next disabled={assignedPage === assignedTotalPages} onClick={() => handleAssignPageChange(assignedPage + 1)} />
+          </Pagination>
+
           <Button variant="secondary" onClick={() => setShowAssignedModal(false)}>Close</Button>
         </Modal.Footer>
       </Modal>
