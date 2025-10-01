@@ -6,6 +6,10 @@ import { Spinner, Table, Dropdown, Button, Card, Row, Col } from 'react-bootstra
 import axios from 'axios';
 import { BASEURL } from '../../service/baseUrl';
 import '../../css/duties.css';
+import { jsPDF } from 'jspdf';
+import { autoTable } from 'jspdf-autotable';
+import { FaFilePdf } from 'react-icons/fa';
+
 
 function Duties() {
   const [stats, setStats] = useState([]);
@@ -77,6 +81,30 @@ function Duties() {
     fetchOverview();
     fetchStats();
   }, []);
+
+
+  const exportToPDF = () => {
+
+    const doc = new jsPDF();
+    const tableData = currentRows.map((u, idx) => [
+      idxFirst + idx + 1,
+      u.username,
+      u.email,
+      u.count,
+      formatDate(u.lastAssigned),
+    ]);
+
+    autoTable(doc, {
+      head: [['#', 'Name', 'Email', 'Assigned Count', 'Last Assigned Date']],
+      body: tableData,
+      startY: 20,
+      theme: 'striped',
+      headStyles: { fillColor: [0, 123, 255], textColor: [255, 255, 255] },
+      bodyStyles: { fillColor: [245, 247, 250] },
+    });
+
+    doc.save('duties_report.pdf');
+  };
 
   // Filtering, sorting, pagination as before...
   const normalized = searchTerm.trim().toLowerCase();
@@ -307,7 +335,16 @@ function Duties() {
                   </Dropdown>
                 </div>
               </div>
-
+              <Button
+                variant="outline-primary"
+                size="sm"
+                className="p-1 d-inline-flex align-items-center justify-content-center"
+                onClick={exportToPDF}
+                aria-label="Download PDF"
+                title="Download PDF"
+              >
+                <FaFilePdf size={14} />
+              </Button>
             </div>
           </main>
         </div>
