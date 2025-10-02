@@ -11,7 +11,7 @@ import { autoTable } from 'jspdf-autotable';
 import { FaFilePdf } from 'react-icons/fa';
 
 function Viewstudents() {
-
+let globalSerialIndex = 1;
   const [students, setStudents] = useState([]);
   const [assignedStudents, setAssignedStudents] = useState([]); // new
   const [showAssignedModal, setShowAssignedModal] = useState(false); // new
@@ -408,46 +408,49 @@ function Viewstudents() {
 
     doc.save('students_report.pdf');
   };
-  const exportAssignedToPDF = () => {
-    const doc = new jsPDF({ unit: 'pt', format: 'a4' });
-    const margin = { top: 60, bottom: 40, left: 10, right: 10 };
-    const pageWidth = doc.internal.pageSize.getWidth();
+const exportAssignedToPDF = () => {
+  const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+  const margin = { top: 60, bottom: 40, left: 10, right: 10 };
+  const pageWidth = doc.internal.pageSize.getWidth();
 
-    // you can choose assignedCurrentRows or assignedStudents
-    const dataRows = assignedCurrentRows.map((stu, idx) => [
-      assignedIdxFirst + idx + 1,
-      stu.name || '',
-      stu.email || '',
-      stu.phone || '',
-      stu.course || '',
-      stu.place || '',
-      (stu.assignedTo?.username || stu.assignedTo?._id) + '',
-      formatAssignedDate(stu.assignedAt)
-    ]);
+  // Prepare data rows
+  const dataRows = assignedStudents.map((stu, idx) => [
+    globalSerialIndex++,
+    stu.name || '',
+    stu.email || '',
+    stu.phone || '',
+    stu.course || '',
+    stu.place || '',
+    (stu.assignedTo?.username || stu.assignedTo?._id) + '',
+    formatAssignedDate(stu.assignedAt)
+  ]);
 
-    autoTable(doc, {
-      startY: margin.top,
-      margin,
-      head: [
-        ['#', 'Name', 'Email', 'Phone', 'Course', 'Place', 'User', 'Assigned Date']
-      ],
-      body: dataRows,
-      theme: 'striped',
-      headStyles: { fillColor: [0, 123, 255], textColor: [255, 255, 255] },
-      didDrawPage: (data) => {
-        doc.setFontSize(14);
-        doc.setTextColor(40);
-        doc.text("Assigned Students Report", pageWidth / 2, margin.top - 30, { align: 'center' });
+  // Generate the table
+  autoTable(doc, {
+    startY: margin.top,
+    margin,
+    head: [
+      ['#', 'Name', 'Email', 'Phone', 'Course', 'Place', 'User', 'Assigned Date']
+    ],
+    body: dataRows,
+    theme: 'striped',
+    headStyles: { fillColor: [0, 123, 255], textColor: [255, 255, 255] },
+    didDrawPage: (data) => {
+      doc.setFontSize(14);
+      doc.setTextColor(40);
+      doc.text("Assigned Students Report", pageWidth / 2, margin.top - 30, { align: 'center' });
 
-        const pageCount = doc.internal.getNumberOfPages();
-        doc.setFontSize(10);
-        const footer = `Page ${doc.internal.getCurrentPageInfo().pageNumber} of ${pageCount}`;
-        doc.text(footer, pageWidth / 2, doc.internal.pageSize.getHeight() - 10, { align: 'center' });
-      }
-    });
+      const pageCount = doc.internal.getNumberOfPages();
+      doc.setFontSize(10);
+      const footer = `Page ${doc.internal.getCurrentPageInfo().pageNumber} of ${pageCount}`;
+      doc.text(footer, pageWidth / 2, doc.internal.pageSize.getHeight() - 10, { align: 'center' });
+    }
+  });
 
-    doc.save('assigned_students_report.pdf');
-  };
+  doc.save('assigned_students_report.pdf');
+};
+
+
 
   function formatAssignedDate(dateString) {
     if (!dateString) return '—';

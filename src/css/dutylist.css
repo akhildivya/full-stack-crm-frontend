@@ -1,0 +1,53 @@
+/* styles.css or your custom CSS file */
+
+.custom-table {
+  border: 1px solid #dee2e6;
+}
+
+.custom-table th, .custom-table td {
+  padding: 0.75rem;
+  vertical-align: middle;
+  border-top: 1px solid #dee2e6;
+}
+
+.custom-table thead th {
+  background-color:green;
+  border-bottom: 2px solid #dee2e6;
+}
+
+.custom-table tbody tr:hover {
+  background-color: #f1f3f5;
+}
+
+/* Adjust card and spacing similar to your admin-card */
+.admin-card {
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+/* Ensure table scrolls on small screens */
+.table-responsive {
+  overflow-x: auto;
+}
+
+
+/* Centering the loading spinner and error message */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  text-align: center;
+}
+
+.loading-container .spinner-border {
+  margin-bottom: 20px;
+}
+
+.loading-container .error-message {
+  color: red;
+  font-weight: bold;
+  font-size: 1.2rem;
+}

@@ -69,7 +69,7 @@ function Adminmenu() {
 
             <NavLink to="/admin-dashboard/alloted-duties" className={linkClass}>
               <i className="bi bi-list-task me-2" aria-hidden="true"></i>
-              <span>Allotted Duties</span>
+              <span>Statistics/lead</span>
             </NavLink>
 
 

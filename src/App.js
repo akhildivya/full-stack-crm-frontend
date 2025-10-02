@@ -20,6 +20,7 @@ import Profile from "./pages/user/Profile";
 import Uploadsheet from "./pages/Admin/Uploadsheet";
 import Viewstudents from "./pages/Admin/Viewstudents";
 import Duties from "./pages/Admin/Duties";
+import DutyList from "./pages/user/DutyList";
 
 function App() {
   return (
@@ -30,6 +31,7 @@ function App() {
         <Route path='/user-dashboard' element={<PrivateRoute />}>
           <Route index element={<Dashboard />} />
           <Route path='profile' element={<Profile />} />
+          <Route path='daily-duty' element={<DutyList />} />
         </Route>
         <Route path='/admin-dashboard' element={<AdminRoute />}>
           <Route index element={<Admindashboard />} />

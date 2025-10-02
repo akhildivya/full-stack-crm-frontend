@@ -63,17 +63,21 @@ function Usermenu() {
             <div className="brand-icon me-2">
               <i className="bi bi-shield-lock-fill" aria-hidden="true"></i>
             </div>
-            <h6 className="m-0">{username}{userType}</h6>
+            <h5 className="m-0">{username}{userType}</h5>
             <StatusIcon className='m-1 p-1' verified={verified} />
           </div>
 
           <div className="list-group">
 
             <NavLink to="/user-dashboard/profile" className={linkClass}>
-              <i className="bi bi-people-fill me-2" aria-hidden="true"></i>
+              <i className="bi bi-person-circle me-2" aria-hidden="true"></i>
               <span>My Profile</span>
             </NavLink>
 
+            <NavLink to="/user-dashboard/daily-duty" className={linkClass}>
+              <i className="bi bi-person-lines-fill me-2" aria-hidden="true"></i>
+              <span>Duty Assigned</span>
+            </NavLink>
           </div>
 
         </div>
