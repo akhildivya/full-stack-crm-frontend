@@ -1,92 +1,212 @@
-.homepage-container {
-  font-family: 'Inter', sans-serif;
-  color: #2c3e50;
-  padding: 0 20px;
+/* === Hero — drop-in CSS ===
+   Map to your JSX classes:
+   .hero-section > .hero-text (left) and .hero-section > .hero-slider (right)
+   Keeps layout responsive and accessible.
+*/
+
+/* variables */
+:root{
+  --hero-min-height: 72vh;
+  --container-max: 1200px;
+  --accent-1: #7b61ff;
+  --accent-2: #00d6a5;
+  --accent-3: #ff7ab6;
+  --glass-alpha: 0.14;
+  --glass-border: rgba(255,255,255,0.18);
+  --text-contrast: rgba(255,255,255,0.96);
+  --muted: rgba(255,255,255,0.85);
+  --radius: 18px;
+  --btn-radius: 12px;
 }
 
-/* Hero Section */
-.hero-section {
+/* base layout */
+.hero-section{
+  min-height: var(--hero-min-height);
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 80px 0;
-  gap: 2rem;
-  flex-wrap: wrap;
-  background: linear-gradient(135deg, #f0f7ff, #d9f8f7);
-  border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.1);
-}
-
-.hero-text h1 {
-  font-size: 2.8rem;
-  font-weight: 800;
-  margin-bottom: 16px;
-  line-height: 1.2;
-  color: #1e3a8a;
-}
-
-.hero-text p {
-  font-size: 1.2rem;
-  margin-bottom: 24px;
-  color: #2c3e50;
-}
-
-.hero-cta button {
-  padding: 12px 24px;
-  font-size: 1rem;
-  font-weight: 600;
-  border-radius: 8px;
-  cursor: pointer;
-  margin-right: 12px;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.btn-primary {
-  background-color: #1e90ff;
-  color: white;
-  border: none;
-}
-.btn-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 12px rgba(30,144,255,0.3);
-}
-
-.btn-secondary {
-  background-color: transparent;
-  color: #1e90ff;
-  border: 2px solid #1e90ff;
-}
-.btn-secondary:hover {
-  background-color: #1e90ff;
-  color: white;
-}
-
-/* Hero Slider */
-.hero-slider {
-  width: 100%;
-  max-width: 500px;
+  justify-content: center;
+  padding: 3.5rem 1rem;
+  box-sizing: border-box;
+  position: relative;
   overflow: hidden;
-  border-radius: 20px;
-  box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+  background:
+    radial-gradient(600px 400px at 10% 10%, rgba(123,97,255,0.12), transparent 12%),
+    radial-gradient(500px 360px at 95% 80%, rgba(0,214,165,0.10), transparent 12%),
+    linear-gradient(135deg, #0f1724 0%, #0b1020 30%, #071026 100%);
+  color: var(--text-contrast);
 }
 
-.slider {
-  display: flex;
-  animation: slide 12s infinite;
-}
-
-.slider img {
+/* central container to restrict width */
+.hero-section .homepage-container,
+.hero-section .hero-inner{
   width: 100%;
-  flex-shrink: 0;
-  object-fit: contain;
+  max-width: var(--container-max);
+  margin: 0 auto;
+  display: flex;
+  gap: 2.5rem;
+  align-items: center;
+  justify-content: space-between;
 }
 
-@keyframes slide {
-  0%, 20% { transform: translateX(0%); }
-  25%, 45% { transform: translateX(-100%); }
-  50%, 70% { transform: translateX(-200%); }
-  75%, 95% { transform: translateX(0%); }
-  100% { transform: translateX(0%); }
+/* left: text area (glass) */
+.hero-text{
+  flex: 1 1 48%;
+  display: flex;
+  align-items: flex-start;
+  z-index: 2;
+}
+
+.hero-text .hero-card{
+  width: 100%;
+  max-width: 680px;
+  padding: 2.25rem 2rem;
+  border-radius: var(--radius);
+  background: linear-gradient(180deg, rgba(255,255,255,var(--glass-alpha)) 0%, rgba(255,255,255,0.04) 100%);
+  /* Glassmorphism: use backdrop-filter where supported */
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 12px 40px rgba(3,9,23,0.6);
+  color: var(--text-contrast);
+}
+
+/* heading & copy */
+.hero-text h1{
+  margin: 0 0 0.6rem 0;
+  font-size: clamp(30px, 4.6vw, 48px);
+  line-height: 1.02;
+  letter-spacing: -0.4px;
+  font-weight: 700;
+  text-wrap: balance;
+}
+.hero-text p{
+  margin: 0 0 1.25rem 0;
+  color: var(--muted);
+  font-size: clamp(14px, 1.6vw, 18px);
+  line-height: 1.5;
+}
+
+/* CTA buttons */
+.hero-cta{
+  display: flex;
+  gap: 0.8rem;
+  align-items: center;
+  margin-top: 0.5rem;
+}
+
+.btn-primary, .btn-secondary{
+  border: none;
+  cursor: pointer;
+  padding: 0.75rem 1.15rem;
+  font-weight: 600;
+  border-radius: var(--btn-radius);
+  font-size: 1rem;
+  transition: transform .18s cubic-bezier(.2,.9,.3,1), box-shadow .18s ease, opacity .12s;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  box-shadow: 0 8px 22px rgba(7,10,25,0.45);
+}
+
+/* primary style */
+.btn-primary{
+  background: linear-gradient(90deg, var(--accent-1), var(--accent-2));
+  color: white;
+  padding-left: 1.2rem;
+  padding-right: 1.2rem;
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.btn-primary:hover{
+  transform: translateY(-4px) scale(1.01);
+  box-shadow: 0 18px 40px rgba(11,18,60,0.5);
+}
+
+/* secondary style */
+.btn-secondary{
+  background: transparent;
+  color: var(--text-contrast);
+  border: 1px solid rgba(255,255,255,0.12);
+  backdrop-filter: blur(4px);
+}
+.btn-secondary:hover{
+  transform: translateY(-3px);
+  opacity: 0.98;
+}
+
+/* right: slider/illustration */
+.hero-slider{
+  flex: 1 1 48%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+  min-height: 320px;
+}
+
+/* slider wrapper to control overflow */
+.hero-slider .slider{
+  width: 100%;
+  max-width: 520px;
+  height: 100%;
+  aspect-ratio: 16/10;
+  border-radius: 20px;
+  overflow: hidden;
+  position: relative;
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.04));
+  border: 1px solid rgba(255,255,255,0.04);
+  box-shadow: 0 20px 50px rgba(2,6,20,0.6);
+}
+
+/* images sit side-by-side and animate horizontally */
+.hero-slider .slider img{
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: inline-block;
+}
+
+/* create a row of images inside a sliding track */
+.hero-slider .slider .track{
+  display: flex;
+  height: 100%;
+  width: calc(100% * 3); /* if 3 imgs */
+  animation: slide 14s linear infinite;
+}
+
+/* keep a pause between loops for clarity using steps to slow? we do linear with keyframes */
+@keyframes slide{
+  0%   { transform: translateX(0%); }
+  25%  { transform: translateX(0%); }
+  33%  { transform: translateX(-100%); }
+  58%  { transform: translateX(-100%); }
+  66%  { transform: translateX(-200%); }
+  100% { transform: translateX(-200%); }
+}
+
+/* accessibility: respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .hero-slider .slider .track{ animation: none; }
+  .btn-primary, .btn-secondary{ transition: none; transform: none; }
+}
+
+/* responsive stacking */
+@media (max-width: 980px){
+  .hero-section .hero-inner{
+    flex-direction: column;
+    gap: 1.25rem;
+    align-items: stretch;
+  }
+  .hero-text, .hero-slider{ flex-basis: auto; width: 100%; }
+  .hero-text .hero-card{ padding: 1.5rem; border-radius: 14px; }
+  .hero-slider .slider{ max-width: 720px; margin: 0 auto; }
+}
+
+/* small phones: tighter spacing */
+@media (max-width: 480px){
+  .hero-text h1{ font-size: clamp(22px, 7.2vw, 34px); }
+  .hero-text p{ font-size: 14px; }
+  .btn-primary, .btn-secondary{ padding: 0.6rem 0.9rem; font-size: 0.95rem; }
+  .hero-section{ padding: 2rem 0.75rem; min-height: 60vh; }
 }
 
 /* Features Section */

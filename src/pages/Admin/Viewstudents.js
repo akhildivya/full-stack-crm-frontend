@@ -11,7 +11,7 @@ import { autoTable } from 'jspdf-autotable';
 import { FaFilePdf } from 'react-icons/fa';
 
 function Viewstudents() {
-let globalSerialIndex = 1;
+  let globalSerialIndex = 1;
   const [students, setStudents] = useState([]);
   const [assignedStudents, setAssignedStudents] = useState([]); // new
   const [showAssignedModal, setShowAssignedModal] = useState(false); // new
@@ -52,6 +52,38 @@ let globalSerialIndex = 1;
   const assignedIdxLast = assignedIdxFirst + assignedRowsPerPage;
   const assignedCurrentRows = assignedStudents.slice(assignedIdxFirst, assignedIdxLast);
 
+
+  //NEW
+  const [historyOpenFor, setHistoryOpenFor] = useState(null);
+
+  const [assignedSearchTerm, setAssignedSearchTerm] = useState('');
+  const [assignedSortConfig, setAssignedSortConfig] = useState({ key: null, direction: 'asc' });
+  // function to resolve nested keys (e.g. "assignedTo.username")
+  const getNested = (obj, path) =>
+    path.split('.').reduce((o, p) => (o ? o[p] : undefined), obj);
+
+  const handleAssignedSort = (key) => {
+    setAssignedSortConfig(prev => {
+      if (prev.key === key) {
+        return { key, direction: prev.direction === 'asc' ? 'desc' : 'asc' };
+      }
+      return { key, direction: 'asc' };
+    });
+  };
+
+  const renderAssignedSortIndicator = (key) => {
+    if (assignedSortConfig.key !== key) return null;
+    return assignedSortConfig.direction === 'asc' ? ' ▲' : ' ▼';
+  };
+  const assigneeCounts = React.useMemo(() => {
+    const counts = {};
+    assignedStudents.forEach(stu => {
+      const name = stu.assignedTo?.username || 'Unassigned';
+      counts[name] = (counts[name] || 0) + 1;
+    });
+    return counts;
+  }, [assignedStudents]);
+
   const handleAssignPageChange = (pageNum) => {
     if (pageNum < 1) pageNum = 1;
     if (pageNum > assignedTotalPages) pageNum = assignedTotalPages;
@@ -88,7 +120,11 @@ let globalSerialIndex = 1;
       console.error('Error fetching users', err);
     }
   };
-
+  //New
+  const handleCloseAssignedModal = () => {
+    setShowAssignedModal(false);
+    setHistoryOpenFor(null);
+  };
 
   const handleSearchChange = (e) => {
     setSearchTerm(e.target.value);
@@ -242,6 +278,11 @@ let globalSerialIndex = 1;
       console.error('Error fetching assigned students', err);
       toast.error('Failed to load assigned students');
     }
+  };
+
+  //New
+  const toggleHistory = (studentId) => {
+    setHistoryOpenFor(prev => (prev === studentId ? null : studentId));
   };
   const filteredStudents = students.filter(stu => {
     const lower = searchTerm.trim().toLowerCase();
@@ -408,47 +449,47 @@ let globalSerialIndex = 1;
 
     doc.save('students_report.pdf');
   };
-const exportAssignedToPDF = () => {
-  const doc = new jsPDF({ unit: 'pt', format: 'a4' });
-  const margin = { top: 60, bottom: 40, left: 10, right: 10 };
-  const pageWidth = doc.internal.pageSize.getWidth();
+  const exportAssignedToPDF = () => {
+    const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+    const margin = { top: 60, bottom: 40, left: 10, right: 10 };
+    const pageWidth = doc.internal.pageSize.getWidth();
 
-  // Prepare data rows
-  const dataRows = assignedStudents.map((stu, idx) => [
-    globalSerialIndex++,
-    stu.name || '',
-    stu.email || '',
-    stu.phone || '',
-    stu.course || '',
-    stu.place || '',
-    (stu.assignedTo?.username || stu.assignedTo?._id) + '',
-    formatAssignedDate(stu.assignedAt)
-  ]);
+    // Prepare data rows
+    const dataRows = assignedStudents.map((stu, idx) => [
+      globalSerialIndex++,
+      stu.name || '',
+      stu.email || '',
+      stu.phone || '',
+      stu.course || '',
+      stu.place || '',
+      (stu.assignedTo?.username || stu.assignedTo?._id) + '',
+      formatAssignedDate(stu.assignedAt)
+    ]);
 
-  // Generate the table
-  autoTable(doc, {
-    startY: margin.top,
-    margin,
-    head: [
-      ['#', 'Name', 'Email', 'Phone', 'Course', 'Place', 'User', 'Assigned Date']
-    ],
-    body: dataRows,
-    theme: 'striped',
-    headStyles: { fillColor: [0, 123, 255], textColor: [255, 255, 255] },
-    didDrawPage: (data) => {
-      doc.setFontSize(14);
-      doc.setTextColor(40);
-      doc.text("Assigned Students Report", pageWidth / 2, margin.top - 30, { align: 'center' });
+    // Generate the table
+    autoTable(doc, {
+      startY: margin.top,
+      margin,
+      head: [
+        ['#', 'Name', 'Email', 'Phone', 'Course', 'Place', 'User', 'Assigned Date']
+      ],
+      body: dataRows,
+      theme: 'striped',
+      headStyles: { fillColor: [0, 123, 255], textColor: [255, 255, 255] },
+      didDrawPage: (data) => {
+        doc.setFontSize(14);
+        doc.setTextColor(40);
+        doc.text("Assigned Students Report", pageWidth / 2, margin.top - 30, { align: 'center' });
 
-      const pageCount = doc.internal.getNumberOfPages();
-      doc.setFontSize(10);
-      const footer = `Page ${doc.internal.getCurrentPageInfo().pageNumber} of ${pageCount}`;
-      doc.text(footer, pageWidth / 2, doc.internal.pageSize.getHeight() - 10, { align: 'center' });
-    }
-  });
+        const pageCount = doc.internal.getNumberOfPages();
+        doc.setFontSize(10);
+        const footer = `Page ${doc.internal.getCurrentPageInfo().pageNumber} of ${pageCount}`;
+        doc.text(footer, pageWidth / 2, doc.internal.pageSize.getHeight() - 10, { align: 'center' });
+      }
+    });
 
-  doc.save('assigned_students_report.pdf');
-};
+    doc.save('assigned_students_report.pdf');
+  };
 
 
 
@@ -802,7 +843,7 @@ const exportAssignedToPDF = () => {
         centered
       >
         <Modal.Header className="confirm-delete-modal-header" closeButton>
-          <Modal.Title className="modal-title-custom">Confirm Delete Selected</Modal.Title>
+          <Modal.Title className="modal-title-custom">Delete </Modal.Title>
         </Modal.Header>
         <Modal.Body className="confirm-delete-modal-body">
           Are you sure you want to bulk delete <strong>{selectedIds.size}</strong> {selectedIds.size < 2 ? 'selected student' : ' selected student\'s'}?
@@ -886,7 +927,10 @@ const exportAssignedToPDF = () => {
                 const studentLabel = studentCount > 1 ? 'students' : 'student';
                 toast.info(
                   `The following ${studentLabel} are already assigned: ${alreadyAssigned
-                    .map(stu => stu.name)
+                    .map(stu => {
+                      const assignedToUsername = stu.assignedTo ? stu.assignedTo.username : 'Unknown';
+                      return `${stu.name} : already assigned to ${assignedToUsername} on ${new Date(stu.assignedAt).toLocaleDateString()}`;
+                    })
                     .join(', ')}`, {
                   position: "top-center",
                   autoClose: 5000,
@@ -896,8 +940,7 @@ const exportAssignedToPDF = () => {
                   draggable: true,
                   progress: undefined,
                   theme: "light",
-                }
-                );
+                });
                 return;
               }
 
@@ -906,6 +949,16 @@ const exportAssignedToPDF = () => {
                   studentIds: Array.from(selectedIds),
                   userId: selectedUserId
                 });
+                toast.success('Students assigned successfully!', {
+                  position: "top-center",
+                  autoClose: 3000,
+                  hideProgressBar: false,
+                  closeOnClick: true,
+                  pauseOnHover: true,
+                  draggable: true,
+                  progress: undefined,
+                  theme: "light",
+                });
                 const res = await axios.get(`${BASEURL}/admin/view-students`);
                 setStudents(res.data);
                 setSelectedIds(new Set());
@@ -913,6 +966,11 @@ const exportAssignedToPDF = () => {
                 setShowAssignModal(false);
               } catch (err) {
                 console.error('Error assigning students', err);
+                toast.error('Failed to assign students. Please try again.', {
+                  position: "top-center",
+                  autoClose: 3000,
+                  theme: "colored",
+                });
               }
             }}
           >
@@ -925,7 +983,11 @@ const exportAssignedToPDF = () => {
       {/* NEW: Assigned students modal */}
       <Modal
         show={showAssignedModal}
-        onHide={() => setShowAssignedModal(false)}
+        onHide={() => {
+          setShowAssignedModal(false);
+          setAssignedSearchTerm('');
+          setAssignedSortConfig({ key: null, direction: 'asc' });
+        }}
         size="lg"
         dialogClassName="assigned-modal-dialog"
       >
@@ -933,51 +995,246 @@ const exportAssignedToPDF = () => {
           <Modal.Title>Assigned Students</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <div className="table-responsive">
-            <Table className="table-hover align-middle">
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>Name</th>
-                  <th>Email</th>
-                  <th>Phone</th>
-                  <th>Course</th>
-                  <th>Place</th>
-                  <th>Status (UserId)</th> {/* replaced Status column */}
-                  <th>Assigned Date</th> {/* new column */}
-                </tr>
-              </thead>
-              <tbody>
-                {assignedCurrentRows.length > 0 ? assignedCurrentRows.map((stu, i) => (
-                  <tr key={stu._id || i}>
-                    <td>{assignedIdxFirst + i + 1}</td>
-                    <td>{stu.name}</td>
-                    <td>{stu.email}</td>
-                    <td>{stu.phone}</td>
-                    <td>{stu.course}</td>
-                    <td>{stu.place}</td>
-                    <td style={{ wordBreak: 'break-word', maxWidth: 200 }}>
-                      <div style={{ fontSize: 14, fontWeight: 'bold' }}>
-                        {stu.assignedTo?.username || stu.assignedTo?._id}
-                      </div>
-                      {stu.assignedTo?.email && (
-                        <div style={{ fontSize: 12, color: '#666' }}>
-                          {stu.assignedTo.email}
-                        </div>
-                      )}
-                    </td>
-                    <td>
-                      {formatAssignedDate(stu.assignedAt)}
-                    </td>
-                  </tr>
-                )) : (
-                  <tr>
-                    <td colSpan="8">No assigned students found.</td>
-                  </tr>
-                )}
-              </tbody>
-            </Table>
+
+          <div className="mb-3">
+            <input
+              type="text"
+              className="form-control"
+              placeholder="Search by name, email, assignee..."
+              value={assignedSearchTerm}
+              onChange={e => {
+                setAssignedSearchTerm(e.target.value);
+                // reset to first page if you have paging
+                setAssignedPage(1);
+              }}
+            />
           </div>
+          {/* Sort controls */}
+          <div className="d-flex align-items-center mb-3">
+            <span className="me-2">Sort by:</span>
+            <Form.Select
+              size="sm"
+              value={assignedSortConfig.key || ''}
+              onChange={e => {
+                const col = e.target.value;
+                if (col) {
+                  handleAssignedSort(col);
+                } else {
+                  setAssignedSortConfig({ key: null, direction: 'asc' });
+                }
+                setAssignedPage(1);
+              }}
+              style={{ width: 'auto' }}
+            >
+              <option value="">-- None --</option>
+              <option value="name">Name</option>
+              <option value="email">Email</option>
+              <option value="phone">Phone</option>
+              <option value="course">Course</option>
+              <option value="place">Place</option>
+              <option value="assignedTo.username">Assignee</option>
+              <option value="assignedAt">Assigned Date</option>
+            </Form.Select>
+
+            <Button
+              variant="outline-secondary"
+              size="sm"
+              className="ms-2"
+              onClick={() => {
+                if (assignedSortConfig.key) {
+                  setAssignedSortConfig(prev => ({
+                    key: prev.key,
+                    direction: prev.direction === 'asc' ? 'desc' : 'asc'
+                  }));
+                  setAssignedPage(1);
+                }
+              }}
+              disabled={!assignedSortConfig.key}
+              title="Toggle sort direction"
+            >
+              {assignedSortConfig.direction === 'asc' ? '↑' : '↓'}
+            </Button>
+          </div>
+          <div className="mb-3">
+            <strong>Summary:</strong>{' '}
+            {Object.entries(assigneeCounts).map(([name, cnt], idx, arr) => (
+              <span key={name}>
+                {name}: {cnt}
+                {idx < arr.length - 1 ? ' | ' : ''}
+              </span>
+            ))}
+          </div>
+          <Table bordered hover responsive>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th onClick={() => handleAssignedSort('name')}>
+                  Name{renderAssignedSortIndicator('name')}
+                </th>
+                <th onClick={() => handleAssignedSort('email')}>
+                  Email{renderAssignedSortIndicator('email')}
+                </th>
+                <th onClick={() => handleAssignedSort('phone')}>
+                  Phone{renderAssignedSortIndicator('phone')}
+                </th>
+                <th onClick={() => handleAssignedSort('course')}>
+                  Course{renderAssignedSortIndicator('course')}
+                </th>
+                <th onClick={() => handleAssignedSort('place')}>
+                  Place{renderAssignedSortIndicator('place')}
+                </th>
+                <th onClick={() => handleAssignedSort('assignedTo.username')}>
+                  Current Assignee{renderAssignedSortIndicator('assignedTo.username')}
+                </th>
+                <th onClick={() => handleAssignedSort('assignedAt')}>
+                  Assigned At{renderAssignedSortIndicator('assignedAt')}
+                </th>
+                <th>History</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(() => {
+                const lower = assignedSearchTerm.trim().toLowerCase();
+
+                // 1. Filter by search term across *all relevant fields*
+                let filtered = assignedStudents.filter(stu => {
+                  // If search is empty, include all
+                  if (!lower) return true;
+
+                  // Prepare potential string representations of fields
+                  const checks = [];
+
+                  // Basic fields
+                  if (stu.name) checks.push(stu.name.toLowerCase());
+                  if (stu.email) checks.push(stu.email.toLowerCase());
+                  if (stu.phone) checks.push(stu.phone.toLowerCase());
+                  if (stu.course) checks.push(stu.course.toLowerCase());
+                  if (stu.place) checks.push(stu.place.toLowerCase());
+
+                  // Assignee
+                  if (stu.assignedTo?.username)
+                    checks.push(stu.assignedTo.username.toLowerCase());
+                  if (stu.assignedTo?.email)
+                    checks.push(stu.assignedTo.email.toLowerCase());
+
+                  // Assigned date: convert to string
+                  if (stu.assignedAt) {
+                    const dt = formatAssignedDate(stu.assignedAt).toLowerCase();
+                    checks.push(dt);
+                  }
+
+                  // You could also check history fields if needed
+                  // e.g. checking previous assignment user names or dates
+
+                  // Finally: does any field “contain” the search term?
+                  return checks.some(str => str.includes(lower));
+                });
+
+                // 2. Sort if needed
+                if (assignedSortConfig.key) {
+                  const { key, direction } = assignedSortConfig;
+                  filtered = filtered.slice().sort((a, b) => {
+                    const getNested = (obj, path) =>
+                      path.split('.').reduce((o, p) => (typeof o === 'object' && o ? o[p] : undefined), obj);
+
+                    const aVal = getNested(a, key);
+                    const bVal = getNested(b, key);
+
+                    if (aVal == null && bVal == null) return 0;
+                    if (aVal == null) return 1;
+                    if (bVal == null) return -1;
+
+                    const aStr = aVal.toString().toLowerCase();
+                    const bStr = bVal.toString().toLowerCase();
+
+                    if (aStr < bStr) return direction === 'asc' ? -1 : 1;
+                    if (aStr > bStr) return direction === 'asc' ? 1 : -1;
+                    return 0;
+                  });
+                }
+
+                // 3. Pagination slice
+                const start = (assignedPage - 1) * assignedRowsPerPage;
+                const paged = filtered.slice(start, start + assignedRowsPerPage);
+
+                // 4. Render rows or "no records"
+                if (paged.length === 0) {
+                  return (
+                    <tr>
+                      <td colSpan={9} style={{ textAlign: 'center' }}>
+                        No assigned students found.
+                      </td>
+                    </tr>
+                  );
+                }
+
+                return paged.map((stu, idx) => (
+                  <React.Fragment key={stu._id}>
+                    <tr>
+                      <td>{assignedIdxFirst + idx + 1}</td>
+                      <td>{stu.name}</td>
+                      <td>{stu.email}</td>
+                      <td>{stu.phone}</td>
+                      <td>{stu.course}</td>
+                      <td>{stu.place}</td>
+                      <td>
+                        {stu.assignedTo?.username || stu.assignedTo?._id}
+                        {stu.assignedTo?.email && (
+                          <div style={{ fontSize: '0.8em', color: '#666' }}>
+                            {stu.assignedTo.email}
+                          </div>
+                        )}
+                      </td>
+                      <td style={{ minWidth: '150px', width: '250px' }}>
+                        {stu.assignedAt ? formatAssignedDate(stu.assignedAt) : '-'}
+                      </td>
+                      <td>
+                        <Button size="sm" onClick={() => toggleHistory(stu._id)}>
+                          {historyOpenFor === stu._id ? 'Hide' : 'Show'}
+                        </Button>
+                      </td>
+                    </tr>
+
+                    {historyOpenFor === stu._id && (
+                      <tr>
+                        <td colSpan={9}>
+                          <div>
+                            <strong>Assignment History:</strong>
+                            <Table size="sm" bordered>
+                              <thead>
+                                <tr>
+                                  <th>User</th>
+                                  <th>Assigned At</th>
+                                  <th>Unassigned At</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {(stu.assignments || []).map((a, ai) => (
+                                  <tr key={ai}>
+                                    <td>{a.user?.username || a.user?._id}</td>
+                                    <td>
+                                      {a.assignedAt
+                                        ? formatAssignedDate(a.assignedAt)
+                                        : '-'}
+                                    </td>
+                                    <td>
+                                      {a.unassignedAt
+                                        ? formatAssignedDate(a.unassignedAt).toLocaleString()
+                                        : '---'}
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </Table>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
+                ));
+              })()}
+            </tbody>
+          </Table>
         </Modal.Body>
         <Modal.Footer className="d-flex flex-column flex-md-row justify-content-between align-items-center">
           {/* PDF Export Icon */}

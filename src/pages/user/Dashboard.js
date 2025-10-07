@@ -3,6 +3,7 @@ import Layout from '../../components/layout/Layout'
 import Usermenu from '../../components/layout/Usermenu'
 import '../../css/admin.css'
 import Greetings from '../../components/Greetings'
+import Notifications from './Notifications'
 
 function Dashboard() {
  
@@ -17,7 +18,7 @@ function Dashboard() {
         <main className="col-md-9">
           <div className="card admin-card w-100 p-3">
             <Greetings />
-            
+            <Notifications />
           </div>
         </main>
       </div>
