@@ -16,7 +16,8 @@ function DutyList() {
     const [sortOrder, setSortOrder] = useState("asc");
 
     const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPage = 10;
+    const [itemsPerPage, setItemsPerPage] = useState(10); // Added for pagination
+
     const [auth] = useAuth();
 
     useEffect(() => {
@@ -79,7 +80,8 @@ function DutyList() {
         const startIndex = (currentPage - 1) * itemsPerPage;
         const endIndex = startIndex + itemsPerPage;
         return sorted.slice(startIndex, endIndex);
-    }, [sorted, currentPage]);
+    }, [sorted, currentPage, itemsPerPage]);
+    const totalPages = Math.ceil(sorted.length / itemsPerPage);
 
     const handlePageChange = (pageNumber) => {
         setCurrentPage(pageNumber);
@@ -168,9 +170,9 @@ function DutyList() {
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                {sorted.map((s, idx) => (
+                                                {currentItems.map((s, idx) => (
                                                     <tr key={s._id || idx}>
-                                                        <td>{idx + 1}</td>
+                                                        <td>{idx + 1 + (currentPage - 1) * itemsPerPage}</td>
                                                         <td>{s.name}</td>
                                                         <td>{s.email}</td>
                                                         <td>{s.phone}</td>
@@ -189,6 +191,42 @@ function DutyList() {
                                                 ))}
                                             </tbody>
                                         </Table>
+                                        <div className="d-flex justify-content-between align-items-center mt-3">
+                                            {/* Previous / Next Buttons */}
+                                            <div>
+                                                <button
+                                                    className="btn btn-outline-primary me-2"
+                                                    onClick={() => currentPage > 1 && handlePageChange(currentPage - 1)}
+                                                    disabled={currentPage === 1}
+                                                >
+                                                     &laquo;
+                                                </button>
+                                                <button
+                                                    className="btn btn-outline-primary"
+                                                    onClick={() => currentPage < totalPages && handlePageChange(currentPage + 1)}
+                                                    disabled={currentPage === totalPages}
+                                                >
+                                                     &raquo;
+                                                </button>
+                                            </div>
+
+                                            {/* Items per page dropdown */}
+                                            <div className="d-flex align-items-center gap-2">
+                                               
+                                                <select
+                                                    className="form-select form-select-sm"
+                                                    value={itemsPerPage}
+                                                    onChange={(e) => {
+                                                        setCurrentPage(1);
+                                                        setItemsPerPage(Number(e.target.value));
+                                                    }}
+                                                >
+                                                    {[2,5, 10, 15, 20, 25,50,100].map(size => (
+                                                        <option key={size} value={size}>{size}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                        </div>
                                     </div>
                                 )}
                             </div>
