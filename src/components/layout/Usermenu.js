@@ -78,6 +78,11 @@ function Usermenu() {
               <i className="bi bi-person-lines-fill me-2" aria-hidden="true"></i>
               <span>Duty Assigned</span>
             </NavLink>
+
+              <NavLink to="/user-dashboard/completed-tasks" className={linkClass}>
+              <i className="bi bi-person-lines-fill me-2" aria-hidden="true"></i>
+              <span>Completed</span>
+            </NavLink>
           </div>
 
         </div>

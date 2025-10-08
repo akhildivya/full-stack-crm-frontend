@@ -21,6 +21,7 @@ import Uploadsheet from "./pages/Admin/Uploadsheet";
 import Viewstudents from "./pages/Admin/Viewstudents";
 import Duties from "./pages/Admin/Duties";
 import DutyList from "./pages/user/DutyList";
+import Taskcompleted from "./pages/user/Taskcompleted";
 
 function App() {
   return (
@@ -32,6 +33,7 @@ function App() {
           <Route index element={<Dashboard />} />
           <Route path='profile' element={<Profile />} />
           <Route path='daily-duty' element={<DutyList />} />
+          <Route path='completed-tasks' element={<Taskcompleted />}></Route>
         </Route>
         <Route path='/admin-dashboard' element={<AdminRoute />}>
           <Route index element={<Admindashboard />} />
