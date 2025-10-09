@@ -7,7 +7,10 @@ import axios from 'axios';
 import { useAuth } from '../../context/auth';
 import { toast } from 'react-toastify';
 import '../../css/dutylist.css';
+import { jsPDF } from 'jspdf';
+import { autoTable } from 'jspdf-autotable';
 
+import { FaFilePdf } from 'react-icons/fa';
 function DutyList() {
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -87,15 +90,15 @@ function DutyList() {
     };
 
     fetchAssigned();
-  intervalId = setInterval(fetchAssigned, 10000); // Poll every 10 seconds
+    intervalId = setInterval(fetchAssigned, 10000); // Poll every 10 seconds
 
     return () => {
       mounted = false;
-       clearInterval(intervalId); // 
+      clearInterval(intervalId); // 
     };
   }, [auth]);
 
- 
+
 
   // search & filtering
   const normalized = searchTerm.trim().toLowerCase();
@@ -193,7 +196,84 @@ function DutyList() {
       toast.error('Server or network error');
     }
   };
+  const exportToPDF = () => {
+    const doc = new jsPDF({
+      unit: 'pt',
+      format: 'a4',
+    });
 
+    const margin = { top: 60, bottom: 40, left: 10, right: 10 };
+    const pageWidth = doc.internal.pageSize.getWidth();
+
+    // Prepare the data rows
+    const tableData = students.map((student, index) => {
+      const statusText = updatedStudents.includes(student._id) ? 'Marked' : 'Not Marked';
+      return [
+        index + 1,
+        student.name || '',
+        student.email || '',
+        student.phone || '',
+        student.course || '',
+        student.place || '',
+        student.assignedAt ? new Date(student.assignedAt).toLocaleString('en-IN', {
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: true,
+        }) : '-',
+        statusText,
+      ];
+    });
+
+    // Header labels
+    const head = [
+      ['#', 'Name', 'Email', 'Phone', 'Course', 'Place', 'Assigned At', 'Status'],
+    ];
+
+    autoTable(doc, {
+      startY: margin.top,
+      margin: margin,
+      head: head,
+      body: tableData,
+      theme: 'striped',
+      headStyles: {
+        fillColor: [0, 123, 255],
+        textColor: [255, 255, 255],
+        halign: 'center',
+      },
+      styles: {
+        fontSize: 10,
+        cellPadding: 4,
+        overflow: 'linebreak',
+      },
+      bodyStyles: {
+        fillColor: [245, 247, 250],
+      },
+      didDrawPage: (data) => {
+        // Title header
+        doc.setFontSize(14);
+        doc.setTextColor(40);
+        doc.text(
+          'Student Duty List',
+          pageWidth / 2,
+          margin.top - 30,
+          { align: 'center' }
+        );
+
+        // Footer with page numbers
+        const pageCount = doc.internal.getNumberOfPages();
+        doc.setFontSize(10);
+        const footerText = `Page ${doc.internal.getCurrentPageInfo().pageNumber} of ${pageCount}`;
+        const y = doc.internal.pageSize.getHeight() - 10;
+        doc.text(footerText, pageWidth / 2, y, { align: 'center' });
+      },
+    });
+
+    doc.save('duty_list.pdf');
+  };
   if (loading)
     return (
       <div className="loading-container">
@@ -284,57 +364,85 @@ function DutyList() {
                         </tr>
                       </thead>
                       <tbody>
-                        {currentItems.map((s, idx) => {
-                          const isUpdated = updatedStudents.includes(s._id);
-                          return (
-                            <tr key={s._id || idx}>
-                              <td>{idx + 1 + (currentPage - 1) * itemsPerPage}</td>
-                              <td style={{ color: isUpdated ? 'red' : 'inherit' }}>{s.name}</td>
-                              <td>{s.email}</td>
-                              <td>{s.phone}</td>
-                              <td>{s.course}</td>
-                              <td>{s.place}</td>
-                              <td>
-                                {s.assignedAt
-                                  ? new Date(s.assignedAt).toLocaleString('en-IN', {
-                                    day: '2-digit',
-                                    month: 'short',
-                                    year: 'numeric',
-                                    hour: '2-digit',
-                                    minute: '2-digit',
-                                    second: '2-digit',
-                                    hour12: true,
-                                  })
-                                  : '-'}
-                              </td>
-                              <td>
-                                <Button
-                                  variant="outline-primary"
-                                  size="sm"
-                                  onClick={() => {
-                                    setSelectedStudent(s);
-                                    setFormData({
-                                      callStatus: s.callInfo?.callStatus || '',
-                                      callDuration: s.callInfo?.callDuration || '',
-                                      interested:
-                                        s.callInfo?.interested === true
-                                          ? 'yes'
-                                          : s.callInfo?.interested === false
-                                            ? 'no'
-                                            : '',
-                                      planType: s.callInfo?.planType || '',
-                                    });
-                                    setShowModal(true);
-                                  }}
-                                  disabled={isUpdated}
-                                >
-                                  Update
-                                </Button>
-                              </td>
-                              <td>{isUpdated ? 'Marked' : 'Not Marked'}</td>
-                            </tr>
+                        {(() => {
+                          // Find the latest assignedAt date among students that are NOT yet updated
+                          const latestAssignedTime = Math.max(
+                            ...students
+                              .filter(s => s.assignedAt && !updatedStudents.includes(s._id))
+                              .map(s => new Date(s.assignedAt).getTime())
                           );
-                        })}
+
+                          return currentItems.map((s, idx) => {
+                            const isUpdated = updatedStudents.includes(s._id);
+                            const isLatest =
+                              s.assignedAt &&
+                              new Date(s.assignedAt).getTime() === latestAssignedTime &&
+                              !isUpdated; // Only show NEW if not updated
+
+                            return (
+                              <tr key={s._id || idx}>
+                                <td>{idx + 1 + (currentPage - 1) * itemsPerPage}</td>
+                                <td style={{ color: isUpdated ? 'red' : 'inherit' }}>
+                                  {s.name}{' '}
+                                  {isLatest && (
+                                    <sup
+                                      style={{
+                                        color: 'green',
+                                        fontWeight: 'bold',
+                                        fontSize: '0.75rem',
+                                        marginLeft: '4px',
+                                      }}
+                                    >
+                                      NEW
+                                    </sup>
+                                  )}
+                                </td>
+                                <td>{s.email}</td>
+                                <td>{s.phone}</td>
+                                <td>{s.course}</td>
+                                <td>{s.place}</td>
+                                <td>
+                                  {s.assignedAt
+                                    ? new Date(s.assignedAt).toLocaleString('en-IN', {
+                                      day: '2-digit',
+                                      month: 'short',
+                                      year: 'numeric',
+                                      hour: '2-digit',
+                                      minute: '2-digit',
+                                      second: '2-digit',
+                                      hour12: true,
+                                    })
+                                    : '-'}
+                                </td>
+                                <td>
+                                  <Button
+                                    variant="outline-primary"
+                                    size="sm"
+                                    onClick={() => {
+                                      setSelectedStudent(s);
+                                      setFormData({
+                                        callStatus: s.callInfo?.callStatus || '',
+                                        callDuration: s.callInfo?.callDuration || '',
+                                        interested:
+                                          s.callInfo?.interested === true
+                                            ? 'yes'
+                                            : s.callInfo?.interested === false
+                                              ? 'no'
+                                              : '',
+                                        planType: s.callInfo?.planType || '',
+                                      });
+                                      setShowModal(true);
+                                    }}
+                                    disabled={isUpdated}
+                                  >
+                                    Update
+                                  </Button>
+                                </td>
+                                <td>{isUpdated ? 'Marked' : 'Not Marked'}</td>
+                              </tr>
+                            );
+                          });
+                        })()}
                       </tbody>
                     </Table>
 
@@ -372,6 +480,17 @@ function DutyList() {
                           ))}
                         </select>
                       </div>
+                    </div>
+                    <div className="me-2 mt-2">
+                      <Button
+                        variant="outline-primary"
+                        className="icon-only-btn p-0"
+                        onClick={exportToPDF}
+                        aria-label="Download PDF"
+                        title="Download PDF"
+                      >
+                        <FaFilePdf size={14} />
+                      </Button>
                     </div>
                   </div>
                 )}

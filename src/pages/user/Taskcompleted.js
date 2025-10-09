@@ -47,39 +47,60 @@ function Taskcompleted() {
 
   const normalized = searchTerm.trim().toLowerCase();
 
-  const filtered = useMemo(() => {
-    return (students || []).filter(s => {
-      if (!normalized) return true;
-      const callStatus = s.callInfo?.callStatus || '';
-      return (
-        s.name.toLowerCase().includes(normalized) ||
-        s.phone.toLowerCase().includes(normalized) ||
-        s.course.toLowerCase().includes(normalized) ||
-        callStatus.toLowerCase().includes(normalized)
-      );
-    });
-  }, [students, normalized]);
+ const filtered = useMemo(() => {
+  return (students || []).filter(s => {
+    if (!normalized) return true;
 
-  const sorted = useMemo(() => {
-    return [...filtered].sort((a, b) => {
-      let aVal = a[sortKey] ?? '';
-      let bVal = b[sortKey] ?? '';
+    const callStatus = s.callInfo?.callStatus || '';
+    const callDuration = s.callInfo?.callDuration ?? '';
+    const interested = s.callInfo?.interested === true ? 'Yes' : s.callInfo?.interested === false ? 'No' : '';
+    const planType = s.callInfo?.planType || '';
+    const assignedAt = s.assignedAt ? new Date(s.assignedAt).toLocaleString('en-GB') : '';
+    const completedAt = s.callInfo?.completedAt ? new Date(s.callInfo.completedAt).toLocaleString('en-GB') : '';
 
-      if (sortKey === 'callStatus') {
-        aVal = a.callInfo?.callStatus ?? '';
-        bVal = b.callInfo?.callStatus ?? '';
-      }
+    return (
+      s.name.toLowerCase().includes(normalized) ||
+      s.phone.toLowerCase().includes(normalized) ||
+      s.course.toLowerCase().includes(normalized) ||
+      callStatus.toLowerCase().includes(normalized) ||
+      callDuration.toString().includes(normalized) ||
+      interested.toLowerCase().includes(normalized) ||
+      planType.toLowerCase().includes(normalized) ||
+      assignedAt.toLowerCase().includes(normalized) ||
+      completedAt.toLowerCase().includes(normalized)
+    );
+  });
+}, [students, normalized]);
 
-      if (sortKey === 'assignedAt' || sortKey === 'completedAt') {
-        aVal = aVal ? new Date(aVal) : new Date(0);
-        bVal = bVal ? new Date(bVal) : new Date(0);
-      }
+const sorted = useMemo(() => {
+  return [...filtered].sort((a, b) => {
+    let aVal = a[sortKey] ?? '';
+    let bVal = b[sortKey] ?? '';
 
-      if (aVal < bVal) return sortOrder === 'asc' ? -1 : 1;
-      if (aVal > bVal) return sortOrder === 'asc' ? 1 : -1;
-      return 0;
-    });
-  }, [filtered, sortKey, sortOrder]);
+    // Handle nested fields
+    if (sortKey === 'callStatus') {
+      aVal = a.callInfo?.callStatus ?? '';
+      bVal = b.callInfo?.callStatus ?? '';
+    } else if (sortKey === 'callDuration') {
+      aVal = a.callInfo?.callDuration ?? '';
+      bVal = b.callInfo?.callDuration ?? '';
+    } else if (sortKey === 'interested') {
+      aVal = a.callInfo?.interested === true ? 'Yes' : a.callInfo?.interested === false ? 'No' : '';
+      bVal = b.callInfo?.interested === true ? 'Yes' : b.callInfo?.interested === false ? 'No' : '';
+    } else if (sortKey === 'planType') {
+      aVal = a.callInfo?.planType ?? '';
+      bVal = b.callInfo?.planType ?? '';
+    } else if (sortKey === 'assignedAt' || sortKey === 'completedAt') {
+      aVal = aVal ? new Date(aVal) : new Date(0);
+      bVal = bVal ? new Date(bVal) : new Date(0);
+    }
+
+    // Compare values
+    if (aVal < bVal) return sortOrder === 'asc' ? -1 : 1;
+    if (aVal > bVal) return sortOrder === 'asc' ? 1 : -1;
+    return 0;
+  });
+}, [filtered, sortKey, sortOrder]);
 
   const currentItems = useMemo(() => {
     const start = (currentPage - 1) * itemsPerPage;
@@ -183,7 +204,7 @@ function Taskcompleted() {
                     Sort by: {sortKey}
                   </Dropdown.Toggle>
                   <Dropdown.Menu>
-                    {['name', 'phone', 'course', 'callStatus', 'assignedAt', 'completedAt'].map(col => (
+                    {['name', 'phone', 'course', 'callStatus', 'callDuration', 'interested', 'planType','assignedAt', 'completedAt'].map(col => (
                       <Dropdown.Item
                         key={col}
                         onClick={() => {
@@ -261,7 +282,7 @@ function Taskcompleted() {
                   </div>
                   <div>
                     <select className="form-select form-select-sm" value={itemsPerPage} onChange={e => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}>
-                      {[5, 10, 15, 20, 25, 30, 50, 100].map(size => <option key={size} value={size}>{size}</option>)}
+                      {[5, 10, 15, 20, 25, 30,35,40, 50, 100].map(size => <option key={size} value={size}>{size}</option>)}
                     </select>
                   </div>
                 </div>
