@@ -4,7 +4,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import axios from 'axios';
 import { Table, Form, Dropdown, Spinner } from 'react-bootstrap';
 import { BASEURL } from '../../service/baseUrl';
-import '../../css/dutylist.css';
+import '../../css/taskcompleted.css';
 
 function Taskcompleted() {
   const [students, setStudents] = useState([]);
@@ -17,6 +17,7 @@ function Taskcompleted() {
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
   useEffect(() => {
+    let intervalId;
     const fetchStudents = async () => {
       try {
         const { data } = await axios.get(`${BASEURL}/assigned-summary`);
@@ -36,6 +37,12 @@ function Taskcompleted() {
       }
     };
     fetchStudents();
+    intervalId = setInterval(fetchStudents, 10 * 1000); // 10,000 ms = 10 sec
+
+
+    return () => {
+      clearInterval(intervalId);
+    };
   }, []);
 
   const normalized = searchTerm.trim().toLowerCase();
@@ -98,30 +105,70 @@ function Taskcompleted() {
           </aside>
           <main className="col-md-9">
             <div className="card admin-card p-4">
-
-              {/* Summary */}
-              <div className="mb-3">
-                <strong>Total Assigned:</strong> {summary.totalAssigned} &nbsp;|&nbsp;
-                <strong>Completed:</strong> {summary.completed} &nbsp;|&nbsp;
-                <strong>Pending:</strong> {summary.pending} &nbsp;|&nbsp;
-                <strong>Total Call Duration (sec):</strong> {summary.totalCallDuration} &nbsp;|&nbsp;
-                <strong>Total Interested:</strong> {summary.totalInterested}
+              <div className="row mb-3 g-3">
+                <div className="col-md-4 mb-2">
+                  <div className="summary-card bg-primary text-white p-3 rounded shadow-sm">
+                    <h6>Total Assigned</h6>
+                    <h3>{summary.totalAssigned}</h3>
+                  </div>
+                </div>
+                <div className="col-md-4 mb-2">
+                  <div className="summary-card bg-success text-white p-3 rounded shadow-sm">
+                    <h6>Completed</h6>
+                    <h3>{summary.completed}</h3>
+                  </div>
+                </div>
+                <div className="col-md-4 mb-2">
+                  <div className="summary-card bg-warning text-dark p-3 rounded shadow-sm">
+                    <h6>Pending</h6>
+                    <h3>{summary.pending}</h3>
+                  </div>
+                </div>
+                <div className="col-md-4 mb-2">
+                  <div className="summary-card bg-info text-white p-3 rounded shadow-sm">
+                    <h6>Total Call Duration (sec)</h6>
+                    <h3>{summary.totalCallDuration}</h3>
+                  </div>
+                </div>
+                <div className="col-md-4 mb-2">
+                  <div className="summary-card bg-danger text-white p-3 rounded shadow-sm">
+                    <h6>Total Interestes</h6>
+                    <h3>{summary.totalInterested}</h3>
+                  </div>
+                </div>
+                <div className="col-md-4 mb-2">
+                  <div className="summary-card bg-secondary text-white p-3 rounded shadow-sm">
+                    <h6>Missing Interest</h6>
+                    <h3>{summary.missingInterest}</h3>
+                  </div>
+                </div>
               </div>
 
-              {/* Plan & Course Summary */}
-              <div className="mb-3">
-                <strong>Plan Counts:</strong> Starter: {summary.planCounts?.starter || 0}, 
-                Gold: {summary.planCounts?.gold || 0}, 
-                Master: {summary.planCounts?.master || 0}
-              </div>
-              <div className="mb-3">
-                <strong>Course-wise Count:</strong>
-                {summary.courseCounts &&
-                  Object.entries(summary.courseCounts).map(([course, count]) => (
-                    <span key={course}> {course}: {count};</span>
-                  ))}
+              {/* Plan Counts */}
+              <div className="row mb-3">
+                {['starter', 'gold', 'master'].map(plan => (
+                  <div className="col-md-4 mb-2" key={plan}>
+                    <div className={`summary-card plan-${plan} text-white p-3 rounded shadow-sm`}>
+                      <h6>{plan.charAt(0).toUpperCase() + plan.slice(1)} Plan</h6>
+                      <h3>{summary.planCounts?.[plan] || 0}</h3>
+                    </div>
+                  </div>
+                ))}
               </div>
 
+              {/* Course-wise Counts */}
+              <div className="mb-3">
+                <h6>Course-wise Count:</h6>
+                <div className="d-flex flex-wrap gap-2">
+                  {summary.courseCounts &&
+                    Object.entries(summary.courseCounts).map(([course, count]) => (
+                      <span key={course} className="badge bg-secondary p-2">
+                        {course}: {count}
+                      </span>
+                    ))
+                  }
+                </div>
+              </div>
               {/* Search & Sort */}
               <div className="d-flex flex-wrap align-items-center mb-3 gap-2">
                 <Form.Control
@@ -136,11 +183,11 @@ function Taskcompleted() {
                     Sort by: {sortKey}
                   </Dropdown.Toggle>
                   <Dropdown.Menu>
-                    {['name','phone','course','callStatus','assignedAt','completedAt'].map(col => (
+                    {['name', 'phone', 'course', 'callStatus', 'assignedAt', 'completedAt'].map(col => (
                       <Dropdown.Item
                         key={col}
                         onClick={() => {
-                          if (sortKey === col) setSortOrder(prev => (prev==='asc'?'desc':'asc'));
+                          if (sortKey === col) setSortOrder(prev => (prev === 'asc' ? 'desc' : 'asc'));
                           else { setSortKey(col); setSortOrder('asc'); }
                         }}
                       >
@@ -171,18 +218,34 @@ function Taskcompleted() {
                   <tbody>
                     {currentItems.map((s, idx) => (
                       <tr key={s._id}>
-                        <td>{idx + 1 + (currentPage-1)*itemsPerPage}</td>
+                        <td>{idx + 1 + (currentPage - 1) * itemsPerPage}</td>
                         <td>{s.name}</td>
                         <td>{s.phone}</td>
                         <td>{s.course}</td>
                         <td>{s.callInfo?.callStatus || 'Pending'}</td>
                         <td>{s.callInfo?.callDuration ?? '-'}</td>
-                        <td>{s.callInfo?.interested===true?'Yes':s.callInfo?.interested===false?'No':'-'}</td>
+                        <td>{s.callInfo?.interested === true ? 'Yes' : s.callInfo?.interested === false ? 'No' : '-'}</td>
                         <td>{s.callInfo?.planType || '-'}</td>
-                        <td>{s.assignedAt ? new Date(s.assignedAt).toLocaleString() : '-'}</td>
+                        <td>{s.assignedAt ? new Date(s.assignedAt).toLocaleString('en-GB', {
+                          day: '2-digit',
+                          month: 'short',
+                          year: 'numeric',
+                          hour: 'numeric',
+                          minute: '2-digit',
+                          second: '2-digit',
+                          hour12: true
+                        }) : '-'}</td>
                         <td>
-                          {s.callInfo?.completedAt 
-                            ? new Date(s.callInfo.completedAt).toLocaleString() 
+                          {s.callInfo?.completedAt
+                            ? new Date(s.callInfo.completedAt).toLocaleString('en-GB', {
+                              day: '2-digit',
+                              month: 'short',
+                              year: 'numeric',
+                              hour: 'numeric',
+                              minute: '2-digit',
+                              second: '2-digit',
+                              hour12: true
+                            })
                             : '-'}
                         </td>
                       </tr>
@@ -193,12 +256,12 @@ function Taskcompleted() {
                 {/* Pagination */}
                 <div className="d-flex justify-content-between align-items-center mt-3">
                   <div>
-                    <button className="btn btn-outline-primary me-2" onClick={()=>setCurrentPage(p=>Math.max(p-1,1))} disabled={currentPage===1}>&laquo;</button>
-                    <button className="btn btn-outline-primary" onClick={()=>setCurrentPage(p=>Math.min(p+1,totalPages))} disabled={currentPage===totalPages}>&raquo;</button>
+                    <button className="btn btn-outline-primary me-2" onClick={() => setCurrentPage(p => Math.max(p - 1, 1))} disabled={currentPage === 1}>&laquo;</button>
+                    <button className="btn btn-outline-primary" onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))} disabled={currentPage === totalPages}>&raquo;</button>
                   </div>
                   <div>
-                    <select className="form-select form-select-sm" value={itemsPerPage} onChange={e=>{ setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}>
-                      {[5,10,15,20].map(size=> <option key={size} value={size}>{size}</option>)}
+                    <select className="form-select form-select-sm" value={itemsPerPage} onChange={e => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}>
+                      {[5, 10, 15, 20, 25, 30, 50, 100].map(size => <option key={size} value={size}>{size}</option>)}
                     </select>
                   </div>
                 </div>

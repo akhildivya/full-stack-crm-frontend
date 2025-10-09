@@ -1,0 +1,120 @@
+/* ====== DutyList Table Styling ====== */
+
+.custom-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.custom-table th,
+.custom-table td {
+  vertical-align: middle;
+  text-align: center;
+  white-space: nowrap; /* ✅ Prevents date/time from breaking */
+  padding: 10px 12px;
+}
+
+.custom-table thead {
+  background-color: #f8f9fa;
+  border-bottom: 2px solid #dee2e6;
+}
+
+.custom-table th {
+  font-weight: 600;
+  color: #333;
+}
+
+.custom-table tbody tr:hover {
+  background-color: #f1f5ff;
+  transition: background-color 0.2s ease-in-out;
+}
+
+.custom-table td {
+  border-top: 1px solid #dee2e6;
+}
+
+.custom-table td:last-child,
+.custom-table th:last-child {
+  white-space: nowrap; /* ✅ Keeps action buttons aligned */
+}
+
+/* Prevent text wrapping for date/time */
+.custom-table td:nth-child(7) {
+  white-space: nowrap; /* ✅ Ensures assigned date stays in one line */
+  font-size: 13px;
+  color: #555;
+}
+
+/* ====== Pagination and Controls ====== */
+
+.table-responsive {
+  overflow-x: auto;
+}
+
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  text-align: center;
+}
+
+.loading-container .spinner-border {
+  margin-bottom: 20px;
+}
+
+.loading-container .error-message {
+  color: red;
+  font-weight: bold;
+  font-size: 1.2rem;
+}
+
+/* Buttons */
+.btn-outline-primary {
+  border-radius: 6px;
+  font-size: 13px;
+  padding: 5px 10px;
+}
+
+/* Pagination styling */
+.d-flex button {
+  min-width: 35px;
+}
+
+.form-select-sm {
+  width: auto;
+  min-width: 60px;
+}
+
+
+.summary-card h6 {
+  font-weight: 500;
+  font-size: 0.9rem;
+  margin-bottom: 5px;
+}
+
+.summary-card h3 {
+  font-weight: 700;
+  font-size: 1.8rem;
+}
+
+/* Custom Plan Colors */
+.plan-starter {
+  background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+}
+
+.plan-gold {
+  background: linear-gradient(135deg, #f7971e 0%, #ffd200 100%);
+}
+
+.plan-master {
+  background: linear-gradient(135deg, #ff416c 0%, #ff4b2b 100%);
+}
+
+/* Badges for courses */
+.badge {
+  font-size: 0.9rem;
+  padding: 0.5em 0.8em;
+}
+

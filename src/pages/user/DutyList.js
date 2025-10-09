@@ -41,8 +41,8 @@ function DutyList() {
           selectedStudent.callInfo?.interested === true
             ? 'yes'
             : selectedStudent.callInfo?.interested === false
-            ? 'no'
-            : '',
+              ? 'no'
+              : '',
         planType: selectedStudent.callInfo?.planType || '',
       });
     }
@@ -51,6 +51,7 @@ function DutyList() {
   // fetch once when component mounts / auth changes
   useEffect(() => {
     let mounted = true;
+    let intervalId;
     const fetchAssigned = async () => {
       if (!auth || !auth.token) {
         if (mounted) {
@@ -86,9 +87,11 @@ function DutyList() {
     };
 
     fetchAssigned();
+  intervalId = setInterval(fetchAssigned, 10000); // Poll every 10 seconds
 
     return () => {
       mounted = false;
+       clearInterval(intervalId); // 
     };
   }, [auth]);
 
@@ -96,8 +99,19 @@ function DutyList() {
   const normalized = searchTerm.trim().toLowerCase();
   const filtered = useMemo(() => {
     return students.filter(s => {
-        const isUpdated = updatedStudents.includes(s._id);
-    const statusText = isUpdated ? 'marked' : 'not marked';
+      const isUpdated = updatedStudents.includes(s._id);
+      const statusText = isUpdated ? 'marked' : 'not marked';
+      const assignedAtStr = s.assignedAt
+        ? new Date(s.assignedAt).toLocaleString('en-IN', {
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: true,
+        })
+        : '';
       if (!normalized) return true;
       return (
         s.name.toLowerCase().includes(normalized) ||
@@ -105,7 +119,8 @@ function DutyList() {
         (s.phone && String(s.phone).toLowerCase().includes(normalized)) ||
         (s.course || '').toLowerCase().includes(normalized) ||
         (s.place || '').toLowerCase().includes(normalized) ||
-        statusText.includes(normalized) 
+        statusText.includes(normalized) ||
+        assignedAtStr.toLowerCase().includes(normalized)
       );
     });
   }, [students, normalized, updatedStudents]);
@@ -113,18 +128,18 @@ function DutyList() {
   // sorting
   const sorted = useMemo(() => {
     return [...filtered].sort((a, b) => {
-        if (sortKey === 'status') {
-      const aStatus = updatedStudents.includes(a._id) ? 'marked' : 'not marked';
-      const bStatus = updatedStudents.includes(b._id) ? 'marked' : 'not marked';
-      const cmp = aStatus.localeCompare(bStatus, undefined, { sensitivity: 'base' });
-      return sortOrder === 'asc' ? cmp : -cmp;
-        }
+      if (sortKey === 'status') {
+        const aStatus = updatedStudents.includes(a._id) ? 'marked' : 'not marked';
+        const bStatus = updatedStudents.includes(b._id) ? 'marked' : 'not marked';
+        const cmp = aStatus.localeCompare(bStatus, undefined, { sensitivity: 'base' });
+        return sortOrder === 'asc' ? cmp : -cmp;
+      }
       const aVal = ((a[sortKey] || '') + '').toString().toLowerCase();
       const bVal = ((b[sortKey] || '') + '').toString().toLowerCase();
       const cmp = aVal.localeCompare(bVal, undefined, { sensitivity: 'base' });
       return sortOrder === 'asc' ? cmp : -cmp;
     });
-  }, [filtered, sortKey, sortOrder,updatedStudents]);
+  }, [filtered, sortKey, sortOrder, updatedStudents]);
 
   // pagination
   const currentItems = useMemo(() => {
@@ -213,13 +228,13 @@ function DutyList() {
                     />
                   </div>
 
-                  <div className="d-flex gap-2">
+                  <div className="d-flex justify-content-center gap-2">
                     <Dropdown>
                       <Dropdown.Toggle variant="outline-secondary" id="dropdown-sort-column">
                         Sort by: {sortKey.charAt(0).toUpperCase() + sortKey.slice(1)}
                       </Dropdown.Toggle>
                       <Dropdown.Menu>
-                        {['name', 'email', 'phone', 'course', 'place','status'].map(col => (
+                        {['name', 'email', 'phone', 'course', 'place', 'status'].map(col => (
                           <Dropdown.Item
                             key={col}
                             onClick={() => {
@@ -280,14 +295,14 @@ function DutyList() {
                               <td>
                                 {s.assignedAt
                                   ? new Date(s.assignedAt).toLocaleString('en-IN', {
-                                      day: '2-digit',
-                                      month: 'short',
-                                      year: 'numeric',
-                                      hour: '2-digit',
-                                      minute: '2-digit',
-                                      second: '2-digit',
-                                      hour12: true,
-                                    })
+                                    day: '2-digit',
+                                    month: 'short',
+                                    year: 'numeric',
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                    second: '2-digit',
+                                    hour12: true,
+                                  })
                                   : '-'}
                               </td>
                               <td>
@@ -303,8 +318,8 @@ function DutyList() {
                                         s.callInfo?.interested === true
                                           ? 'yes'
                                           : s.callInfo?.interested === false
-                                          ? 'no'
-                                          : '',
+                                            ? 'no'
+                                            : '',
                                       planType: s.callInfo?.planType || '',
                                     });
                                     setShowModal(true);
