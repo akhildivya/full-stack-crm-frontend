@@ -2,10 +2,12 @@ import Layout from '../../components/layout/Layout';
 import Usermenu from '../../components/layout/Usermenu';
 import React, { useEffect, useState, useMemo } from 'react';
 import axios from 'axios';
-import { Table, Form, Dropdown, Spinner } from 'react-bootstrap';
+import { Table, Form, Dropdown, Spinner, Button } from 'react-bootstrap';
 import { BASEURL } from '../../service/baseUrl';
 import '../../css/taskcompleted.css';
-
+import { jsPDF } from 'jspdf';
+import { autoTable } from 'jspdf-autotable';
+import { FaFilePdf } from 'react-icons/fa';
 function Taskcompleted() {
   const [students, setStudents] = useState([]);
   const [summary, setSummary] = useState({});
@@ -17,6 +19,7 @@ function Taskcompleted() {
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
   useEffect(() => {
+    document.title = 'CRM - Opera Omnia';
     let intervalId;
     const fetchStudents = async () => {
       try {
@@ -47,60 +50,60 @@ function Taskcompleted() {
 
   const normalized = searchTerm.trim().toLowerCase();
 
- const filtered = useMemo(() => {
-  return (students || []).filter(s => {
-    if (!normalized) return true;
+  const filtered = useMemo(() => {
+    return (students || []).filter(s => {
+      if (!normalized) return true;
 
-    const callStatus = s.callInfo?.callStatus || '';
-    const callDuration = s.callInfo?.callDuration ?? '';
-    const interested = s.callInfo?.interested === true ? 'Yes' : s.callInfo?.interested === false ? 'No' : '';
-    const planType = s.callInfo?.planType || '';
-    const assignedAt = s.assignedAt ? new Date(s.assignedAt).toLocaleString('en-GB') : '';
-    const completedAt = s.callInfo?.completedAt ? new Date(s.callInfo.completedAt).toLocaleString('en-GB') : '';
+      const callStatus = s.callInfo?.callStatus || '';
+      const callDuration = s.callInfo?.callDuration ?? '';
+      const interested = s.callInfo?.interested === true ? 'Yes' : s.callInfo?.interested === false ? 'No' : '';
+      const planType = s.callInfo?.planType || '';
+      const assignedAt = s.assignedAt ? new Date(s.assignedAt).toLocaleString('en-GB') : '';
+      const completedAt = s.callInfo?.completedAt ? new Date(s.callInfo.completedAt).toLocaleString('en-GB') : '';
 
-    return (
-      s.name.toLowerCase().includes(normalized) ||
-      s.phone.toLowerCase().includes(normalized) ||
-      s.course.toLowerCase().includes(normalized) ||
-      callStatus.toLowerCase().includes(normalized) ||
-      callDuration.toString().includes(normalized) ||
-      interested.toLowerCase().includes(normalized) ||
-      planType.toLowerCase().includes(normalized) ||
-      assignedAt.toLowerCase().includes(normalized) ||
-      completedAt.toLowerCase().includes(normalized)
-    );
-  });
-}, [students, normalized]);
+      return (
+        s.name.toLowerCase().includes(normalized) ||
+        s.phone.toLowerCase().includes(normalized) ||
+        s.course.toLowerCase().includes(normalized) ||
+        callStatus.toLowerCase().includes(normalized) ||
+        callDuration.toString().includes(normalized) ||
+        interested.toLowerCase().includes(normalized) ||
+        planType.toLowerCase().includes(normalized) ||
+        assignedAt.toLowerCase().includes(normalized) ||
+        completedAt.toLowerCase().includes(normalized)
+      );
+    });
+  }, [students, normalized]);
 
-const sorted = useMemo(() => {
-  return [...filtered].sort((a, b) => {
-    let aVal = a[sortKey] ?? '';
-    let bVal = b[sortKey] ?? '';
+  const sorted = useMemo(() => {
+    return [...filtered].sort((a, b) => {
+      let aVal = a[sortKey] ?? '';
+      let bVal = b[sortKey] ?? '';
 
-    // Handle nested fields
-    if (sortKey === 'callStatus') {
-      aVal = a.callInfo?.callStatus ?? '';
-      bVal = b.callInfo?.callStatus ?? '';
-    } else if (sortKey === 'callDuration') {
-      aVal = a.callInfo?.callDuration ?? '';
-      bVal = b.callInfo?.callDuration ?? '';
-    } else if (sortKey === 'interested') {
-      aVal = a.callInfo?.interested === true ? 'Yes' : a.callInfo?.interested === false ? 'No' : '';
-      bVal = b.callInfo?.interested === true ? 'Yes' : b.callInfo?.interested === false ? 'No' : '';
-    } else if (sortKey === 'planType') {
-      aVal = a.callInfo?.planType ?? '';
-      bVal = b.callInfo?.planType ?? '';
-    } else if (sortKey === 'assignedAt' || sortKey === 'completedAt') {
-      aVal = aVal ? new Date(aVal) : new Date(0);
-      bVal = bVal ? new Date(bVal) : new Date(0);
-    }
+      // Handle nested fields
+      if (sortKey === 'callStatus') {
+        aVal = a.callInfo?.callStatus ?? '';
+        bVal = b.callInfo?.callStatus ?? '';
+      } else if (sortKey === 'callDuration') {
+        aVal = a.callInfo?.callDuration ?? '';
+        bVal = b.callInfo?.callDuration ?? '';
+      } else if (sortKey === 'interested') {
+        aVal = a.callInfo?.interested === true ? 'Yes' : a.callInfo?.interested === false ? 'No' : '';
+        bVal = b.callInfo?.interested === true ? 'Yes' : b.callInfo?.interested === false ? 'No' : '';
+      } else if (sortKey === 'planType') {
+        aVal = a.callInfo?.planType ?? '';
+        bVal = b.callInfo?.planType ?? '';
+      } else if (sortKey === 'assignedAt' || sortKey === 'completedAt') {
+        aVal = aVal ? new Date(aVal) : new Date(0);
+        bVal = bVal ? new Date(bVal) : new Date(0);
+      }
 
-    // Compare values
-    if (aVal < bVal) return sortOrder === 'asc' ? -1 : 1;
-    if (aVal > bVal) return sortOrder === 'asc' ? 1 : -1;
-    return 0;
-  });
-}, [filtered, sortKey, sortOrder]);
+      // Compare values
+      if (aVal < bVal) return sortOrder === 'asc' ? -1 : 1;
+      if (aVal > bVal) return sortOrder === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }, [filtered, sortKey, sortOrder]);
 
   const currentItems = useMemo(() => {
     const start = (currentPage - 1) * itemsPerPage;
@@ -108,6 +111,138 @@ const sorted = useMemo(() => {
   }, [sorted, currentPage, itemsPerPage]);
 
   const totalPages = Math.ceil(sorted.length / itemsPerPage);
+  const [updatedStudents, setUpdatedStudents] = useState([]);
+  const exportToPDF = () => {
+    const doc = new jsPDF({
+      unit: 'pt',
+      format: 'a4',
+    });
+
+    const margin = { top: 80, bottom: 60, left: 10, right: 10 };
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+
+    // Compute summary details
+    const totalAssigned = students.length;
+    const marked = updatedStudents.length;
+    const notMarked = totalAssigned - marked;
+
+    // Build summary line
+    const summaryLine = [
+      `Total Assigned: ${totalAssigned}`,
+      `Completed: ${marked}`,
+      `Pending: ${notMarked}`,
+      `Total Call Duration: ${summary.totalCallDuration} sec`,
+      `Total Interested: ${summary.totalInterested}`,
+      `Missing Interest: ${summary.missingInterest}`,
+    ].join(' | ');
+
+    // Plan counts & course-wise
+    const planCounts = summary.planCounts || {};
+    const courseCounts = summary.courseCounts || {};
+
+    // Draw heading
+    doc.setFontSize(14);
+    doc.setTextColor(40);
+    doc.text('CRM - Body of Works', pageWidth / 2, 40, { align: 'center' });
+
+    // Summary under heading
+    doc.setFontSize(10);
+    doc.setTextColor(60);
+    doc.text(summaryLine, margin.left, 60);
+
+    // Plan counts block
+    let yCursor = 80;
+    const planKeys = ['starter', 'gold', 'master'];
+    let planX = margin.left;
+    planKeys.forEach((pl) => {
+      const count = planCounts[pl] || 0;
+      const label = `${pl.charAt(0).toUpperCase() + pl.slice(1)} Plan: ${count}`;
+      const labelWidth = doc.getTextWidth(label);
+      if (planX + labelWidth > pageWidth - margin.right) {
+        planX = margin.left;
+        yCursor += 15;
+      }
+      doc.text(label, planX, yCursor);
+      planX += labelWidth + 10; // Add 10 for spacing between labels
+    });
+
+    yCursor += 15;
+
+    // Course-wise counts block
+    let courseX = margin.left;
+    const spaceX = 100;
+    Object.entries(courseCounts).forEach(([course, cnt]) => {
+      const label = `${course}: ${cnt}`;
+      const labelWidth = doc.getTextWidth(label);
+      if (courseX + labelWidth > pageWidth - margin.right) {
+        courseX = margin.left;
+        yCursor += 15;
+      }
+      doc.text(label, courseX, yCursor);
+      courseX += labelWidth + 10; // Add 10 for spacing between labels
+    });
+
+    // Then draw table starting below that
+    const startTableY = yCursor + 20;
+
+    // Prepare table data
+    const tableColumns = [
+      '#', 'Name', 'Phone', 'Course', 'Call Status', 'Call Duration',
+      'Interested', 'Plan Type', 'Assigned At', 'Completed At'
+    ];
+    const tableRows = currentItems.map((s, idx) => [
+      idx + 1 + (currentPage - 1) * itemsPerPage,
+      s.name,
+      s.phone,
+      s.course,
+      s.callInfo?.callStatus || 'Pending',
+      s.callInfo?.callDuration ?? '-',
+      s.callInfo?.interested === true ? 'Yes' : s.callInfo?.interested === false ? 'No' : '-',
+      s.callInfo?.planType || '-',
+      s.assignedAt ? new Date(s.assignedAt).toLocaleString('en-GB', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true,
+      }) : '-',
+      s.callInfo?.completedAt ? new Date(s.callInfo.completedAt).toLocaleString('en-GB', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true,
+      }) : '-',
+    ]);
+
+    autoTable(doc, {
+      head: [tableColumns],
+      body: tableRows,
+      startY: startTableY,
+      theme: 'striped',
+      headStyles: { fillColor: [22, 160, 133] },
+      margin: margin,
+      didDrawPage: (data) => {
+        const pageCount = doc.internal.getNumberOfPages();
+        const currentPageNum = doc.internal.getCurrentPageInfo().pageNumber;
+        doc.setFontSize(10);
+        doc.text(
+          `Page ${currentPageNum} of ${pageCount}`,
+          pageWidth - margin.right,
+          pageHeight - margin.bottom,
+          { align: 'right' }
+        );
+      },
+    });
+
+    doc.save('concluded_work_report.pdf');
+  };
+
 
   if (loading)
     return (
@@ -118,7 +253,7 @@ const sorted = useMemo(() => {
     );
 
   return (
-    <Layout title="CRM - Task Completed">
+    <Layout title="CRM - Opera Omnia">
       <div className="container-fluid m-3 p-3 admin-root">
         <div className="row">
           <aside className="col-md-3">
@@ -179,7 +314,7 @@ const sorted = useMemo(() => {
 
               {/* Course-wise Counts */}
               <div className="mb-3">
-                <h6>Course-wise Count:</h6>
+                <h6>Course-wise-count:</h6>
                 <div className="d-flex flex-wrap gap-2">
                   {summary.courseCounts &&
                     Object.entries(summary.courseCounts).map(([course, count]) => (
@@ -204,7 +339,7 @@ const sorted = useMemo(() => {
                     Sort by: {sortKey}
                   </Dropdown.Toggle>
                   <Dropdown.Menu>
-                    {['name', 'phone', 'course', 'callStatus', 'callDuration', 'interested', 'planType','assignedAt', 'completedAt'].map(col => (
+                    {['name', 'phone', 'course', 'callStatus', 'callDuration', 'interested', 'planType', 'assignedAt', 'completedAt'].map(col => (
                       <Dropdown.Item
                         key={col}
                         onClick={() => {
@@ -282,11 +417,21 @@ const sorted = useMemo(() => {
                   </div>
                   <div>
                     <select className="form-select form-select-sm" value={itemsPerPage} onChange={e => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}>
-                      {[5, 10, 15, 20, 25, 30,35,40, 50, 100].map(size => <option key={size} value={size}>{size}</option>)}
+                      {[2,5, 10, 15, 20, 25, 30, 35, 40, 50, 100].map(size => <option key={size} value={size}>{size}</option>)}
                     </select>
                   </div>
                 </div>
-
+                <div className="me-2 mt-2">
+                  <Button
+                    variant="outline-primary"
+                    className="icon-only-btn p-0"
+                    onClick={exportToPDF}
+                    aria-label="Download PDF"
+                    title="Download PDF"
+                  >
+                    <FaFilePdf size={14} />
+                  </Button>
+                </div>
               </div>
             </div>
           </main>

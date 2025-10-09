@@ -36,6 +36,7 @@ function DutyList() {
 
   // populate form when modal opens
   useEffect(() => {
+    document.title = 'CRM - Daily Routine';
     if (selectedStudent) {
       setFormData({
         callStatus: selectedStudent.callInfo?.callStatus || '',
@@ -196,84 +197,173 @@ function DutyList() {
       toast.error('Server or network error');
     }
   };
-  const exportToPDF = () => {
-    const doc = new jsPDF({
-      unit: 'pt',
-      format: 'a4',
-    });
+const exportToPDF = () => {
+  const doc = new jsPDF({
+    unit: 'pt',
+    format: 'a4',
+  });
 
-    const margin = { top: 60, bottom: 40, left: 10, right: 10 };
-    const pageWidth = doc.internal.pageSize.getWidth();
+  const margin = { top: 60, bottom: 60, left: 10, right: 10 };
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
 
-    // Prepare the data rows
-    const tableData = students.map((student, index) => {
-      const statusText = updatedStudents.includes(student._id) ? 'Marked' : 'Not Marked';
-      return [
-        index + 1,
-        student.name || '',
-        student.email || '',
-        student.phone || '',
-        student.course || '',
-        student.place || '',
-        student.assignedAt ? new Date(student.assignedAt).toLocaleString('en-IN', {
-          day: '2-digit',
-          month: 'short',
-          year: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit',
-          second: '2-digit',
-          hour12: true,
-        }) : '-',
-        statusText,
-      ];
-    });
+  // Compute summary details
+  const totalAssigned = students.length;
+  const marked = updatedStudents.length;
+  const notMarked = totalAssigned - marked;
 
-    // Header labels
-    const head = [
-      ['#', 'Name', 'Email', 'Phone', 'Course', 'Place', 'Assigned At', 'Status'],
+  let latestAssignedDate = null;
+  let newCount = 0;
+  if (students.length > 0) {
+    const unmarked = students.filter(
+      s => s.assignedAt && !updatedStudents.includes(s._id)
+    );
+    if (unmarked.length > 0) {
+      const times = unmarked.map(s => new Date(s.assignedAt).getTime());
+      const maxTime = Math.max(...times);
+      latestAssignedDate = new Date(maxTime);
+      newCount = unmarked.filter(
+        s => new Date(s.assignedAt).getTime() === maxTime
+      ).length;
+    }
+  }
+
+  // Build summary line
+  const summaryLine = [
+    `Total Assigned: ${totalAssigned}`,
+    `Completed: ${marked}`,
+    `Pending: ${notMarked}`,
+    `New: ${newCount}`,
+    `Last Assigned: ${
+      latestAssignedDate
+        ? latestAssignedDate.toLocaleString('en-GB', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: true,
+          })
+        : '-'
+    }`,
+  ].join(' | ');
+
+  // First, draw heading + summary
+  doc.setFontSize(14);
+  doc.setTextColor(40);
+  const headingY = margin.top - 20;
+  doc.text('CRM-Daily Routine', pageWidth / 2, headingY, { align: 'center' });
+
+  doc.setFontSize(10);
+  doc.setTextColor(60);
+  const summaryY = headingY + 20;
+  doc.text(summaryLine, margin.left, summaryY);
+
+  // Then draw the table, starting a bit lower so it doesn’t overlap summary
+  const tableStartY = summaryY + 15;
+
+  // Prepare table data
+  const tableData = students.map((student, index) => {
+    const statusText = updatedStudents.includes(student._id) ? 'Marked' : 'Not Marked';
+    return [
+      index + 1,
+      student.name || '',
+      student.email || '',
+      student.phone || '',
+      student.course || '',
+      student.place || '',
+      student.assignedAt
+        ? new Date(student.assignedAt).toLocaleString('en-IN', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: true,
+          })
+        : '-',
+      statusText,
     ];
+  });
 
-    autoTable(doc, {
-      startY: margin.top,
-      margin: margin,
-      head: head,
-      body: tableData,
-      theme: 'striped',
-      headStyles: {
-        fillColor: [0, 123, 255],
-        textColor: [255, 255, 255],
-        halign: 'center',
-      },
-      styles: {
-        fontSize: 10,
-        cellPadding: 4,
-        overflow: 'linebreak',
-      },
-      bodyStyles: {
-        fillColor: [245, 247, 250],
-      },
-      didDrawPage: (data) => {
-        // Title header
-        doc.setFontSize(14);
-        doc.setTextColor(40);
-        doc.text(
-          'Student Duty List',
-          pageWidth / 2,
-          margin.top - 30,
-          { align: 'center' }
-        );
+  const head = [
+    ['#', 'Name', 'Email', 'Phone', 'Course', 'Place', 'Assigned At', 'Status'],
+  ];
 
-        // Footer with page numbers
-        const pageCount = doc.internal.getNumberOfPages();
-        doc.setFontSize(10);
-        const footerText = `Page ${doc.internal.getCurrentPageInfo().pageNumber} of ${pageCount}`;
-        const y = doc.internal.pageSize.getHeight() - 10;
-        doc.text(footerText, pageWidth / 2, y, { align: 'center' });
-      },
-    });
+  autoTable(doc, {
+    startY: tableStartY,
+    margin: margin,
+    head: head,
+    body: tableData,
+    theme: 'striped',
+    headStyles: {
+      fillColor: [0, 123, 255],
+      textColor: [255, 255, 255],
+      halign: 'center',
+    },
+    styles: {
+      fontSize: 10,
+      cellPadding: 4,
+      overflow: 'linebreak',
+    },
+    bodyStyles: {
+      fillColor: [245, 247, 250],
+    },
+    didDrawPage: (data) => {
+      // Page numbering in footer
+      const pageCount = doc.internal.getNumberOfPages();
+      doc.setFontSize(10);
+      doc.text(
+        `Page ${doc.internal.getCurrentPageInfo().pageNumber} of ${pageCount}`,
+        pageWidth - margin.right,
+        pageHeight - margin.bottom + 10,
+        null,
+        null,
+        'right'
+      );
+    },
+  });
 
-    doc.save('duty_list.pdf');
-  };
+  doc.save('daily_routine_report.pdf');
+};
+
+
+
+
+  // After students & updatedStudents are known
+
+  const summaryDetails = useMemo(() => {
+    const totalAssigned = students.length;
+
+    const marked = updatedStudents.length;
+    const notMarked = totalAssigned - marked;
+
+    // “New” means the one with the latest assignedAt that is not marked yet?
+    // You already have logic for “latestAssignedTime” in your render; reuse that:
+    let newCount = 0;
+    let latestAssignedDate = null;
+    if (students.length > 0) {
+      // filter only unmarked
+      const unmarked = students.filter(s => !updatedStudents.includes(s._id) && s.assignedAt);
+      if (unmarked.length > 0) {
+        const times = unmarked.map(s => new Date(s.assignedAt).getTime());
+        const maxT = Math.max(...times);
+        latestAssignedDate = new Date(maxT);
+        newCount = unmarked.filter(s => new Date(s.assignedAt).getTime() === maxT).length;
+      }
+    }
+
+    return {
+      totalAssigned,
+      marked,
+      notMarked,
+      newCount,
+      latestAssignedDate,
+    };
+  }, [students, updatedStudents]);
+
   if (loading)
     return (
       <div className="loading-container">
@@ -289,7 +379,7 @@ function DutyList() {
     );
 
   return (
-    <Layout title={"CRM- User's Duty List"}>
+    <Layout title={"CRM - Daily Routine"}>
       <div className="container-fluid m-3 p-3 admin-root">
         <div className="row">
           <aside className="col-md-3">
@@ -298,6 +388,7 @@ function DutyList() {
 
           <main className="col-md-9">
             <div className="card admin-card p-4">
+
               <div className="container mt-4">
                 <div className="d-flex flex-wrap align-items-center mb-3 gap-2">
                   <div className="flex-grow-1" style={{ minWidth: '200px' }}>
@@ -342,6 +433,28 @@ function DutyList() {
                         <Dropdown.Item onClick={() => setSortOrder('desc')}>Descending</Dropdown.Item>
                       </Dropdown.Menu>
                     </Dropdown>
+                  </div>
+                  <div className="summary-overview mb-3">
+                    <span><span className="label-key">Total Assigned:</span> <span className="value">{summaryDetails.totalAssigned}</span></span>
+                    <span><span className="label-key">Marked:</span> <span className="value">{summaryDetails.marked}</span></span>
+                    <span><span className="label-key">Not Marked:</span> <span className="value">{summaryDetails.notMarked}</span></span>
+                    <span><span className="label-key">New:</span> <span className="value">{summaryDetails.newCount}</span></span>
+                    <span>
+                      <span className="label-key">Last Assigned:</span>
+                      <span className="value">
+                        {summaryDetails.latestAssignedDate
+                          ? summaryDetails.latestAssignedDate.toLocaleString('en-GB', {
+                            day: '2-digit',
+                            month: 'short',
+                            year: 'numeric',
+                            hour: 'numeric',
+                            minute: '2-digit',
+                            second: '2-digit',
+                            hour12: true,
+                          })
+                          : '-'}
+                      </span>
+                    </span>
                   </div>
                 </div>
 

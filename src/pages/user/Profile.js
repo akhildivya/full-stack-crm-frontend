@@ -158,7 +158,7 @@ function Profile() {
     }
   };
   return (
-    <Layout title={"CRM-User profile"}>
+    <Layout title={"CRM- My Profile"}>
 
       <div className="container-fluid m-3 p-3 admin-root">
         <div className="row">

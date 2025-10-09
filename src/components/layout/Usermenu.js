@@ -71,17 +71,17 @@ function Usermenu() {
 
             <NavLink to="/user-dashboard/profile" className={linkClass}>
               <i className="bi bi-person-circle me-2" aria-hidden="true"></i>
-              <span>My Profile</span>
+              <span>My profile</span>
             </NavLink>
 
             <NavLink to="/user-dashboard/daily-duty" className={linkClass}>
-              <i className="bi bi-person-lines-fill me-2" aria-hidden="true"></i>
-              <span>Duty Assigned</span>
+              <i className="bi bi-calendar-date-fill me-2" aria-hidden="true"></i>
+              <span>Daily routine</span>
             </NavLink>
 
               <NavLink to="/user-dashboard/completed-tasks" className={linkClass}>
-              <i className="bi bi-person-lines-fill me-2" aria-hidden="true"></i>
-              <span>Completed</span>
+              <i className="bi bi-card-checklist me-2" aria-hidden="true"></i>
+              <span>Body of work</span>
             </NavLink>
           </div>
 
