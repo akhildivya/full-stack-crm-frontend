@@ -81,60 +81,88 @@ function Duties() {
   }, []);
 
 
- const exportToPDF = () => {
-  const doc = new jsPDF({
-    unit: 'pt',
-    format: 'a4',
-  });
-
-  const margin = { top: 60, bottom: 40, left: 40, right: 40 };
-
-  const tableData = currentRows.map((u, idx) => [
-    idxFirst + idx + 1,
-    u.username,
-    u.email,
-    u.count,
-    formatDate(u.lastAssigned),
-  ]);
-
+  const exportToPDF = () => {
+     const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+  const margin = { top: 60, bottom: 40, left: 10, right: 10 };
   const totalPagesExp = "{total_pages_count_string}";
 
-  autoTable(doc, {
-    startY: margin.top,
-    margin: margin,
-    head: [['#', 'Name', 'Email', 'Assigned Count', 'Last Assigned Date']],
-    body: tableData,
-    theme: 'grid',
-    styles: { overflow: 'linebreak', cellWidth: 'wrap' },
-    headStyles: { fillColor: [0, 123, 255], textColor: [255, 255, 255] },
-    bodyStyles: { fillColor: [245, 247, 250], textColor: [20, 20, 20] },
-    didDrawPage: (data) => {
-      // Header
-      doc.setFontSize(12);
-      doc.setTextColor(40);
-      doc.text("CRM-User Assignment Statistics", margin.left, margin.top - 20,);
+  // Page header + footer
+  const addHeaderFooter = () => {
+    const pageNo = doc.internal.getNumberOfPages();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    doc.setFontSize(12);
+   doc.text("CRM - Lead Assignment Statistics", pageWidth / 2, 40, { align: "center" });
+    doc.setFontSize(10);
+    doc.text(`Page ${pageNo} of ${totalPagesExp}`, pageWidth / 2, pageHeight - 10, { align: "center" });
+  };
 
-      // Footer — page number
-      const pageNo = doc.internal.getNumberOfPages();
-      doc.setFontSize(10);
-      const footer = `Page ${pageNo} of ${totalPagesExp}`;
-      const pageWidth = doc.internal.pageSize.getWidth();
-      doc.text(footer, pageWidth / 2, doc.internal.pageSize.getHeight() - 10, {
-        align: 'center'
+  let currentY = margin.top;
+
+  currentRows.forEach((u, idx) => {
+    // user heading
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.text(`${idxFirst + idx + 1}. ${u.username} (${u.email})`, margin.left, currentY);
+    currentY += 18;
+
+    // user summary info
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.text(`Total Count: ${u.totalAssigned}`, margin.left, currentY);
+    const formattedLast = formatDate(u.lastAssigned);
+    doc.text(`Last Assigned: ${formattedLast}`, margin.left + 200, currentY);
+    currentY += 12;
+
+    // daily summary subtable
+    if (u.dailySummary && u.dailySummary.length > 0) {
+      const body = u.dailySummary.map(d => {
+        const dateObj = new Date(d.date);
+        const day = String(dateObj.getDate()).padStart(2, "0");
+        const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sept","Oct","Nov","Dec"];
+        const month = monthNames[dateObj.getMonth()];
+        const year = dateObj.getFullYear();
+        const time = dateObj.toLocaleString("en-IN", {
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+          hour12: true
+        });
+        const formattedDate = `${day}-${month}-${year} ${time}`;
+        return [formattedDate, d.count];
       });
-    },
-    willDrawCell: (data) => {
-      // you could do custom styling per cell if needed
-    },
+
+      autoTable(doc, {
+        startY: currentY,
+        margin: { left: margin.left, right: margin.right },
+        head: [["Date & Time", "Count"]],
+        body,
+        theme: "grid",
+        headStyles: { fillColor: [0, 123, 255], textColor: [255, 255, 255] },
+        bodyStyles: { fillColor: [245, 247, 250], textColor: [20, 20, 20] },
+        styles: { fontSize: 9 },
+        didDrawPage: addHeaderFooter,
+      });
+
+      currentY = doc.lastAutoTable.finalY + 20;
+    } else {
+      currentY += 10;
+    }
+
+    // add page break if needed
+    if (currentY > doc.internal.pageSize.height - margin.bottom - 40) {
+      doc.addPage();
+      currentY = margin.top;
+    }
   });
 
-  // Replace the placeholder for total pages
-  if (typeof doc.putTotalPages === 'function') {
+  // replace placeholder with total page count
+  if (typeof doc.putTotalPages === "function") {
     doc.putTotalPages(totalPagesExp);
   }
 
-  doc.save('Assign_Lead_Statistics.pdf');
-};
+  doc.save("Assigned_Lead_Statistics.pdf");
+  };
 
   // Filtering, sorting, pagination as before...
   const normalized = searchTerm.trim().toLowerCase();
@@ -311,19 +339,79 @@ function Duties() {
                     {currentRows.length > 0 ? (
                       currentRows.map((u, idx) => {
                         const globalIndex = idxFirst + idx + 1;
+
+                        // Format lastAssigned
+                        const formattedLastAssigned = (() => {
+                          if (!u.lastAssigned) return '—';
+                          const d = new Date(u.lastAssigned);
+                          const day = String(d.getDate()).padStart(2, '0');
+                          const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"];
+                          const month = monthNames[d.getMonth()];
+                          const year = d.getFullYear();
+                          const time = d.toLocaleString('en-IN', {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            second: '2-digit',
+                            hour12: true
+                          });
+                          return `${day}-${month}-${year} ${time}`;
+                        })();
+
                         return (
-                          <tr key={u.userId || u._id || globalIndex}>
-                            <td>{globalIndex}</td>
-                            <td>{u.username}</td>
-                            <td>{u.email}</td>
-                            <td>{u.count}</td>
-                            <td>{formatDate(u.lastAssigned)}</td>
-                          </tr>
+                          <React.Fragment key={u.userId || globalIndex}>
+                            <tr className="table-primary">
+                              <td>{globalIndex}</td>
+                              <td>{u.username}</td>
+                              <td>{u.email}</td>
+                              <td>{u.totalAssigned}</td>
+                              <td>{formattedLastAssigned}</td>
+                            </tr>
+
+                            {u.dailySummary && u.dailySummary.length > 0 && (
+                              <tr>
+                                <td colSpan="5" className="p-0">
+                                  <Table size="sm" bordered responsive className="mb-0">
+                                    <thead>
+                                      <tr className="table-light">
+                                        <th style={{ width: '60%' }}>Date & Time</th>
+                                        <th>Count</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {u.dailySummary.map((d, i) => {
+                                        const dateObj = new Date(d.date);
+                                        const day = String(dateObj.getDate()).padStart(2, '0');
+                                        const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"];
+                                        const month = monthNames[dateObj.getMonth()];
+                                        const year = dateObj.getFullYear();
+                                        const time = dateObj.toLocaleString('en-IN', {
+                                          hour: '2-digit',
+                                          minute: '2-digit',
+                                          second: '2-digit',
+                                          hour12: true
+                                        });
+                                        const formattedDate = `${day}-${month}-${year} ${time}`;
+
+                                        return (
+                                          <tr key={i}>
+                                            <td>{formattedDate}</td>
+                                            <td>{d.count}</td>
+                                          </tr>
+                                        );
+                                      })}
+                                    </tbody>
+                                  </Table>
+                                </td>
+                              </tr>
+                            )}
+                          </React.Fragment>
                         );
                       })
                     ) : (
                       <tr>
-                        <td colSpan="5" className="text-center">No matching records found.</td>
+                        <td colSpan="5" className="text-center">
+                          No matching records found.
+                        </td>
                       </tr>
                     )}
                   </tbody>
@@ -331,44 +419,44 @@ function Duties() {
               </div>
 
               {/* Pagination & rows-per-page */}
-                <div className="d-flex flex-column flex-sm-row justify-content-between align-items-center mt-4">
-                              <div className="mb-2 mb-sm-0">
-                                <Button variant="outline-secondary" size="sm" onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1}>
-                                  &lt; Prev
-                                </Button>
-                                {[...Array(totalPages)].map((_, i) => {
-                                  const pageNum = i + 1;
-                                  return (
-                                    <Button
-                                      key={pageNum}
-                                      variant={currentPage === pageNum ? "primary" : "outline-secondary"}
-                                      size="sm"
-                                      className="mx-1"
-                                      onClick={() => goToPage(pageNum)}
-                                    >
-                                      {pageNum}
-                                    </Button>
-                                  );
-                                })}
-                                <Button variant="outline-secondary" size="sm" onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages}>
-                                  Next &gt;
-                                </Button>
-                              </div>
-                              <div>
-                                <Dropdown>
-                                  <Dropdown.Toggle variant="outline-secondary" size="sm" id="dropdown-rows-per-page">
-                                    {rowsPerPage}
-                                  </Dropdown.Toggle>
-                                  <Dropdown.Menu>
-                                    {[1, 2, 5, 10, 20, 50,100].map(num => (
-                                      <Dropdown.Item key={num} active={rowsPerPage === num} onClick={() => { setRowsPerPage(num); setCurrentPage(1); }}>
-                                        {num}
-                                      </Dropdown.Item>
-                                    ))}
-                                  </Dropdown.Menu>
-                                </Dropdown>
-                              </div>
-                            </div>
+              <div className="d-flex flex-column flex-sm-row justify-content-between align-items-center mt-4">
+                <div className="mb-2 mb-sm-0">
+                  <Button variant="outline-secondary" size="sm" onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1}>
+                    &lt; Prev
+                  </Button>
+                  {[...Array(totalPages)].map((_, i) => {
+                    const pageNum = i + 1;
+                    return (
+                      <Button
+                        key={pageNum}
+                        variant={currentPage === pageNum ? "primary" : "outline-secondary"}
+                        size="sm"
+                        className="mx-1"
+                        onClick={() => goToPage(pageNum)}
+                      >
+                        {pageNum}
+                      </Button>
+                    );
+                  })}
+                  <Button variant="outline-secondary" size="sm" onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages}>
+                    Next &gt;
+                  </Button>
+                </div>
+                <div>
+                  <Dropdown>
+                    <Dropdown.Toggle variant="outline-secondary" size="sm" id="dropdown-rows-per-page">
+                      {rowsPerPage}
+                    </Dropdown.Toggle>
+                    <Dropdown.Menu>
+                      {[1, 2, 5, 10, 20, 50, 100].map(num => (
+                        <Dropdown.Item key={num} active={rowsPerPage === num} onClick={() => { setRowsPerPage(num); setCurrentPage(1); }}>
+                          {num}
+                        </Dropdown.Item>
+                      ))}
+                    </Dropdown.Menu>
+                  </Dropdown>
+                </div>
+              </div>
               <div className="me-2 mt-2">
                 <Button
                   variant="outline-primary"
