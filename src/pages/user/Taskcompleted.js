@@ -48,7 +48,7 @@ function Taskcompleted() {
     };
   }, []);
 
-  const normalized = searchTerm.trim().toLowerCase();
+const normalized = searchTerm.trim().toLowerCase();
 
   const filtered = useMemo(() => {
     return (students || []).filter(s => {
@@ -74,6 +74,7 @@ function Taskcompleted() {
       );
     });
   }, [students, normalized]);
+
 
   const sorted = useMemo(() => {
     return [...filtered].sort((a, b) => {
@@ -314,7 +315,7 @@ function Taskcompleted() {
 
               {/* Course-wise Counts */}
               <div className="mb-3">
-                <h6>Course-wise-count:</h6>
+                <h6 >Course-wise-count:</h6>
                 <div className="d-flex flex-wrap gap-2">
                   {summary.courseCounts &&
                     Object.entries(summary.courseCounts).map(([course, count]) => (

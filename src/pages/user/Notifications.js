@@ -17,14 +17,21 @@ function Notifications() {
   useEffect(() => {
     const fetchStudents = async () => {
       try {
-        const response = await axios.get(`${BASEURL}/assigned-students/${date}`, {
-          headers: { Authorization: auth?.token || localStorage.getItem("authToken") },
-        });
+        const response = await axios.get(
+          `${BASEURL}/assigned-students/${date}`,
+          {
+            headers: {
+              Authorization:
+                auth?.token || localStorage.getItem("authToken"),
+            },
+          }
+        );
 
         if (response.data.success) {
           const students = response.data.students;
           const dismissedKey = `dismissed_notification_${date}`;
-          const dismissedTimestamp = localStorage.getItem(`${dismissedKey}_timestamp`) || 0;
+          const dismissedTimestamp =
+            localStorage.getItem(`${dismissedKey}_timestamp`) || 0;
 
           const newStudents = students.filter(
             s => new Date(s.assignedAt).getTime() > dismissedTimestamp
@@ -65,14 +72,33 @@ function Notifications() {
     toast.info("Notification dismissed!");
   };
 
+  function formatDateToDDMMMYYYY(dateString) {
+    const d = new Date(dateString);
+    const day = d.getDate().toString().padStart(2, "0");
+    const year = d.getFullYear();
+    const monthNames = [
+      "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+      "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+    ];
+    const month = monthNames[d.getMonth()];
+    return `${day}-${month}-${year}`;
+  }
+
   if (isDismissed && assignedStudents.length === 0) return null;
 
   return (
     <div className="notification-container">
-      <Card className="notification-card shadow-lg rounded-lg p-3 mb-4">
+      <Card className="notification-card shadow-none">
         <Card.Body>
-          <h5 className="text-primary">Duty assigned on {date}</h5>
-          <p>Total assigned contacts = <strong>{assignedStudents.length}</strong></p>
+          <div className="notification-header">
+            <span className="icon">🔔</span>
+            <h6>
+              <strong>Duty assigned on {formatDateToDDMMMYYYY(date)}</strong>
+            </h6>
+          </div>
+          <div className="notification-subtitle">
+            Total assigned contacts = <strong>{assignedStudents.length}</strong>
+          </div>
 
           {assignedStudents.length > 0 ? (
             <>
@@ -87,28 +113,52 @@ function Notifications() {
 
               {showDetails && (
                 <ul className="notification-list">
-                  {assignedStudents.map((student) => (
-                    <li
-                      key={student._id}
-                      className={`list-group-item ${newStudentIds.includes(student._id) ? 'list-group-item-warning' : ''}`}
-                    >
-                      {student.name} - Assigned at {new Date(student.assignedAt).toLocaleTimeString()}
-                    </li>
-                  ))}
+                  {(() => {
+                    const total = assignedStudents.length;
+                    // If more than 3, show only first 2
+                    const toShow = total > 3
+                      ? assignedStudents.slice(0, 2)
+                      : assignedStudents;
+                    const remaining = total > toShow.length
+                      ? total - toShow.length
+                      : 0;
+
+                    return (
+                      <>
+                        {toShow.map(student => (
+                          <li
+                            key={student._id}
+                            className={ newStudentIds.includes(student._id) ? "new" : "" }
+                          >
+                            <span>{student.name}</span>
+                            <span className="time">
+                              {new Date(student.assignedAt).toLocaleTimeString()}
+                            </span>
+                          </li>
+                        ))}
+                        {remaining > 0 && (
+                          <li className="more-indicator">
+                            +{remaining} more...
+                          </li>
+                        )}
+                      </>
+                    );
+                  })()}
                 </ul>
               )}
 
-              <Button
-                variant="danger"
-                size="sm"
-                className="mt-2"
-                onClick={handleDeleteNotification}
-              >
-                Delete Notification
-              </Button>
+              <div className="notification-actions">
+                <Button
+                  variant="danger"
+                  size="sm"
+                  onClick={handleDeleteNotification}
+                >
+                  Dismiss
+                </Button>
+              </div>
             </>
           ) : (
-            <p>No assignments found for this date.</p>
+            <p>No assignments for this date.</p>
           )}
         </Card.Body>
       </Card>

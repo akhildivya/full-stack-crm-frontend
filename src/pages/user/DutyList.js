@@ -46,7 +46,7 @@ function DutyList() {
             ? 'yes'
             : selectedStudent.callInfo?.interested === false
               ? 'no'
-              : '',
+              : 'yes',
         planType: selectedStudent.callInfo?.planType || '',
       });
     }
@@ -103,10 +103,12 @@ function DutyList() {
 
   // search & filtering
   const normalized = searchTerm.trim().toLowerCase();
+
   const filtered = useMemo(() => {
     return students.filter(s => {
       const isUpdated = updatedStudents.includes(s._id);
       const statusText = isUpdated ? 'marked' : 'not marked';
+
       const assignedAtStr = s.assignedAt
         ? new Date(s.assignedAt).toLocaleString('en-IN', {
           day: '2-digit',
@@ -118,16 +120,22 @@ function DutyList() {
           hour12: true,
         })
         : '';
-      if (!normalized) return true;
-      return (
-        s.name.toLowerCase().includes(normalized) ||
-        (s.email || '').toLowerCase().includes(normalized) ||
-        (s.phone && String(s.phone).toLowerCase().includes(normalized)) ||
-        (s.course || '').toLowerCase().includes(normalized) ||
-        (s.place || '').toLowerCase().includes(normalized) ||
-        statusText.includes(normalized) ||
-        assignedAtStr.toLowerCase().includes(normalized)
-      );
+
+      if (!normalized) {
+        return true;
+      }
+
+      const checks = [
+        s.name && s.name.toLowerCase().includes(normalized),
+        s.email && s.email.toLowerCase().includes(normalized),
+        s.phone && String(s.phone).toLowerCase().includes(normalized),
+        s.course && s.course.toLowerCase().includes(normalized),
+        s.place && s.place.toLowerCase().includes(normalized),
+        statusText === normalized, // changed for strict match
+        assignedAtStr.toLowerCase().includes(normalized),
+      ];
+
+      return checks.some(Boolean);
     });
   }, [students, normalized, updatedStudents]);
 
@@ -197,84 +205,83 @@ function DutyList() {
       toast.error('Server or network error');
     }
   };
-const exportToPDF = () => {
-  const doc = new jsPDF({
-    unit: 'pt',
-    format: 'a4',
-  });
+  const exportToPDF = () => {
+    const doc = new jsPDF({
+      unit: 'pt',
+      format: 'a4',
+    });
 
-  const margin = { top: 60, bottom: 60, left: 10, right: 10 };
-  const pageWidth = doc.internal.pageSize.getWidth();
-  const pageHeight = doc.internal.pageSize.getHeight();
+    const margin = { top: 60, bottom: 60, left: 10, right: 10 };
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
 
-  // Compute summary details
-  const totalAssigned = students.length;
-  const marked = updatedStudents.length;
-  const notMarked = totalAssigned - marked;
+    // Compute summary details
+    const totalAssigned = students.length;
+    const marked = updatedStudents.length;
+    const notMarked = totalAssigned - marked;
 
-  let latestAssignedDate = null;
-  let newCount = 0;
-  if (students.length > 0) {
-    const unmarked = students.filter(
-      s => s.assignedAt && !updatedStudents.includes(s._id)
-    );
-    if (unmarked.length > 0) {
-      const times = unmarked.map(s => new Date(s.assignedAt).getTime());
-      const maxTime = Math.max(...times);
-      latestAssignedDate = new Date(maxTime);
-      newCount = unmarked.filter(
-        s => new Date(s.assignedAt).getTime() === maxTime
-      ).length;
+    let latestAssignedDate = null;
+    let newCount = 0;
+    if (students.length > 0) {
+      const unmarked = students.filter(
+        s => s.assignedAt && !updatedStudents.includes(s._id)
+      );
+      if (unmarked.length > 0) {
+        const times = unmarked.map(s => new Date(s.assignedAt).getTime());
+        const maxTime = Math.max(...times);
+        latestAssignedDate = new Date(maxTime);
+        newCount = unmarked.filter(
+          s => new Date(s.assignedAt).getTime() === maxTime
+        ).length;
+      }
     }
-  }
 
-  // Build summary line
-  const summaryLine = [
-    `Total Assigned: ${totalAssigned}`,
-    `Completed: ${marked}`,
-    `Pending: ${notMarked}`,
-    `New: ${newCount}`,
-    `Last Assigned: ${
-      latestAssignedDate
+    // Build summary line
+    const summaryLine = [
+      `Total Assigned: ${totalAssigned}`,
+      `Completed: ${marked}`,
+      `Pending: ${notMarked}`,
+      `New: ${newCount}`,
+      `Last Assigned: ${latestAssignedDate
         ? latestAssignedDate.toLocaleString('en-GB', {
-            day: '2-digit',
-            month: 'short',
-            year: 'numeric',
-            hour: 'numeric',
-            minute: '2-digit',
-            second: '2-digit',
-            hour12: true,
-          })
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric',
+          hour: 'numeric',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: true,
+        })
         : '-'
-    }`,
-  ].join(' | ');
+      }`,
+    ].join(' | ');
 
-  // First, draw heading + summary
-  doc.setFontSize(14);
-  doc.setTextColor(40);
-  const headingY = margin.top - 20;
-  doc.text('CRM-Daily Routine', pageWidth / 2, headingY, { align: 'center' });
+    // First, draw heading + summary
+    doc.setFontSize(14);
+    doc.setTextColor(40);
+    const headingY = margin.top - 20;
+    doc.text('CRM - Daily Routine', pageWidth / 2, headingY, { align: 'center' });
 
-  doc.setFontSize(10);
-  doc.setTextColor(60);
-  const summaryY = headingY + 20;
-  doc.text(summaryLine, margin.left, summaryY);
+    doc.setFontSize(10);
+    doc.setTextColor(60);
+    const summaryY = headingY + 20;
+    doc.text(summaryLine, margin.left, summaryY);
 
-  // Then draw the table, starting a bit lower so it doesn’t overlap summary
-  const tableStartY = summaryY + 15;
+    // Then draw the table, starting a bit lower so it doesn’t overlap summary
+    const tableStartY = summaryY + 15;
 
-  // Prepare table data
-  const tableData = students.map((student, index) => {
-    const statusText = updatedStudents.includes(student._id) ? 'Marked' : 'Not Marked';
-    return [
-      index + 1,
-      student.name || '',
-      student.email || '',
-      student.phone || '',
-      student.course || '',
-      student.place || '',
-      student.assignedAt
-        ? new Date(student.assignedAt).toLocaleString('en-IN', {
+    // Prepare table data
+    const tableData = students.map((student, index) => {
+      const statusText = updatedStudents.includes(student._id) ? 'Marked' : 'Not Marked';
+      return [
+        index + 1,
+        student.name || '',
+        student.email || '',
+        student.phone || '',
+        student.course || '',
+        student.place || '',
+        student.assignedAt
+          ? new Date(student.assignedAt).toLocaleString('en-IN', {
             day: '2-digit',
             month: 'short',
             year: 'numeric',
@@ -283,51 +290,51 @@ const exportToPDF = () => {
             second: '2-digit',
             hour12: true,
           })
-        : '-',
-      statusText,
+          : '-',
+        statusText,
+      ];
+    });
+
+    const head = [
+      ['#', 'Name', 'Email', 'Phone', 'Course', 'Place', 'Assigned At', 'Status'],
     ];
-  });
 
-  const head = [
-    ['#', 'Name', 'Email', 'Phone', 'Course', 'Place', 'Assigned At', 'Status'],
-  ];
+    autoTable(doc, {
+      startY: tableStartY,
+      margin: margin,
+      head: head,
+      body: tableData,
+      theme: 'striped',
+      headStyles: {
+        fillColor: [0, 123, 255],
+        textColor: [255, 255, 255],
+        halign: 'center',
+      },
+      styles: {
+        fontSize: 10,
+        cellPadding: 4,
+        overflow: 'linebreak',
+      },
+      bodyStyles: {
+        fillColor: [245, 247, 250],
+      },
+      didDrawPage: (data) => {
+        // Page numbering in footer
+        const pageCount = doc.internal.getNumberOfPages();
+        doc.setFontSize(10);
+        doc.text(
+          `Page ${doc.internal.getCurrentPageInfo().pageNumber} of ${pageCount}`,
+          pageWidth - margin.right,
+          pageHeight - margin.bottom + 10,
+          null,
+          null,
+          'right'
+        );
+      },
+    });
 
-  autoTable(doc, {
-    startY: tableStartY,
-    margin: margin,
-    head: head,
-    body: tableData,
-    theme: 'striped',
-    headStyles: {
-      fillColor: [0, 123, 255],
-      textColor: [255, 255, 255],
-      halign: 'center',
-    },
-    styles: {
-      fontSize: 10,
-      cellPadding: 4,
-      overflow: 'linebreak',
-    },
-    bodyStyles: {
-      fillColor: [245, 247, 250],
-    },
-    didDrawPage: (data) => {
-      // Page numbering in footer
-      const pageCount = doc.internal.getNumberOfPages();
-      doc.setFontSize(10);
-      doc.text(
-        `Page ${doc.internal.getCurrentPageInfo().pageNumber} of ${pageCount}`,
-        pageWidth - margin.right,
-        pageHeight - margin.bottom + 10,
-        null,
-        null,
-        'right'
-      );
-    },
-  });
-
-  doc.save('daily_routine_report.pdf');
-};
+    doc.save('daily_routine_report.pdf');
+  };
 
 
 
@@ -612,7 +619,7 @@ const exportToPDF = () => {
           </main>
         </div>
 
-        <Modal show={showModal} onHide={() => setShowModal(false)}>
+        {/*<Modal show={showModal} onHide={() => setShowModal(false)}>
           <Modal.Header closeButton>
             <Modal.Title>Update Call Status</Modal.Title>
           </Modal.Header>
@@ -646,7 +653,83 @@ const exportToPDF = () => {
                     <Form.Group controlId="planType">
                       <Form.Label>Plan Type</Form.Label>
                       <Form.Control as="select" value={formData.planType} onChange={handleInputChange} name="planType">
-                        <option value="starter">starter</option>
+                        <option value="starter">Starter</option>
+                        <option value="gold">Gold</option>
+                        <option value="master">Master</option>
+                      </Form.Control>
+                    </Form.Group>
+                  )}
+                </>
+              )}
+            </Form>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" onClick={() => setShowModal(false)}>
+              Close
+            </Button>
+            <Button variant="primary" onClick={handleSave}>
+              Save Changes
+            </Button>
+          </Modal.Footer>
+        </Modal>*/}
+        <Modal show={showModal} onHide={() => setShowModal(false)}>
+          <Modal.Header closeButton>
+            <Modal.Title>Update Call Status</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <Form>
+              <Form.Group controlId="callStatus">
+                <Form.Label>Call Status</Form.Label>
+                <Form.Control
+                  as="select"
+                  value={formData.callStatus}
+                  onChange={handleInputChange}
+                  name="callStatus"
+                >
+                  <option value="">-- Select --</option>
+                  <option value="missed">Missed</option>
+                  <option value="rejected">Rejected</option>
+                  <option value="accepted">Accepted</option>
+                </Form.Control>
+              </Form.Group>
+
+              {formData.callStatus === 'accepted' && (
+                <>
+                  <Form.Group controlId="callDuration">
+                    <Form.Label>Call Duration (minutes)</Form.Label>
+                    <Form.Control
+                      type="number"
+                      value={formData.callDuration}
+                      onChange={handleInputChange}
+                      name="callDuration"
+                    />
+                  </Form.Group>
+
+                  <Form.Group controlId="interested">
+                    <Form.Label>Interested</Form.Label>
+                    <Form.Control
+                      as="select"
+                      value={formData.interested}
+                      onChange={handleInputChange}
+                      name="interested"
+                    >
+                      <option value="">-- Select --</option>
+                      <option value="yes">Yes</option>
+                      <option value="no">No</option>
+                    </Form.Control>
+                  </Form.Group>
+
+                  {formData.interested === 'yes' && (
+                    <Form.Group controlId="planType">
+                      <Form.Label>Plan Type</Form.Label>
+                      <Form.Control
+                        as="select"
+                        value={formData.planType}
+                        onChange={handleInputChange}
+                        name="planType"
+                      >
+                        <option value="">-- Select Plan --</option>
+                        <option value="starter">Starter</option>
                         <option value="gold">Gold</option>
                         <option value="master">Master</option>
                       </Form.Control>
@@ -665,6 +748,7 @@ const exportToPDF = () => {
             </Button>
           </Modal.Footer>
         </Modal>
+
       </div>
     </Layout>
   );

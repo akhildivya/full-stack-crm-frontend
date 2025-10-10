@@ -112,3 +112,122 @@
 .summary-overview .value {
   color: #0d6efd;  /* bootstrap-primary blue or any color you like */
 }
+/*Modal code */
+/* Modal background overlay (backdrop) slight dark blur */
+.modal-backdrop.show {
+  background-color: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(3px);
+}
+
+/* Modal dialog container */
+.modal-dialog {
+  max-width: 500px;        /* size adjust */
+  margin: 1.75rem auto;    /* vertical margin */
+  transform: translateY(-20px);
+  transition: transform 0.3s ease-out;
+}
+
+/* When modal is shown, slide in a bit */
+.modal.show .modal-dialog {
+  transform: translateY(0);
+}
+
+/* Modal content box */
+.modal-content {
+  border: none;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  background: #ffffff;
+}
+
+/* Modal header style */
+.modal-header {
+  background: linear-gradient(135deg, #4b79a1, #283e51);
+  color: white;
+  border-bottom: none;
+  padding: 1rem 1.5rem;
+}
+
+/* Modal title */
+.modal-header .modal-title {
+  font-weight: 600;
+  font-size: 1.25rem;
+}
+
+/* Close (X) button override */
+.modal-header .btn-close {
+  filter: brightness(0.9);
+  color: white;
+  opacity: 0.8;
+}
+.modal-header .btn-close:hover {
+  opacity: 1;
+}
+
+/* Modal body area */
+.modal-body {
+  padding: 1.5rem;
+  color: #333333;
+  background: #f9f9f9;
+}
+
+/* Form controls inside modal */
+.modal-body .form-group {
+  margin-bottom: 1.25rem;
+}
+.modal-body .form-label {
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+.modal-body .form-control {
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  box-shadow: none;
+  transition: border-color 0.2s;
+}
+.modal-body .form-control:focus {
+  border-color: #4b79a1;
+  box-shadow: 0 0 0 2px rgba(75, 121, 161, 0.2);
+}
+
+/* Modal footer */
+.modal-footer {
+  background: #ffffff;
+  border-top: none;
+  padding: 1rem 1.5rem;
+  justify-content: flex-end;
+}
+
+/* Footer buttons */
+.modal-footer .btn {
+  min-width: 100px;
+  border-radius: 6px;
+  padding: 0.5rem 1rem;
+}
+.modal-footer .btn-secondary {
+  background-color: #e0e0e0;
+  border: none;
+  color: #555;
+}
+.modal-footer .btn-secondary:hover {
+  background-color: #d4d4d4;
+}
+.modal-footer .btn-primary {
+  background: #4b79a1;
+  border: none;
+  color: #fff;
+}
+.modal-footer .btn-primary:hover {
+  background: #3a5a7a;
+}
+
+/* Responsive for small screens */
+@media (max-width: 576px) {
+  .modal-dialog {
+    margin: 0.5rem;
+  }
+  .modal-content {
+    border-radius: 8px;
+  }
+}

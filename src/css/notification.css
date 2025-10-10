@@ -1,43 +1,114 @@
-/* notification.css */
 .notification-container {
   max-width: 600px;
   margin: 20px auto;
-  padding: 10px;
-  background-color: #f9f9f9;
-  border-radius: 8px;
+  padding: 0 10px;
 }
 
 .notification-card {
-  background-color: #ffffff;
-  border: 1px solid #ddd;
-  border-radius: 8px;
+  position: relative;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  border: none;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.notification-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
+}
+
+.notification-card .card-body {
+  padding: 20px;
+}
+
+.notification-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.notification-header h5 {
+  margin: 0;
+  font-size: 1.25rem;
+  color: #333;
+  flex: 1;
+}
+
+.notification-header .icon {
+  margin-right: 10px;
+  font-size: 1.5rem;
+  color: #007bff;
+}
+
+.notification-subtitle {
+  font-size: 0.9rem;
+  color: #666;
+  margin-bottom: 16px;
 }
 
 .notification-list {
-  list-style-type: none;
+  list-style: none;
   padding: 0;
+  margin: 0;
+  max-height: 200px;
+  overflow-y: auto;
 }
 
 .notification-list li {
-  padding: 8px;
-  margin-bottom: 5px;
-  border-radius: 5px;
-  transition: background-color 0.3s ease;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  transition: background-color 0.2s ease;
+  background: #f8f9fa;
 }
 
 .notification-list li:hover {
-  background-color: #f1f1f1;
+  background: #e9ecef;
 }
 
-.list-group-item-warning {
-  background-color: #fff3cd;
-  border-color: #ffeeba;
+.notification-list li.new {
+  border-left: 4px solid #ffca28;
+  background: #fff8e1;
 }
 
-button {
-  transition: background-color 0.3s ease;
+.notification-list li .time {
+  font-size: 0.85rem;
+  color: #555;
+  margin-left: 12px;
 }
 
-button:hover {
-  background-color: #0056b3;
+.notification-actions {
+  margin-top: 16px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.notification-actions .btn {
+  font-size: 0.85rem;
+  padding: 6px 14px;
+}
+
+.more-indicator {
+  color: #666;
+  font-style: italic;
+  padding: 8px 12px;
+}
+
+/* For time span in each list item */
+.notification-list li .time {
+  margin-left: auto; /* pushes time to right */
+  color: #555;
+  font-size: 0.85rem;
+}
+
+/* If you want .new items highlighted */
+.notification-list li.new {
+  border-left: 4px solid #ffca28;
+  background-color: #fff8e1;
 }
