@@ -299,20 +299,21 @@ function Viewstudents() {
     const status = stu.assignedTo ? 'assigned' : 'unassigned';
     const matchesStatus =
       status.startsWith(lower) || lower.startsWith(status);
-
+    const callStatus = stu.callMarked || 'not marked';  // fallback
+    const matchesCallStatus =
+      callStatus.toLowerCase().startsWith(lower) ||
+      lower.startsWith(callStatus.toLowerCase());
     // If empty search, show all
     if (!lower) return true;
-    return matchesText || matchesStatus;
+    return matchesText || matchesStatus || matchesCallStatus;
   });
-
-
-
 
 
   const sortedStudents = [...filteredStudents].sort((a, b) => {
     let aVal, bVal;
 
-    if (sortColumn === 'status') {
+  
+     if (sortColumn === 'status') {
       aVal = a.assignedTo ? 'assigned' : 'unassigned';
       bVal = b.assignedTo ? 'assigned' : 'unassigned';
     } else {
@@ -380,147 +381,183 @@ function Viewstudents() {
   };
 
   const exportToPDF = () => {
-  const doc = new jsPDF({
-    unit: 'pt',
-    format: 'a4',
-  });
+    const doc = new jsPDF({
+      unit: 'pt',
+      format: 'a4',
+    });
 
-  const margin = { top: 60, bottom: 40, left: 10, right: 10 };
-  const pageWidth = doc.internal.pageSize.getWidth();
-
-  // Compute summary values from full students array (not just currentRows)
-  const totalStudents = students.length;  // assuming `students` is full list
-  const assignedCount = students.filter(stu => stu.assignedTo).length;
-  const unassignedCount = totalStudents - assignedCount;
-
-  // First, draw the title
-  doc.setFontSize(14);
-  doc.setTextColor(40);
-  doc.text(
-    "CRM - Contact Details Report",
-    pageWidth / 2,
-    margin.top - 30,
-    { align: 'center' }
-  );
-
-  // Then draw the summary line just below the title
-  const summaryY = margin.top - 3; // or tweak for spacing
-  doc.setFontSize(12);
-  doc.setTextColor(0);
-  const summaryText = `Total Students: ${totalStudents} | Assigned: ${assignedCount} | Unassigned: ${unassignedCount}`;
-  doc.text(summaryText, margin.left, summaryY);
-  
-  // Prepare table data
-  const tableData = currentRows.map((stu, idx) => {
-    const statusText = stu.assignedTo ? 'Assigned' : 'Unassigned';
-    return [
-      indexOfFirstRow + idx + 1,
-      stu.name || '',
-      stu.email || '',
-      stu.phone || '',
-      stu.place || '',
-      stu.course || '',
-      statusText,
-    ];
-  });
-  const head = [['#', 'Name', 'Email', 'Phone', 'Place', 'Course', 'Status']];
-
-  autoTable(doc, {
-    startY: margin.top + 20,  // push table down so it doesn't overlap summary
-    margin: margin,
-    head: head,
-    body: tableData,
-    theme: 'striped',
-    headStyles: {
-      fillColor: [0, 123, 255],
-      textColor: [255, 255, 255],
-      halign: 'center',
-    },
-    styles: {
-      fontSize: 10,
-      cellPadding: 4,
-      overflow: 'linebreak',
-    },
-    bodyStyles: {
-      fillColor: [245, 247, 250],
-    },
-    didDrawPage: (data) => {
-      // footer with page numbers
-      const pageCount = doc.internal.getNumberOfPages();
-      doc.setFontSize(10);
-      const footerText = `Page ${doc.internal.getCurrentPageInfo().pageNumber} of ${pageCount}`;
-      const y = doc.internal.pageSize.getHeight() - 10;
-      doc.text(footerText, pageWidth / 2, y, { align: 'center' });
-    }
-  });
-
-  doc.save('crm_contact_details_report.pdf');
-};
-
-  const exportAssignedToPDF = () => {
-    const doc = new jsPDF({ unit: 'pt', format: 'a4' });
     const margin = { top: 60, bottom: 40, left: 10, right: 10 };
     const pageWidth = doc.internal.pageSize.getWidth();
 
-    // Prepare data rows
-    const dataRows = assignedStudents.map((stu, idx) => [
-      globalSerialIndex++,
-      stu.assignedTo?.username || stu.assignedTo?._id || '',
-      formatAssignedDate(stu.assignedAt) || '',
-      stu.name || '',
-      stu.email || '',
-      stu.phone || '',
-      stu.course || '',
-      stu.place || ''
-    ]);
+    // Compute summary values from full students array (not just currentRows)
+    const totalStudents = students.length;  // assuming `students` is full list
+    const assignedCount = students.filter(stu => stu.assignedTo).length;
+    const unassignedCount = totalStudents - assignedCount;
+    const markedCount = students.filter(stu => stu.callMarked === 'marked').length;
+    const notMarkedCount = students.filter(stu => stu.callMarked !== 'marked').length;
+    // First, draw the title
+    doc.setFontSize(14);
+    doc.setTextColor(40);
+    doc.text(
+      "CRM - Contact Details Summary Report",
+      pageWidth / 2,
+      margin.top - 30,
+      { align: 'center' }
+    );
 
-    // Define column widths
-    const columnWidths = [30, 70, 70, 100, 100, 70, 60, 70];
+    // Then draw the summary line just below the title
+    const summaryY = margin.top - 3; // or tweak for spacing
+    doc.setFontSize(12);
+    doc.setTextColor(0);
+    const summaryText = `Total Students: ${totalStudents} | Assigned: ${assignedCount} | Unassigned: ${unassignedCount} | Marked:${markedCount} | Not Marked : ${notMarkedCount}`;
+    doc.text(summaryText, margin.left, summaryY);
 
-    // Generate the table
+    // Prepare table data
+    const tableData = currentRows.map((stu, idx) => {
+      const statusText = stu.assignedTo ? 'Assigned' : 'Unassigned';
+      const callStatusText = stu.callMarked === 'marked' ? 'Marked' : 'Not Marked';
+      return [
+        indexOfFirstRow + idx + 1,
+        stu.name || '',
+        stu.email || '',
+        stu.phone || '',
+        stu.place || '',
+        stu.course || '',
+        statusText,
+        callStatusText
+      ];
+    });
+    const head = [['#', 'Name', 'Email', 'Phone', 'Place', 'Course', 'Status', 'Call Status']];
+
     autoTable(doc, {
-      startY: margin.top,
-      margin,
-      head: [
-        ['#', 'Current Assignee', 'Assigned At', 'Name', 'Email', 'Phone', 'Course', 'Place']
-      ],
-      body: dataRows,
+      startY: margin.top + 20,  // push table down so it doesn't overlap summary
+      margin: margin,
+      head: head,
+      body: tableData,
       theme: 'striped',
-      headStyles: { fillColor: [0, 123, 255], textColor: [255, 255, 255] },
-      columnStyles: {
-        0: { cellWidth: columnWidths[0] },
-        1: { cellWidth: columnWidths[1] },
-        2: { cellWidth: columnWidths[2] },
-        3: { cellWidth: columnWidths[3] },
-        4: { cellWidth: columnWidths[4] },
-        5: { cellWidth: columnWidths[5], halign: 'center' },
-        6: { cellWidth: columnWidths[6], halign: 'center' },
-        7: { cellWidth: columnWidths[7] }
+      headStyles: {
+        fillColor: [0, 123, 255],
+        textColor: [255, 255, 255],
+        halign: 'center',
       },
       styles: {
-        overflow: 'linebreak',
-        cellWidth: 'auto',
         fontSize: 10,
-        lineWidth: 0.1
+        cellPadding: 4,
+        overflow: 'linebreak',
       },
-      tableWidth: 'auto',
+      bodyStyles: {
+        fillColor: [245, 247, 250],
+      },
       didDrawPage: (data) => {
-        doc.setFontSize(14);
-        doc.setTextColor(40);
-        doc.text("Assigned Students Report", pageWidth / 2, margin.top - 30, { align: 'center' });
-
+        // footer with page numbers
         const pageCount = doc.internal.getNumberOfPages();
         doc.setFontSize(10);
-        const footer = `Page ${doc.internal.getCurrentPageInfo().pageNumber} of ${pageCount}`;
-        doc.text(footer, pageWidth / 2, doc.internal.pageSize.getHeight() - 10, { align: 'center' });
+        const footerText = `Page ${doc.internal.getCurrentPageInfo().pageNumber} of ${pageCount}`;
+        const y = doc.internal.pageSize.getHeight() - 10;
+        doc.text(footerText, pageWidth / 2, y, { align: 'center' });
       }
     });
 
-    doc.save('assigned_students_report.pdf');
+    doc.save('crm_contact_details_summary_report.pdf');
   };
 
+const exportAssignedToPDF = () => {
+  const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+  const margin = { top: 60, bottom: 40, left: 10, right: 10 };
+  const pageWidth = doc.internal.pageSize.getWidth();
 
+  // Apply search filter
+  const lowerSearchTerm = assignedSearchTerm.trim().toLowerCase();
+  const filtered = assignedStudents.filter(stu => {
+    if (!lowerSearchTerm) return true;
+    const checks = [
+      stu.name?.toLowerCase(),
+      stu.email?.toLowerCase(),
+      stu.phone?.toLowerCase(),
+      stu.course?.toLowerCase(),
+      stu.place?.toLowerCase(),
+      stu.assignedTo?.username?.toLowerCase(),
+      stu.assignedTo?.email?.toLowerCase(),
+      stu.assignedAt ? formatAssignedDate(stu.assignedAt).toLowerCase() : ''
+    ];
+    return checks.some(str => str?.includes(lowerSearchTerm));
+  });
 
+  // Apply sorting
+  const { key, direction } = assignedSortConfig;
+  if (key) {
+    filtered.sort((a, b) => {
+      const aVal = getNested(a, key);
+      const bVal = getNested(b, key);
+      if (aVal == null && bVal == null) return 0;
+      if (aVal == null) return 1;
+      if (bVal == null) return -1;
+      const aStr = aVal.toString().toLowerCase();
+      const bStr = bVal.toString().toLowerCase();
+      return direction === 'asc' ? aStr.localeCompare(bStr) : bStr.localeCompare(aStr);
+    });
+  }
+
+ const summaryText = `Summary: ${Object.entries(assigneeCounts)
+    .map(([name, count]) => `${name}: ${count}`)
+    .join(' | ')}`;
+  // Prepare data rows
+  const dataRows = filtered.map((stu, idx) => [
+    assignedIdxFirst + idx + 1,
+    stu.assignedTo?.username || stu.assignedTo?._id || '',
+    formatAssignedDate(stu.assignedAt) || '',
+    stu.name || '',
+    stu.email || '',
+    stu.phone || '',
+    stu.course || '',
+    stu.place || ''
+  ]);
+
+  // Define column widths
+  const columnWidths = [30, 70, 70, 100, 100, 70, 60, 70];
+
+  // Generate the table
+  autoTable(doc, {
+    startY: margin.top,
+    margin,
+    head: [
+      ['#', 'Current Assignee', 'Assigned At', 'Name', 'Email', 'Phone', 'Course', 'Place']
+    ],
+    body: dataRows,
+    theme: 'striped',
+    headStyles: { fillColor: [0, 123, 255], textColor: [255, 255, 255] },
+    columnStyles: {
+      0: { cellWidth: columnWidths[0] },
+      1: { cellWidth: columnWidths[1] },
+      2: { cellWidth: columnWidths[2] },
+      3: { cellWidth: columnWidths[3] },
+      4: { cellWidth: columnWidths[4] },
+      5: { cellWidth: columnWidths[5], halign: 'center' },
+      6: { cellWidth: columnWidths[6], halign: 'center' },
+      7: { cellWidth: columnWidths[7] }
+    },
+    styles: {
+      overflow: 'linebreak',
+      cellWidth: 'auto',
+      fontSize: 10,
+      lineWidth: 0.1
+    },
+    tableWidth: 'auto',
+    didDrawPage: (data) => {
+      doc.setFontSize(14);
+      doc.setTextColor(40);
+      doc.text("CRM- Assigned Leads Report", pageWidth / 2, margin.top - 30, { align: 'center' });
+ 
+      const pageCount = doc.internal.getNumberOfPages();
+      doc.setFontSize(10);
+      doc.text(summaryText, margin.left, margin.top  -5);
+      const footer = `Page ${doc.internal.getCurrentPageInfo().pageNumber} of ${pageCount}`;
+      doc.text(footer, pageWidth / 2, doc.internal.pageSize.getHeight() - 10, { align: 'center' });
+    }
+  });
+
+  doc.save('CRM_Assigned_Leads_Report.pdf');
+};
 
 
 
@@ -595,7 +632,7 @@ function Viewstudents() {
                       Sort by: {sortColumn.charAt(0).toUpperCase() + sortColumn.slice(1)}
                     </Dropdown.Toggle>
                     <Dropdown.Menu>
-                      {['name', 'email', 'phone', 'course', 'place', 'status'].map(col => (
+                      {['name', 'email', 'phone', 'course', 'place', 'status','callMarked'].map(col => (
                         <Dropdown.Item key={col} onClick={() => handleSortChange(col)}>
                           {col.charAt(0).toUpperCase() + col.slice(1)}
                         </Dropdown.Item>
@@ -631,7 +668,7 @@ function Viewstudents() {
                   size="sm"
                   onClick={() => { fetchAssigned(); setShowAssignedModal(true); }}
                 >
-                  View Assigned
+                  View Leads
                 </Button>
                 <Button
                   variant="danger"
@@ -659,7 +696,9 @@ function Viewstudents() {
               <div className="mt-2 fw-bold text-start">
                 Total Students: {students.length} |{" "}
                 Assigned: {students.filter(stu => stu.assignedTo).length} |{" "}
-                Unassigned: {students.filter(stu => !stu.assignedTo).length}
+                Unassigned: {students.filter(stu => !stu.assignedTo).length} | {" "}
+                Marked : {students.filter(stu => stu.callMarked === 'marked').length} | {" "}
+                Not marked : {students.filter(stu => stu.callMarked !== 'marked').length}
               </div>
               <div className="table-responsive vs-table-responsive">
                 <Table className="custom-table table-hover align-middle">
@@ -688,7 +727,7 @@ function Viewstudents() {
                       <th>Course</th>
                       <th>Place</th>
                       <th>Status</th>
-
+                      <th>Call Status</th>
                       <th style={{ minWidth: '140px' }}>Actions</th>
                     </tr>
                   </thead>
@@ -704,13 +743,19 @@ function Viewstudents() {
                             />
                           </td>
                           <td className="align-middle">{indexOfFirstRow + idx + 1}</td>
-                          <td className={`align-middle ${student.assignedTo ? "assigned-name" : ""}`}>
+                          <td
+                            className={
+                              `align-middle ` +
+                              (student.assignedTo ? "assigned-name " : "") +
+                              (student.assignedTo && student.callMarked === 'marked' ? "name-strikethrough " : "")
+                            }
+                          >
                             {student.name}
                           </td>
-                          <td className="align-middle">{student.email}</td>
-                          <td className="align-middle">{student.phone}</td>
-                          <td className="align-middle">{student.course}</td>
-                          <td className="align-middle">{student.place}</td>
+                          <td className={`align-middle ${student.assignedTo && student.callMarked === 'marked' ? 'name-strikethrough' : ''}`}>{student.email}</td>
+                          <td className={`align-middle ${student.assignedTo && student.callMarked === 'marked' ? 'name-strikethrough' : ''}`}>{student.phone}</td>
+                          <td className={`align-middle ${student.assignedTo && student.callMarked === 'marked' ? 'name-strikethrough' : ''}`}>{student.course}</td>
+                          <td className={`align-middle ${student.assignedTo && student.callMarked === 'marked' ? 'name-strikethrough' : ''}`}>{student.place}</td>
                           <td className="align-middle">
                             {student.assignedTo ? (
                               <span className="badge bg-success">Assigned</span>
@@ -718,6 +763,14 @@ function Viewstudents() {
                               <span className="badge bg-secondary">Unassigned</span>
                             )}
                           </td>
+                          <td className="align-middle">
+                            {student.callMarked === 'marked' ? (
+                              <span className="badge bg-success">Marked</span>
+                            ) : (
+                              <span className="badge bg-secondary">Not Marked</span>
+                            )}
+                          </td>
+
                           <td className="align-middle">
                             <div className="d-flex justify-content-end">
                               <Button
@@ -730,7 +783,7 @@ function Viewstudents() {
                               </Button>
                               <Button
                                 variant="danger"
-                                 className="btn-transition"
+                                className="btn-transition"
                                 size="sm"
                                 onClick={() => handleConfirmDeleteOne(student._id)}
                               >
@@ -779,7 +832,7 @@ function Viewstudents() {
                       {rowsPerPage}
                     </Dropdown.Toggle>
                     <Dropdown.Menu>
-                      {[1, 2, 5, 10, 20, 50, 100].map(num => (
+                      {[1, 2, 5, 10, 20,30,40, 50,60,80,100].map(num => (
                         <Dropdown.Item key={num} active={rowsPerPage === num} onClick={() => { setRowsPerPage(num); setCurrentPage(1); }}>
                           {num}
                         </Dropdown.Item>
@@ -1028,7 +1081,7 @@ function Viewstudents() {
         dialogClassName="assigned-modal-dialog"
       >
         <Modal.Header closeButton>
-          <Modal.Title>Assigned Students</Modal.Title>
+          <Modal.Title>Assigned Leads</Modal.Title>
         </Modal.Header>
         <Modal.Body>
 
@@ -1036,7 +1089,7 @@ function Viewstudents() {
             <input
               type="text"
               className="form-control"
-              placeholder="Search by name, email, assignee..."
+              placeholder="Search by anything..."
               value={assignedSearchTerm}
               onChange={e => {
                 setAssignedSearchTerm(e.target.value);

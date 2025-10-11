@@ -8,7 +8,7 @@ import Notifications from './Notifications'
 function Dashboard() {
  
   return (
-    <Layout title={"CRM-User-Dashboard "}>
+    <Layout title={"CRM- User Dashboard "}>
       <div className="container-fluid m-3 p-3 admin-root">
       <div className="row">
         <aside className="col-md-3">

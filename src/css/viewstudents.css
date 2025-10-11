@@ -433,3 +433,10 @@
   color: #fff;
   transform: scale(1.05);       /* optional slight zoom effect */
 }
+.name-strikethrough {
+  text-decoration: line-through;
+  color: #999;  /* maybe dim the color too */
+  text-decoration-thickness: 1px; /* Thicker line for emphasis */
+  font-weight: bold; /* Bold text */
+  color: #333; 
+}
