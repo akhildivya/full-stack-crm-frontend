@@ -114,3 +114,129 @@
     gap: 1.5rem;
   }
 }
+ /* for user completions*/
+ /* ================== Completion Events Card ================== */
+/* ================== Alternate Completion Events Card ================== */
+
+.completion-card {
+  background: #f8f9fa; /* light gray background */
+  border-radius: 10px;
+  padding: 20px;
+  border: none;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  margin-bottom: 30px;
+}
+
+.completion-title {
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: #343a40;
+  margin-bottom: 16px;
+  position: relative;
+}
+
+.completion-title::after {
+  content: "";
+  width: 40px;
+  height: 3px;
+  background: #007bff; /* accent color */
+  position: absolute;
+  bottom: -8px;
+  left: 0;
+  border-radius: 2px;
+}
+
+.completion-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.completion-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid #e9ecef;
+  transition: background 0.2s ease;
+}
+
+.completion-item:last-child {
+  border-bottom: none;
+}
+
+.completion-item:hover {
+  background: #ffffff;
+}
+
+.completion-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #007bff;
+  color: white;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.completion-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.completion-user {
+  font-weight: 600;
+  color: #212529;
+}
+
+.completion-time {
+  font-size: 0.9rem;
+  color: #6c757d;
+  margin-top: 3px;
+}
+
+
+.completion-dismiss-btn {
+  background: none;
+  border: none;
+  color: #888;
+  font-size: 1.2rem;
+  cursor: pointer;
+  margin-left: auto; /* push it to the far right */
+  padding: 0 8px;
+}
+
+.completion-dismiss-btn:hover {
+  color: #444;
+}
+/* styles.css */
+.completion-message {
+  display: block;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: #555;
+  background-color: #f8f9fa;
+  padding: 8px;
+  border-radius: 4px;
+  margin-top: 8px;
+  border-left: 4px solid #007bff;
+}
+.completion-message span {
+  font-weight: bold;
+  color: #007bff;
+}
+
+.assigned-date {
+  color: #28a745; /* Green */
+}
+
+.total-contacts {
+  color: #ffc107; /* Yellow */
+}
+
+.completed-at {
+  color: #dc3545; /* Red */
+}

@@ -140,27 +140,27 @@ function DutyList() {
   }, [students, normalized, updatedStudents]);
 
   // sorting
- const sorted = useMemo(() => {
-  return [...filtered].sort((a, b) => {
-    if (sortKey === 'assignedAt') {
-      const aAssignedAt = new Date(a.assignedAt).getTime();
-      const bAssignedAt = new Date(b.assignedAt).getTime();
-      return sortOrder === 'asc' ? aAssignedAt - bAssignedAt : bAssignedAt - aAssignedAt;
-    }
+  const sorted = useMemo(() => {
+    return [...filtered].sort((a, b) => {
+      if (sortKey === 'assignedAt') {
+        const aAssignedAt = new Date(a.assignedAt).getTime();
+        const bAssignedAt = new Date(b.assignedAt).getTime();
+        return sortOrder === 'asc' ? aAssignedAt - bAssignedAt : bAssignedAt - aAssignedAt;
+      }
 
-    if (sortKey === 'status') {
-      const aStatus = updatedStudents.includes(a._id) ? 'marked' : 'not marked';
-      const bStatus = updatedStudents.includes(b._id) ? 'marked' : 'not marked';
-      const cmp = aStatus.localeCompare(bStatus, undefined, { sensitivity: 'base' });
+      if (sortKey === 'status') {
+        const aStatus = updatedStudents.includes(a._id) ? 'marked' : 'not marked';
+        const bStatus = updatedStudents.includes(b._id) ? 'marked' : 'not marked';
+        const cmp = aStatus.localeCompare(bStatus, undefined, { sensitivity: 'base' });
+        return sortOrder === 'asc' ? cmp : -cmp;
+      }
+
+      const aVal = ((a[sortKey] || '') + '').toString().toLowerCase();
+      const bVal = ((b[sortKey] || '') + '').toString().toLowerCase();
+      const cmp = aVal.localeCompare(bVal, undefined, { sensitivity: 'base' });
       return sortOrder === 'asc' ? cmp : -cmp;
-    }
-
-    const aVal = ((a[sortKey] || '') + '').toString().toLowerCase();
-    const bVal = ((b[sortKey] || '') + '').toString().toLowerCase();
-    const cmp = aVal.localeCompare(bVal, undefined, { sensitivity: 'base' });
-    return sortOrder === 'asc' ? cmp : -cmp;
-  });
-}, [filtered, sortKey, sortOrder, updatedStudents]);
+    });
+  }, [filtered, sortKey, sortOrder, updatedStudents]);
 
 
   // pagination
@@ -202,15 +202,45 @@ function DutyList() {
         // mark updated
         setUpdatedStudents(prev => (prev.includes(updatedStudent._id) ? prev : [...prev, updatedStudent._id]));
 
-        toast.success('Student status updated successfully!');
+        toast.success('Call status updated successfully!', {
+          position: "top-center",
+          autoClose: 5000,
+          hideProgressBar: false,
+          closeOnClick: false,
+          pauseOnHover: true,
+          draggable: true,
+          progress: undefined,
+          theme: "light",
+
+        });
         setShowModal(false);
         setSelectedStudent(null);
       } else {
-        toast.error(response.data?.message || 'Failed to update student status');
+        toast.error(response.data?.message || 'Failed to update call status', {
+          position: "top-center",
+          autoClose: 5000,
+          hideProgressBar: false,
+          closeOnClick: false,
+          pauseOnHover: true,
+          draggable: true,
+          progress: undefined,
+          theme: "light",
+
+        });
       }
     } catch (err) {
       console.error('Error updating student status:', err);
-      toast.error('Server or network error');
+      toast.error('Server or network error', {
+        position: "top-center",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: false,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "light",
+
+      });
     }
   };
   const exportToPDF = () => {
@@ -355,7 +385,7 @@ function DutyList() {
     const marked = updatedStudents.length;
     const notMarked = totalAssigned - marked;
 
-    
+
     let newCount = 0;
     let latestAssignedDate = null;
     if (students.length > 0) {
@@ -421,7 +451,7 @@ function DutyList() {
                         Sort by: {sortKey.charAt(0).toUpperCase() + sortKey.slice(1)}
                       </Dropdown.Toggle>
                       <Dropdown.Menu>
-                        {['name', 'email', 'phone', 'course', 'place', 'status','assignedAt'].map(col => (
+                        {['name', 'email', 'phone', 'course', 'place', 'status', 'assignedAt'].map(col => (
                           <Dropdown.Item
                             key={col}
                             onClick={() => {
@@ -481,13 +511,14 @@ function DutyList() {
                         <tr>
                           <th>#</th>
                           <th>Name</th>
+                          <th>Status</th>
                           <th>Email</th>
                           <th>Phone</th>
                           <th>Course</th>
                           <th>Place</th>
                           <th>Assigned At</th>
                           <th>Actions</th>
-                          <th>Status</th>
+
                         </tr>
                       </thead>
                       <tbody>
@@ -524,6 +555,7 @@ function DutyList() {
                                     </sup>
                                   )}
                                 </td>
+                                <td >{isUpdated ? <span className="badge bg-success">Marked</span> : <span className="badge bg-secondary">Not Marked</span>}</td>
                                 <td>{s.email}</td>
                                 <td>{s.phone}</td>
                                 <td>{s.course}</td>
@@ -565,7 +597,7 @@ function DutyList() {
                                     Update
                                   </Button>
                                 </td>
-                                <td>{isUpdated ? 'Marked' : 'Not Marked'}</td>
+
                               </tr>
                             );
                           });
@@ -600,7 +632,7 @@ function DutyList() {
                             setItemsPerPage(Number(e.target.value));
                           }}
                         >
-                          {[2, 5, 10, 15, 20, 25,30,35, 40, 50, 100].map(size => (
+                          {[2, 5, 10, 15, 20, 25, 30, 35, 40, 50, 100].map(size => (
                             <option key={size} value={size}>
                               {size}
                             </option>

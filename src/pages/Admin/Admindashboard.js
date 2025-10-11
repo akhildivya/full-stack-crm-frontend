@@ -23,10 +23,8 @@ function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Refs for intervals
-  const newUsersIntervalRef = useRef(null);
-  const overviewIntervalRef = useRef(null);
-  const statsIntervalRef = useRef(null);
+  // For completion events
+  const [completionEvents, setCompletionEvents] = useState([]);
 
   // Fetch unverified users
   useEffect(() => {
@@ -41,13 +39,9 @@ function AdminDashboard() {
         console.error("Error fetching new users:", err);
       }
     };
-
     fetchNewUsers();
-    newUsersIntervalRef.current = setInterval(fetchNewUsers, 1000); 
-
-    return () => {
-      if (newUsersIntervalRef.current) clearInterval(newUsersIntervalRef.current);
-    };
+    const iv = setInterval(fetchNewUsers, 1000);
+    return () => clearInterval(iv);
   }, []);
 
   // Fetch user overview
@@ -67,13 +61,9 @@ function AdminDashboard() {
         setLoading(false);
       }
     };
-
     fetchOverview();
-    overviewIntervalRef.current = setInterval(fetchOverview, 1000); 
-
-    return () => {
-      if (overviewIntervalRef.current) clearInterval(overviewIntervalRef.current);
-    };
+    const iv = setInterval(fetchOverview, 1000);
+    return () => clearInterval(iv);
   }, []);
 
   // Fetch leads & students stats
@@ -93,13 +83,26 @@ function AdminDashboard() {
         setLoading(false);
       }
     };
-
     fetchStats();
-    statsIntervalRef.current = setInterval(fetchStats, 1000); 
+    const iv = setInterval(fetchStats, 1000);
+    return () => clearInterval(iv);
+  }, []);
 
-    return () => {
-      if (statsIntervalRef.current) clearInterval(statsIntervalRef.current);
+  // Fetch user completion events
+  useEffect(() => {
+    const fetchCompletions = async () => {
+      try {
+        const resp = await axios.get(`${BASEURL}/admin/user-completions`);
+        if (resp.data.success) {
+          setCompletionEvents(resp.data.data);
+        }
+      } catch (err) {
+        console.error("Error fetching user completions:", err);
+      }
     };
+    fetchCompletions();
+    const iv = setInterval(fetchCompletions, 5000);
+    return () => clearInterval(iv);
   }, []);
 
   if (loading) {
@@ -152,7 +155,6 @@ function AdminDashboard() {
                           hour12: true,
                         })
                         .replace(/ /g, "-");
-
                       return (
                         <li key={user._id} className="d-flex align-items-center mb-1">
                           <i className="bi bi-person-circle me-2" />
@@ -179,6 +181,64 @@ function AdminDashboard() {
               ) : (
                 <p className="no-unverified">No pending verifications at this time.</p>
               )}
+              {/* Completion events card / list */}
+<div className="completion-card mt-4">
+  <h5 className="completion-title">Recent Task Completions</h5>
+  <ul className="completion-list">
+    {completionEvents.map(u => (
+      <li key={u._id} className="completion-item">
+        <span className="completion-icon">✔</span>
+        <div className="completion-content">
+  <span className="completion-message">
+  {u.username} : Task assigned on:{" "}
+  <span className="assigned-date">
+    {u.assignedDate
+      ? new Date(u.assignedDate).toLocaleString([], {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: true,
+        })
+      : 'N/A'}
+  </span>
+  , Total contacts:{" "}
+  <span className="total-contacts">{u.totalContacts}</span>, Completed at:{" "}
+  <span className="completed-at">
+    {u.completedAt
+      ? new Date(u.completedAt).toLocaleString([], {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: true,
+        })
+      : 'N/A'}
+  </span>
+</span>
+
+
+        </div>
+        <button
+          className="completion-dismiss-btn"
+          onClick={async () => {
+            try {
+              await axios.delete(`${BASEURL}/admin/user-completion/${u._id}`);
+              setCompletionEvents(events => events.filter(ev => ev._id !== u._id));
+            } catch (err) {
+              console.error("Failed to dismiss notification:", err);
+            }
+          }}
+          title="Dismiss"
+        >
+          &times;
+        </button>
+      </li>
+    ))}
+  </ul>
+</div>
 
               {/* User Metrics Row */}
               <div className="row mt-4 gx-3 gy-3">
@@ -202,10 +262,9 @@ function AdminDashboard() {
                 </div>
               </div>
 
-             
               <section className="metrics mt-4">
                 <div className="metric">
-                  <strong><Animatedcounter value={stats.totalStudents}  /></strong>
+                  <strong><Animatedcounter value={stats.totalStudents} /></strong>
                   <span>Total Students</span>
                 </div>
                 <div className="metric">
@@ -217,7 +276,10 @@ function AdminDashboard() {
                   <span>Assigned Leads</span>
                 </div>
               </section>
+
             </div>
+
+
           </main>
         </div>
       </div>
