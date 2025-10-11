@@ -46,6 +46,7 @@ function Duties() {
   };
 
   useEffect(() => {
+    document.title="CRM - Task Allocation"
     // fetch table stats
     const fetchStats = async () => {
       try {
@@ -82,87 +83,131 @@ function Duties() {
 
 
   const exportToPDF = () => {
-     const doc = new jsPDF({ unit: 'pt', format: 'a4' });
-  const margin = { top: 60, bottom: 40, left: 10, right: 10 };
-  const totalPagesExp = "{total_pages_count_string}";
-
-  // Page header + footer
-  const addHeaderFooter = () => {
-    const pageNo = doc.internal.getNumberOfPages();
+    const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+    const margin = { top: 60, bottom: 40, left: 20, right: 20 };
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
-    doc.setFontSize(12);
-   doc.text("CRM - Lead Assignment Statistics", pageWidth / 2, 40, { align: "center" });
-    doc.setFontSize(10);
-    doc.text(`Page ${pageNo} of ${totalPagesExp}`, pageWidth / 2, pageHeight - 10, { align: "center" });
-  };
+    const totalPagesPlaceholder = "{total_pages_count_string}";
 
-  let currentY = margin.top;
+    // Header + footer callback
+    const addHeaderFooter = (data) => {
+      // header
+      doc.setFontSize(12);
+      doc.setFont("helvetica", "bold");
+      doc.text("CRM - Lead Assignment Statistics", pageWidth / 2, margin.top - 30, { align: "center" });
+      // footer
+      const pageNo = doc.internal.getNumberOfPages();
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "normal");
+      doc.text(`Page ${pageNo} of ${totalPagesPlaceholder}`, pageWidth / 2, pageHeight - 10, { align: "center" });
+    };
 
-  currentRows.forEach((u, idx) => {
-    // user heading
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(11);
-    doc.text(`${idxFirst + idx + 1}. ${u.username} (${u.email})`, margin.left, currentY);
-    currentY += 18;
+    let currentY = margin.top;
 
-    // user summary info
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(10);
-    doc.text(`Total Count: ${u.totalAssigned}`, margin.left, currentY);
-    const formattedLast = formatDate(u.lastAssigned);
-    doc.text(`Last Assigned: ${formattedLast}`, margin.left + 200, currentY);
-    currentY += 12;
+    // Utility to format date (same logic as your React)
+    function formatDateTime(dt) {
+      if (!dt) return "—";
+      const d = new Date(dt);
+      const day = String(d.getDate()).padStart(2, "0");
+      const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"];
+      const month = monthNames[d.getMonth()];
+      const year = d.getFullYear();
+      const time = d.toLocaleString("en-IN", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: true
+      });
+      return `${day}-${month}-${year} ${time}`;
+    }
+function formatDate(dt) {
+  if (!dt) return '';
+  const d = new Date(dt);
+  const day = String(d.getDate()).padStart(2, '0');
+  const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"];
+  const month = monthNames[d.getMonth()];
+  const year = d.getFullYear();
+  return `${day}-${month}-${year}`;
+}
+    currentRows.forEach((u, idx) => {
+      // If needed, add a new page when currentY is too near bottom
+      if (currentY > pageHeight - margin.bottom - 100) {
+        doc.addPage();
+        currentY = margin.top;
+      }
 
-    // daily summary subtable
-    if (u.dailySummary && u.dailySummary.length > 0) {
-      const body = u.dailySummary.map(d => {
-        const dateObj = new Date(d.date);
-        const day = String(dateObj.getDate()).padStart(2, "0");
-        const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sept","Oct","Nov","Dec"];
-        const month = monthNames[dateObj.getMonth()];
-        const year = dateObj.getFullYear();
-        const time = dateObj.toLocaleString("en-IN", {
-          hour: "2-digit",
-          minute: "2-digit",
-          second: "2-digit",
-          hour12: true
+      // User header line (username + email)
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(11);
+      doc.text(`${idxFirst + idx + 1}. ${u.username} (${u.email})`, margin.left, currentY);
+      currentY += 18;
+
+      // Summary info line
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
+      const totalCountText = `Total Count: ${u.totalAssigned}`;
+      const lastAssignedText = `Last Assigned: ${formatDateTime(u.lastAssigned)}`;
+      doc.text(totalCountText, margin.left, currentY);
+      doc.text(lastAssignedText, margin.left + 200, currentY);
+      currentY += 14;
+
+      // Prepare daily summary sorted ascending
+      let dailyArr = [];
+      if (u.dailySummary && u.dailySummary.length > 0) {
+        dailyArr = [...u.dailySummary].sort((d1, d2) => {
+          const t1 = new Date(d1.date).getTime();
+          const t2 = new Date(d2.date).getTime();
+          return t1 - t2;
         });
-        const formattedDate = `${day}-${month}-${year} ${time}`;
-        return [formattedDate, d.count];
-      });
+      }
 
-      autoTable(doc, {
-        startY: currentY,
-        margin: { left: margin.left, right: margin.right },
-        head: [["Date & Time", "Count"]],
-        body,
-        theme: "grid",
-        headStyles: { fillColor: [0, 123, 255], textColor: [255, 255, 255] },
-        bodyStyles: { fillColor: [245, 247, 250], textColor: [20, 20, 20] },
-        styles: { fontSize: 9 },
-        didDrawPage: addHeaderFooter,
-      });
+      if (dailyArr.length > 0) {
+        const tableBody = dailyArr.map(d => {
+          return [
+            formatDateTime(d.date),
+            d.count != null ? String(d.count) : ""
+          ];
+        });
+        autoTable(doc, {
+          startY: currentY,
+          margin: { left: margin.left, right: margin.right },
+          head: [["Date & Time", "Count"]],
+          body: tableBody,
+          theme: "grid",
+          headStyles: {
+            fillColor: [0, 123, 255],
+            textColor: [255, 255, 255],
+            halign: "center"
+          },
+          bodyStyles: {
+            fillColor: [245, 247, 250],
+            textColor: [20, 20, 20]
+          },
+          styles: {
+            fontSize: 9,
+            cellPadding: 3
+          },
+          willDrawCell: (data) => {
+            // optional: custom styling per cell if needed
+          },
+          didDrawPage: addHeaderFooter
+        });
 
-      currentY = doc.lastAutoTable.finalY + 20;
-    } else {
-      currentY += 10;
+        // Advance Y to below the table + some spacing
+        currentY = doc.lastAutoTable.finalY + 16;
+      } else {
+        // No daily summary, just add a bit of vertical gap
+        currentY += 12;
+      }
+    });
+
+    // Put total pages
+    if (typeof doc.putTotalPages === "function") {
+      doc.putTotalPages(totalPagesPlaceholder);
     }
-
-    // add page break if needed
-    if (currentY > doc.internal.pageSize.height - margin.bottom - 40) {
-      doc.addPage();
-      currentY = margin.top;
-    }
-  });
-
-  // replace placeholder with total page count
-  if (typeof doc.putTotalPages === "function") {
-    doc.putTotalPages(totalPagesExp);
-  }
-
-  doc.save("Assigned_Lead_Statistics.pdf");
+    doc.save("CRM-Assigned-Lead-Statistics.pdf");
   };
+
 
   // Filtering, sorting, pagination as before...
   const normalized = searchTerm.trim().toLowerCase();
@@ -171,8 +216,11 @@ function Duties() {
     return stats.filter(u => {
       const name = String(u.username || '').toLowerCase();
       const email = String(u.email || '').toLowerCase();
-      const count = String(u.count || '').toLowerCase();
-      return name.includes(normalized) || email.includes(normalized) || count.includes(normalized);
+      const assignedCountStr = String(u.totalAssigned ?? '').toLowerCase();
+      const lastAssigned = u.lastAssigned ? formatDate(new Date(u.lastAssigned)) : '';
+
+      return name.includes(normalized) || email.includes(normalized) || assignedCountStr.includes(normalized) ||
+        lastAssigned.includes(normalized);
     });
   }, [stats, normalized]);
 
@@ -180,7 +228,7 @@ function Duties() {
     const arr = [...filtered];
     arr.sort((a, b) => {
       let cmp = 0;
-      if (sortKey === 'username') {
+      if (sortKey === 'name') {
         const A = String(a.username || '').toLowerCase();
         const B = String(b.username || '').toLowerCase();
         cmp = A.localeCompare(B, undefined, { sensitivity: 'base' });
@@ -189,7 +237,7 @@ function Duties() {
         const B = String(b.email || '').toLowerCase();
         cmp = A.localeCompare(B, undefined, { sensitivity: 'base' });
       } else if (sortKey === 'count') {
-        cmp = (Number(a.count) || 0) - (Number(b.count) || 0);
+        cmp = (Number(a.totalAssigned) || 0) - (Number(b.totalAssigned) || 0);
       } else if (sortKey === 'lastAssigned') {
         const ta = a.lastAssigned ? new Date(a.lastAssigned).getTime() : 0;
         const tb = b.lastAssigned ? new Date(b.lastAssigned).getTime() : 0;
@@ -243,7 +291,7 @@ function Duties() {
 
   if (error || overviewError) {
     return (
-      <Layout title={"CRM- Allotted Duties"}>
+      <Layout title={"CRM- Task Allocation"}>
         <div className="container-fluid m-3 p-3 admin-root">
           <div className="row">
             <aside className="col-md-3"><Adminmenu /></aside>
@@ -293,7 +341,7 @@ function Duties() {
                   <input
                     type="text"
                     className="form-control"
-                    placeholder="Search by username, email or count..."
+                    placeholder="Search by name, email or count..."
                     value={searchTerm}
                     onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }}
                   />
@@ -304,7 +352,7 @@ function Duties() {
                       Sort by: {sortKey.charAt(0).toUpperCase() + sortKey.slice(1)}
                     </Dropdown.Toggle>
                     <Dropdown.Menu>
-                      {['username', 'email', 'count', 'lastAssigned'].map(col => (
+                      {['name', 'email', 'count', 'lastAssigned'].map(col => (
                         <Dropdown.Item key={col} onClick={() => handleSortColumn(col)}>
                           {col === 'lastAssigned' ? 'Last Assigned' : (col.charAt(0).toUpperCase() + col.slice(1))}
                         </Dropdown.Item>
@@ -378,7 +426,14 @@ function Duties() {
                                       </tr>
                                     </thead>
                                     <tbody>
-                                      {u.dailySummary.map((d, i) => {
+                                      {(
+                                        // sort first, without mutating original if you prefer
+                                        [...u.dailySummary].sort((d1, d2) => {
+                                          const t1 = new Date(d1.date).getTime();
+                                          const t2 = new Date(d2.date).getTime();
+                                          return t1 - t2;  // ascending
+                                        })
+                                      ).map((d, i) => {
                                         const dateObj = new Date(d.date);
                                         const day = String(dateObj.getDate()).padStart(2, '0');
                                         const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"];

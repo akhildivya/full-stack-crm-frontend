@@ -58,8 +58,24 @@ const normalized = searchTerm.trim().toLowerCase();
       const callDuration = s.callInfo?.callDuration ?? '';
       const interested = s.callInfo?.interested === true ? 'Yes' : s.callInfo?.interested === false ? 'No' : '';
       const planType = s.callInfo?.planType || '';
-      const assignedAt = s.assignedAt ? new Date(s.assignedAt).toLocaleString('en-GB') : '';
-      const completedAt = s.callInfo?.completedAt ? new Date(s.callInfo.completedAt).toLocaleString('en-GB') : '';
+      const assignedAt = s.assignedAt ? new Date(s.assignedAt).toLocaleString('en-GB', {
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: true,
+        }) : '';
+      const completedAt = s.callInfo?.completedAt ? new Date(s.callInfo.completedAt).toLocaleString('en-GB', {
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: true,
+        }) : '';
 
       return (
         s.name.toLowerCase().includes(normalized) ||

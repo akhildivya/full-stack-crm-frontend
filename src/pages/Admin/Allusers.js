@@ -23,6 +23,7 @@ function Allusers() {
   const pollingInterval = 1000;
 
   useEffect(() => {
+    document.title="CRM - Verify Users"
     const fetchUsers = async () => {
       try {
         const response = await axios.get(`${BASEURL}/all-users`);
@@ -165,7 +166,7 @@ function Allusers() {
   }
 
   return (
-    <Layout title={"CRM - All Users"}>
+    <Layout title={"CRM - Verify Users"}>
       <div className="container-fluid m-3 p-3 admin-root">
         <div className="row">
           <aside className="col-md-3"><Adminmenu /></aside>

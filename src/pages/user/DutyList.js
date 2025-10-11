@@ -140,20 +140,28 @@ function DutyList() {
   }, [students, normalized, updatedStudents]);
 
   // sorting
-  const sorted = useMemo(() => {
-    return [...filtered].sort((a, b) => {
-      if (sortKey === 'status') {
-        const aStatus = updatedStudents.includes(a._id) ? 'marked' : 'not marked';
-        const bStatus = updatedStudents.includes(b._id) ? 'marked' : 'not marked';
-        const cmp = aStatus.localeCompare(bStatus, undefined, { sensitivity: 'base' });
-        return sortOrder === 'asc' ? cmp : -cmp;
-      }
-      const aVal = ((a[sortKey] || '') + '').toString().toLowerCase();
-      const bVal = ((b[sortKey] || '') + '').toString().toLowerCase();
-      const cmp = aVal.localeCompare(bVal, undefined, { sensitivity: 'base' });
+ const sorted = useMemo(() => {
+  return [...filtered].sort((a, b) => {
+    if (sortKey === 'assignedAt') {
+      const aAssignedAt = new Date(a.assignedAt).getTime();
+      const bAssignedAt = new Date(b.assignedAt).getTime();
+      return sortOrder === 'asc' ? aAssignedAt - bAssignedAt : bAssignedAt - aAssignedAt;
+    }
+
+    if (sortKey === 'status') {
+      const aStatus = updatedStudents.includes(a._id) ? 'marked' : 'not marked';
+      const bStatus = updatedStudents.includes(b._id) ? 'marked' : 'not marked';
+      const cmp = aStatus.localeCompare(bStatus, undefined, { sensitivity: 'base' });
       return sortOrder === 'asc' ? cmp : -cmp;
-    });
-  }, [filtered, sortKey, sortOrder, updatedStudents]);
+    }
+
+    const aVal = ((a[sortKey] || '') + '').toString().toLowerCase();
+    const bVal = ((b[sortKey] || '') + '').toString().toLowerCase();
+    const cmp = aVal.localeCompare(bVal, undefined, { sensitivity: 'base' });
+    return sortOrder === 'asc' ? cmp : -cmp;
+  });
+}, [filtered, sortKey, sortOrder, updatedStudents]);
+
 
   // pagination
   const currentItems = useMemo(() => {
@@ -347,8 +355,7 @@ function DutyList() {
     const marked = updatedStudents.length;
     const notMarked = totalAssigned - marked;
 
-    // “New” means the one with the latest assignedAt that is not marked yet?
-    // You already have logic for “latestAssignedTime” in your render; reuse that:
+    
     let newCount = 0;
     let latestAssignedDate = null;
     if (students.length > 0) {
@@ -402,19 +409,19 @@ function DutyList() {
                     <input
                       type="text"
                       className="form-control"
-                      placeholder="Search students..."
+                      placeholder="Find by anything...."
                       value={searchTerm}
                       onChange={e => setSearchTerm(e.target.value)}
                     />
                   </div>
 
-                  <div className="d-flex justify-content-center gap-2">
+                  <div className="d-flex justify-content-center gap-2 ">
                     <Dropdown>
                       <Dropdown.Toggle variant="outline-secondary" id="dropdown-sort-column">
                         Sort by: {sortKey.charAt(0).toUpperCase() + sortKey.slice(1)}
                       </Dropdown.Toggle>
                       <Dropdown.Menu>
-                        {['name', 'email', 'phone', 'course', 'place', 'status'].map(col => (
+                        {['name', 'email', 'phone', 'course', 'place', 'status','assignedAt'].map(col => (
                           <Dropdown.Item
                             key={col}
                             onClick={() => {
@@ -593,7 +600,7 @@ function DutyList() {
                             setItemsPerPage(Number(e.target.value));
                           }}
                         >
-                          {[2, 5, 10, 15, 20, 25, 50, 100].map(size => (
+                          {[2, 5, 10, 15, 20, 25,30,35, 40, 50, 100].map(size => (
                             <option key={size} value={size}>
                               {size}
                             </option>

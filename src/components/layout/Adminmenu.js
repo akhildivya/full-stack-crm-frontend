@@ -59,17 +59,17 @@ function Adminmenu() {
 
             <NavLink to="/admin-dashboard/upload-sheet" className={linkClass}>
               <i className="bi bi-file-earmark-excel-fill me-2" aria-hidden="true"></i>
-              <span>Add sheet</span>
+              <span>Attach sheet</span>
             </NavLink>
 
             <NavLink to="/admin-dashboard/student-details" className={linkClass}>
               <i className="bi bi-person-lines-fill me-2" aria-hidden="true"></i>
-              <span>Students list</span>
+              <span>Registry</span>
             </NavLink>
 
             <NavLink to="/admin-dashboard/alloted-duties" className={linkClass}>
-              <i className="bi bi-list-task me-2" aria-hidden="true"></i>
-              <span>Statistics/lead</span>
+              <i className="bi bi-bar-chart-steps me-2" aria-hidden="true"></i>
+              <span>Stat/lead</span>
             </NavLink>
 
 

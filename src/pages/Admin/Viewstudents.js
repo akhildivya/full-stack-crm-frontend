@@ -90,7 +90,7 @@ function Viewstudents() {
     setAssignedPage(pageNum);
   }
   useEffect(() => {
-    document.title = 'CRM - Student Details';
+    document.title = 'CRM - Enrollee List';
     const fetchStudents = async () => {
       try {
         const res = await axios.get(`${BASEURL}/admin/view-students`);
@@ -380,75 +380,83 @@ function Viewstudents() {
   };
 
   const exportToPDF = () => {
-    const doc = new jsPDF({
-      unit: 'pt',
-      format: 'a4',
-    });
+  const doc = new jsPDF({
+    unit: 'pt',
+    format: 'a4',
+  });
 
-    const margin = { top: 60, bottom: 40, left: 40, right: 40 };
-    const pageWidth = doc.internal.pageSize.getWidth();
+  const margin = { top: 60, bottom: 40, left: 10, right: 10 };
+  const pageWidth = doc.internal.pageSize.getWidth();
 
-    // Prepare the data rows
-    const tableData = currentRows.map((stu, idx) => {
-      // for status, convert boolean or presence
-      const statusText = stu.assignedTo ? 'Assigned' : 'Unassigned';
-      return [
-        indexOfFirstRow + idx + 1,
-        stu.name || '',
-        stu.email || '',
-        stu.phone || '',
-        stu.place || '',
-        stu.course || '',
-        statusText,
-      ];
-    });
+  // Compute summary values from full students array (not just currentRows)
+  const totalStudents = students.length;  // assuming `students` is full list
+  const assignedCount = students.filter(stu => stu.assignedTo).length;
+  const unassignedCount = totalStudents - assignedCount;
 
-    // Header labels
-    const head = [
-      ['#', 'Name', 'Email', 'Phone', 'Place', 'Course', 'Status']
+  // First, draw the title
+  doc.setFontSize(14);
+  doc.setTextColor(40);
+  doc.text(
+    "CRM - Contact Details Report",
+    pageWidth / 2,
+    margin.top - 30,
+    { align: 'center' }
+  );
+
+  // Then draw the summary line just below the title
+  const summaryY = margin.top - 3; // or tweak for spacing
+  doc.setFontSize(12);
+  doc.setTextColor(0);
+  const summaryText = `Total Students: ${totalStudents} | Assigned: ${assignedCount} | Unassigned: ${unassignedCount}`;
+  doc.text(summaryText, margin.left, summaryY);
+  
+  // Prepare table data
+  const tableData = currentRows.map((stu, idx) => {
+    const statusText = stu.assignedTo ? 'Assigned' : 'Unassigned';
+    return [
+      indexOfFirstRow + idx + 1,
+      stu.name || '',
+      stu.email || '',
+      stu.phone || '',
+      stu.place || '',
+      stu.course || '',
+      statusText,
     ];
+  });
+  const head = [['#', 'Name', 'Email', 'Phone', 'Place', 'Course', 'Status']];
 
-    autoTable(doc, {
-      startY: margin.top,
-      margin: margin,
-      head: head,
-      body: tableData,
-      theme: 'striped',
-      headStyles: {
-        fillColor: [0, 123, 255],
-        textColor: [255, 255, 255],
-        halign: 'center',
-      },
-      styles: {
-        fontSize: 10,
-        cellPadding: 4,
-        overflow: 'linebreak',
-      },
-      bodyStyles: {
-        fillColor: [245, 247, 250],
-      },
-      didDrawPage: (data) => {
-        // title header
-        doc.setFontSize(14);
-        doc.setTextColor(40);
-        doc.text(
-          "Student List Report",
-          pageWidth / 2,
-          margin.top - 30,
-          { align: 'center' }
-        );
+  autoTable(doc, {
+    startY: margin.top + 20,  // push table down so it doesn't overlap summary
+    margin: margin,
+    head: head,
+    body: tableData,
+    theme: 'striped',
+    headStyles: {
+      fillColor: [0, 123, 255],
+      textColor: [255, 255, 255],
+      halign: 'center',
+    },
+    styles: {
+      fontSize: 10,
+      cellPadding: 4,
+      overflow: 'linebreak',
+    },
+    bodyStyles: {
+      fillColor: [245, 247, 250],
+    },
+    didDrawPage: (data) => {
+      // footer with page numbers
+      const pageCount = doc.internal.getNumberOfPages();
+      doc.setFontSize(10);
+      const footerText = `Page ${doc.internal.getCurrentPageInfo().pageNumber} of ${pageCount}`;
+      const y = doc.internal.pageSize.getHeight() - 10;
+      doc.text(footerText, pageWidth / 2, y, { align: 'center' });
+    }
+  });
 
-        // footer with page numbers
-        const pageCount = doc.internal.getNumberOfPages();
-        doc.setFontSize(10);
-        const footerText = `Page ${doc.internal.getCurrentPageInfo().pageNumber} of ${pageCount}`;
-        const y = doc.internal.pageSize.getHeight() - 10;
-        doc.text(footerText, pageWidth / 2, y, { align: 'center' });
-      }
-    });
+  doc.save('crm_contact_details_report.pdf');
+};
 
-    doc.save('students_report.pdf');
-  };
   const exportAssignedToPDF = () => {
     const doc = new jsPDF({ unit: 'pt', format: 'a4' });
     const margin = { top: 60, bottom: 40, left: 10, right: 10 };
@@ -457,25 +465,45 @@ function Viewstudents() {
     // Prepare data rows
     const dataRows = assignedStudents.map((stu, idx) => [
       globalSerialIndex++,
+      stu.assignedTo?.username || stu.assignedTo?._id || '',
+      formatAssignedDate(stu.assignedAt) || '',
       stu.name || '',
       stu.email || '',
       stu.phone || '',
       stu.course || '',
-      stu.place || '',
-      (stu.assignedTo?.username || stu.assignedTo?._id) + '',
-      formatAssignedDate(stu.assignedAt)
+      stu.place || ''
     ]);
+
+    // Define column widths
+    const columnWidths = [30, 70, 70, 100, 100, 70, 60, 70];
 
     // Generate the table
     autoTable(doc, {
       startY: margin.top,
       margin,
       head: [
-        ['#', 'Name', 'Email', 'Phone', 'Course', 'Place', 'User', 'Assigned Date']
+        ['#', 'Current Assignee', 'Assigned At', 'Name', 'Email', 'Phone', 'Course', 'Place']
       ],
       body: dataRows,
       theme: 'striped',
       headStyles: { fillColor: [0, 123, 255], textColor: [255, 255, 255] },
+      columnStyles: {
+        0: { cellWidth: columnWidths[0] },
+        1: { cellWidth: columnWidths[1] },
+        2: { cellWidth: columnWidths[2] },
+        3: { cellWidth: columnWidths[3] },
+        4: { cellWidth: columnWidths[4] },
+        5: { cellWidth: columnWidths[5], halign: 'center' },
+        6: { cellWidth: columnWidths[6], halign: 'center' },
+        7: { cellWidth: columnWidths[7] }
+      },
+      styles: {
+        overflow: 'linebreak',
+        cellWidth: 'auto',
+        fontSize: 10,
+        lineWidth: 0.1
+      },
+      tableWidth: 'auto',
       didDrawPage: (data) => {
         doc.setFontSize(14);
         doc.setTextColor(40);
@@ -490,6 +518,9 @@ function Viewstudents() {
 
     doc.save('assigned_students_report.pdf');
   };
+
+
+
 
 
 
@@ -539,7 +570,7 @@ function Viewstudents() {
 
 
   return (
-    <Layout title={"CRM - Student Details"}>
+    <Layout title={"CRM - Enrollee List"}>
       <div className="container-fluid m-3 p-3 admin-root">
         <div className="row">
           <aside className="col-md-3">
@@ -625,7 +656,11 @@ function Viewstudents() {
                   Unselect Page
                 </Button>
               </div>
-
+              <div className="mt-2 fw-bold text-start">
+                Total Students: {students.length} |{" "}
+                Assigned: {students.filter(stu => stu.assignedTo).length} |{" "}
+                Unassigned: {students.filter(stu => !stu.assignedTo).length}
+              </div>
               <div className="table-responsive vs-table-responsive">
                 <Table className="custom-table table-hover align-middle">
                   <thead className="table-header">
@@ -695,6 +730,7 @@ function Viewstudents() {
                               </Button>
                               <Button
                                 variant="danger"
+                                 className="btn-transition"
                                 size="sm"
                                 onClick={() => handleConfirmDeleteOne(student._id)}
                               >
@@ -1068,6 +1104,12 @@ function Viewstudents() {
             <thead>
               <tr>
                 <th>#</th>
+                <th onClick={() => handleAssignedSort('assignedTo.username')}>
+                  Current Assignee{renderAssignedSortIndicator('assignedTo.username')}
+                </th>
+                <th onClick={() => handleAssignedSort('assignedAt')}>
+                  Assigned At{renderAssignedSortIndicator('assignedAt')}
+                </th>
                 <th onClick={() => handleAssignedSort('name')}>
                   Name{renderAssignedSortIndicator('name')}
                 </th>
@@ -1082,12 +1124,6 @@ function Viewstudents() {
                 </th>
                 <th onClick={() => handleAssignedSort('place')}>
                   Place{renderAssignedSortIndicator('place')}
-                </th>
-                <th onClick={() => handleAssignedSort('assignedTo.username')}>
-                  Current Assignee{renderAssignedSortIndicator('assignedTo.username')}
-                </th>
-                <th onClick={() => handleAssignedSort('assignedAt')}>
-                  Assigned At{renderAssignedSortIndicator('assignedAt')}
                 </th>
                 <th>History</th>
               </tr>
@@ -1122,9 +1158,6 @@ function Viewstudents() {
                     const dt = formatAssignedDate(stu.assignedAt).toLowerCase();
                     checks.push(dt);
                   }
-
-                  // You could also check history fields if needed
-                  // e.g. checking previous assignment user names or dates
 
                   // Finally: does any field “contain” the search term?
                   return checks.some(str => str.includes(lower));
@@ -1172,11 +1205,6 @@ function Viewstudents() {
                   <React.Fragment key={stu._id}>
                     <tr>
                       <td>{assignedIdxFirst + idx + 1}</td>
-                      <td>{stu.name}</td>
-                      <td>{stu.email}</td>
-                      <td>{stu.phone}</td>
-                      <td>{stu.course}</td>
-                      <td>{stu.place}</td>
                       <td>
                         {stu.assignedTo?.username || stu.assignedTo?._id}
                         {stu.assignedTo?.email && (
@@ -1188,6 +1216,11 @@ function Viewstudents() {
                       <td style={{ minWidth: '150px', width: '250px' }}>
                         {stu.assignedAt ? formatAssignedDate(stu.assignedAt) : '-'}
                       </td>
+                      <td>{stu.name}</td>
+                      <td>{stu.email}</td>
+                      <td>{stu.phone}</td>
+                      <td>{stu.course}</td>
+                      <td>{stu.place}</td>
                       <td>
                         <Button size="sm" onClick={() => toggleHistory(stu._id)}>
                           {historyOpenFor === stu._id ? 'Hide' : 'Show'}
@@ -1235,6 +1268,7 @@ function Viewstudents() {
               })()}
             </tbody>
           </Table>
+
         </Modal.Body>
         <Modal.Footer className="d-flex flex-column flex-md-row justify-content-between align-items-center">
           {/* PDF Export Icon */}

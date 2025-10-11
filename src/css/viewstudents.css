@@ -422,3 +422,14 @@
 .assign-leads-modal .form-check:hover {
   background: #e6f2ff;
 }
+
+.btn-transition {
+  transition: background-color 0.3s ease, transform 0.2s ease, color 0.3s ease;
+}
+
+/* On hover */
+.btn-transition:hover {
+  background-color: #c82333;  /* adjust as darker red or what you want */
+  color: #fff;
+  transform: scale(1.05);       /* optional slight zoom effect */
+}
