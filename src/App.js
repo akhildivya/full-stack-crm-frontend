@@ -22,6 +22,7 @@ import Viewstudents from "./pages/Admin/Viewstudents";
 import Duties from "./pages/Admin/Duties";
 import DutyList from "./pages/user/DutyList";
 import Taskcompleted from "./pages/user/Taskcompleted";
+import Workreport from "./pages/Admin/Workreport";
 
 function App() {
   return (
@@ -44,6 +45,7 @@ function App() {
           <Route path='contact' element={<Contact />}></Route>
           <Route path='student-details' element={<Viewstudents />}> </Route>
           <Route path='alloted-duties' element={<Duties />}> </Route>
+          <Route path='work-report' element={<Workreport />}></Route>
         </Route>
         <Route path='/register' element={<Register />}></Route>
         <Route path='/login' element={<Login />}></Route>

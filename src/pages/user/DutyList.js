@@ -557,7 +557,11 @@ function DutyList() {
                                 </td>
                                 <td >{isUpdated ? <span className="badge bg-success">Marked</span> : <span className="badge bg-secondary">Not Marked</span>}</td>
                                 <td>{s.email}</td>
-                                <td>{s.phone}</td>
+                                <td>
+                                  <a href={`tel:${s.phone}`} style={{ textDecoration: 'none', color: 'blue' }}>
+                                    {s.phone}
+                                  </a>
+                                </td>
                                 <td>{s.course}</td>
                                 <td>{s.place}</td>
                                 <td>
