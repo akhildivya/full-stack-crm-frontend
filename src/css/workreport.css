@@ -91,7 +91,7 @@
 }
 
 /* Body cells */
-.custom-table tbody td {
+.custom-table tbody td  {
   padding: 0.6rem 0.5rem;
   border-bottom: 1px solid #eaeaea;
   color: #333;
@@ -163,3 +163,4 @@
     white-space: nowrap;
   }
 }
+

@@ -9,7 +9,8 @@ import { BASEURL } from '../../service/baseUrl'
 import { jsPDF } from 'jspdf';
 import { autoTable } from 'jspdf-autotable';
 import { FaFilePdf } from 'react-icons/fa';
-
+import Tippy from '@tippyjs/react';
+import 'tippy.js/dist/tippy.css'; 
 function Viewstudents() {
   let globalSerialIndex = 1;
   const [students, setStudents] = useState([]);

@@ -17,7 +17,17 @@ function Taskcompleted() {
   const [sortOrder, setSortOrder] = useState('desc');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
-
+  const columns = [
+    { label: 'Name', key: 'name' },
+    { label: 'Phone', key: 'phone' },
+    { label: 'Course', key: 'course' },
+    { label: 'Call Status', key: 'callStatus' },
+    { label: 'Call Duration', key: 'callDuration' },
+    { label: 'Interested', key: 'interested' },
+    { label: 'Plan Type', key: 'planType' },
+    { label: 'Assigned At', key: 'assignedAt' },
+    { label: 'Completed At', key: 'completedAt' },
+  ];
   useEffect(() => {
     document.title = 'CRM - Opera Omnia';
     let intervalId;
@@ -48,7 +58,7 @@ function Taskcompleted() {
     };
   }, []);
 
-const normalized = searchTerm.trim().toLowerCase();
+  const normalized = searchTerm.trim().toLowerCase();
 
   const filtered = useMemo(() => {
     return (students || []).filter(s => {
@@ -59,23 +69,23 @@ const normalized = searchTerm.trim().toLowerCase();
       const interested = s.callInfo?.interested === true ? 'Yes' : s.callInfo?.interested === false ? 'No' : '';
       const planType = s.callInfo?.planType || '';
       const assignedAt = s.assignedAt ? new Date(s.assignedAt).toLocaleString('en-GB', {
-          day: '2-digit',
-          month: 'short',
-          year: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit',
-          second: '2-digit',
-          hour12: true,
-        }) : '';
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true,
+      }) : '';
       const completedAt = s.callInfo?.completedAt ? new Date(s.callInfo.completedAt).toLocaleString('en-GB', {
-          day: '2-digit',
-          month: 'short',
-          year: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit',
-          second: '2-digit',
-          hour12: true,
-        }) : '';
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true,
+      }) : '';
 
       return (
         s.name.toLowerCase().includes(normalized) ||
@@ -257,7 +267,7 @@ const normalized = searchTerm.trim().toLowerCase();
       },
     });
 
-    doc.save('concluded_work_report.pdf');
+    doc.save('CRM_Work_Report.pdf');
   };
 
 
@@ -265,7 +275,7 @@ const normalized = searchTerm.trim().toLowerCase();
     return (
       <div className="loading-container">
         <Spinner animation="border" variant="primary" />
-        <div>Loading students...</div>
+        <div>Loading contacts...</div>
       </div>
     );
 
@@ -331,15 +341,29 @@ const normalized = searchTerm.trim().toLowerCase();
 
               {/* Course-wise Counts */}
               <div className="mb-3">
-                <h6 >Course-wise-count:</h6>
+                <h6>Course-wise-count:</h6>
                 <div className="d-flex flex-wrap gap-2">
-                  {summary.courseCounts &&
-                    Object.entries(summary.courseCounts).map(([course, count]) => (
+                  {summary.courseCounts && (() => {
+                    // Normalize course names to consistent values
+                    const normalizedCourseCounts = {};
+                    Object.entries(summary.courseCounts).forEach(([course, count]) => {
+                      const normalizedCourse = course.toLowerCase();
+                      let displayCourse = course;
+
+                      if (normalizedCourse.includes('btech')) displayCourse = 'BTech';
+                      else if (normalizedCourse.includes('plus one')) displayCourse = 'Plus One';
+                      else if (normalizedCourse.includes('plus two')) displayCourse = 'Plus Two';
+
+                      normalizedCourseCounts[displayCourse] = (normalizedCourseCounts[displayCourse] || 0) + count;
+                    });
+
+                    // Render normalized badges
+                    return Object.entries(normalizedCourseCounts).map(([course, count]) => (
                       <span key={course} className="badge bg-secondary p-2">
                         {course}: {count}
                       </span>
-                    ))
-                  }
+                    ));
+                  })()}
                 </div>
               </div>
               {/* Search & Sort */}
@@ -353,18 +377,21 @@ const normalized = searchTerm.trim().toLowerCase();
                 />
                 <Dropdown>
                   <Dropdown.Toggle variant="outline-secondary">
-                    Sort by: {sortKey}
+                    Sort by: {columns.find(c => c.key === sortKey)?.label || sortKey}
                   </Dropdown.Toggle>
                   <Dropdown.Menu>
-                    {['name', 'phone', 'course', 'callStatus', 'callDuration', 'interested', 'planType', 'assignedAt', 'completedAt'].map(col => (
+                    {columns.map(col => (
                       <Dropdown.Item
-                        key={col}
+                        key={col.key}
                         onClick={() => {
-                          if (sortKey === col) setSortOrder(prev => (prev === 'asc' ? 'desc' : 'asc'));
-                          else { setSortKey(col); setSortOrder('asc'); }
+                          if (sortKey === col.key) setSortOrder(prev => (prev === 'asc' ? 'desc' : 'asc'));
+                          else {
+                            setSortKey(col.key);
+                            setSortOrder('asc');
+                          }
                         }}
                       >
-                        {col}
+                        {col.label}
                       </Dropdown.Item>
                     ))}
                   </Dropdown.Menu>
@@ -376,16 +403,33 @@ const normalized = searchTerm.trim().toLowerCase();
                 <Table className="custom-table table-hover align-middle">
                   <thead className="table-dark">
                     <tr>
-                      <th>#</th>
-                      <th>Name</th>
-                      <th>Phone</th>
-                      <th>Course</th>
-                      <th>Call Status</th>
-                      <th>Call Duration</th>
-                      <th>Interested</th>
-                      <th>Plan Type</th>
-                      <th>Assigned At</th>
-                      <th>Completed At</th> {/* New Column */}
+                      {[
+                        { label: '#', key: null },
+                        { label: 'Name', key: 'name' },
+                        { label: 'Phone', key: 'phone' },
+                        { label: 'Course', key: 'course' },
+                        { label: 'Call Status', key: 'callStatus' },
+                        { label: 'Call Duration', key: 'callDuration' },
+                        { label: 'Interested', key: 'interested' },
+                        { label: 'Plan Type', key: 'planType' },
+                        { label: 'Assigned At', key: 'assignedAt' },
+                        { label: 'Completed At', key: 'completedAt' },
+                      ].map((col, idx) => (
+                        <th
+                          key={idx}
+                          style={{ cursor: col.key ? 'pointer' : 'default' }}
+                          onClick={() => {
+                            if (!col.key) return;
+                            if (sortKey === col.key) setSortOrder(prev => (prev === 'asc' ? 'desc' : 'asc'));
+                            else {
+                              setSortKey(col.key);
+                              setSortOrder('asc');
+                            }
+                          }}
+                        >
+                          {col.label} {col.key === sortKey && (sortOrder === 'asc' ? '▲' : '▼')}
+                        </th>
+                      ))}
                     </tr>
                   </thead>
                   <tbody>
@@ -434,7 +478,7 @@ const normalized = searchTerm.trim().toLowerCase();
                   </div>
                   <div>
                     <select className="form-select form-select-sm" value={itemsPerPage} onChange={e => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}>
-                      {[2,5, 10, 15, 20, 25, 30, 35, 40, 50, 100].map(size => <option key={size} value={size}>{size}</option>)}
+                      {[ 5, 10, 15, 20, 25, 30, 35, 40, 50, 100].map(size => <option key={size} value={size}>{size}</option>)}
                     </select>
                   </div>
                 </div>

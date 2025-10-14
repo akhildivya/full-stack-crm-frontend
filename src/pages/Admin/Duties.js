@@ -120,15 +120,7 @@ function Duties() {
       });
       return `${day}-${month}-${year} ${time}`;
     }
-function formatDate(dt) {
-  if (!dt) return '';
-  const d = new Date(dt);
-  const day = String(d.getDate()).padStart(2, '0');
-  const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"];
-  const month = monthNames[d.getMonth()];
-  const year = d.getFullYear();
-  return `${day}-${month}-${year}`;
-}
+
     currentRows.forEach((u, idx) => {
       // If needed, add a new page when currentY is too near bottom
       if (currentY > pageHeight - margin.bottom - 100) {

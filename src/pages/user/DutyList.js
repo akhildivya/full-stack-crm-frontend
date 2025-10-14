@@ -371,7 +371,7 @@ function DutyList() {
       },
     });
 
-    doc.save('daily_routine_report.pdf');
+    doc.save('CRM_Daily_Routine_Report.pdf');
   };
 
 
@@ -412,7 +412,7 @@ function DutyList() {
     return (
       <div className="loading-container">
         <Spinner animation="border" variant="primary" />
-        <div>Loading assigned students…</div>
+        <div>Loading contacts…</div>
       </div>
     );
   if (error)
@@ -509,16 +509,37 @@ function DutyList() {
                     <Table className="custom-table table-hover align-middle">
                       <thead>
                         <tr>
-                          <th>#</th>
-                          <th>Name</th>
-                          <th>Status</th>
-                          <th>Email</th>
-                          <th>Phone</th>
-                          <th>Course</th>
-                          <th>Place</th>
-                          <th>Assigned At</th>
-                          <th>Actions</th>
-
+                          {[
+                            { key: '#', sortKey: null },
+                            { key: 'Name', sortKey: 'name' },
+                            { key: 'Status', sortKey: 'status' },
+                            { key: 'Email', sortKey: 'email' },
+                            { key: 'Phone', sortKey: 'phone' },
+                            { key: 'Course', sortKey: 'course' },
+                            { key: 'Place', sortKey: 'place' },
+                            { key: 'Assigned At', sortKey: 'assignedAt' },
+                            { key: 'Actions', sortKey: null },
+                          ].map((col, idx) => (
+                            <th
+                              key={idx}
+                              style={{ cursor: col.sortKey ? 'pointer' : 'default' }}
+                              onClick={() => {
+                                if (!col.sortKey) return;
+                                if (sortKey === col.sortKey) setSortOrder(prev => (prev === 'asc' ? 'desc' : 'asc'));
+                                else {
+                                  setSortKey(col.sortKey);
+                                  setSortOrder('asc');
+                                }
+                              }}
+                            >
+                              {col.key}{' '}
+                              {col.sortKey === sortKey && (
+                                <span>
+                                  {sortOrder === 'asc' ? '▲' : '▼'}
+                                </span>
+                              )}
+                            </th>
+                          ))}
                         </tr>
                       </thead>
                       <tbody>
@@ -715,7 +736,7 @@ function DutyList() {
             </Button>
           </Modal.Footer>
         </Modal>*/}
-        <Modal show={showModal} onHide={() => setShowModal(false)}>
+       {/* <Modal show={showModal} onHide={() => setShowModal(false)}>
           <Modal.Header closeButton>
             <Modal.Title>Update Call Status</Modal.Title>
           </Modal.Header>
@@ -730,9 +751,9 @@ function DutyList() {
                   name="callStatus"
                 >
                   <option value="">-- Select --</option>
-                  <option value="missed">Missed</option>
-                  <option value="rejected">Rejected</option>
-                  <option value="accepted">Accepted</option>
+                  <option value="Missed">Missed</option>
+                  <option value="Rejected">Rejected</option>
+                  <option value="Accepted">Accepted</option>
                 </Form.Control>
               </Form.Group>
 
@@ -757,8 +778,8 @@ function DutyList() {
                       name="interested"
                     >
                       <option value="">-- Select --</option>
-                      <option value="yes">Yes</option>
-                      <option value="no">No</option>
+                      <option value="Yes">Yes</option>
+                      <option value="No">No</option>
                     </Form.Control>
                   </Form.Group>
 
@@ -772,9 +793,9 @@ function DutyList() {
                         name="planType"
                       >
                         <option value="">-- Select Plan --</option>
-                        <option value="starter">Starter</option>
-                        <option value="gold">Gold</option>
-                        <option value="master">Master</option>
+                        <option value="Starter">Starter</option>
+                        <option value="Gold">Gold</option>
+                        <option value="Master">Master</option>
                       </Form.Control>
                     </Form.Group>
                   )}
@@ -790,7 +811,85 @@ function DutyList() {
               Save Changes
             </Button>
           </Modal.Footer>
-        </Modal>
+        </Modal>*/}
+        <Modal show={showModal} onHide={() => setShowModal(false)}>
+  <Modal.Header closeButton>
+    <Modal.Title>Update Call Status</Modal.Title>
+  </Modal.Header>
+  <Modal.Body>
+    <Form>
+      {/* Call Status */}
+      <Form.Group controlId="callStatus" className="mb-3">
+        <Form.Label>Call Status</Form.Label>
+        <Form.Control
+          as="select"
+          value={formData.callStatus || ''}
+          onChange={handleInputChange}
+          name="callStatus"
+        >
+          <option value="">-- Select --</option>
+          <option value="Missed">Missed</option>
+          <option value="Rejected">Rejected</option>
+          <option value="Accepted">Accepted</option>
+        </Form.Control>
+      </Form.Group>
+
+      {/* Call Duration: Always visible if any callStatus is selected */}
+      {formData.callStatus && (
+        <Form.Group controlId="callDuration" className="mb-3">
+          <Form.Label>Call Duration (minutes)</Form.Label>
+          <Form.Control
+            type="number"
+            value={formData.callDuration || ''}
+            onChange={handleInputChange}
+            name="callDuration"
+          />
+        </Form.Group>
+      )}
+
+      {/* Interested: Always visible if callStatus selected */}
+      {formData.callStatus && (
+        <Form.Group controlId="interested" className="mb-3">
+          <Form.Label>Interested</Form.Label>
+          <Form.Control
+            as="select"
+            value={formData.interested || ''}
+            onChange={handleInputChange}
+            name="interested"
+          >
+            <option value="">-- Select --</option>
+            <option value="Yes">Yes</option>
+            <option value="No">No</option>
+            <option value="DontKnow">Don't Know</option>
+          </Form.Control>
+        </Form.Group>
+      )}
+
+      {/* Plan Type: Only if interested === 'Yes' */}
+      {formData.interested === 'Yes' && (
+        <Form.Group controlId="planType" className="mb-3">
+          <Form.Label>Plan Type</Form.Label>
+          <Form.Control
+            as="select"
+            value={formData.planType || ''}
+            onChange={handleInputChange}
+            name="planType"
+          >
+            <option value="">-- Select Plan --</option>
+            <option value="Starter">Starter</option>
+            <option value="Gold">Gold</option>
+            <option value="Master">Master</option>
+          </Form.Control>
+        </Form.Group>
+      )}
+    </Form>
+  </Modal.Body>
+  <Modal.Footer>
+    <Button variant="secondary" onClick={() => setShowModal(false)}>Close</Button>
+    <Button variant="primary" onClick={handleSave}>Save Changes</Button>
+  </Modal.Footer>
+</Modal>
+
 
       </div>
     </Layout>

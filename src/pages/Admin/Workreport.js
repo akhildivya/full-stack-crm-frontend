@@ -3,6 +3,10 @@ import axios from 'axios';
 import Layout from '../../components/layout/Layout';
 import Adminmenu from '../../components/layout/Adminmenu';
 import { BASEURL } from '../../service/baseUrl';
+import { jsPDF } from 'jspdf';
+import { autoTable } from 'jspdf-autotable';
+import { FaFilePdf } from 'react-icons/fa';
+import { Button } from 'react-bootstrap';
 
 function Workreport() {
     const [users, setUsers] = useState([]);
@@ -83,6 +87,9 @@ function Workreport() {
         let totalCallDuration = 0;
         let totalInterest = 0;
         let missingInterest = 0;
+        let missedCalls = 0;
+        let rejectedCalls = 0;
+        let acceptedCalls = 0;
         const planCounts = {
             starter: 0,
             gold: 0,
@@ -115,6 +122,10 @@ function Workreport() {
                 else if (pt.includes('gold')) planCounts.gold += 1;
                 else if (pt.includes('master')) planCounts.master += 1;
             }
+            const status = ci.callStatus?.toLowerCase();
+            if (status === 'missed') missedCalls += 1;
+            else if (status === 'rejected') rejectedCalls += 1;
+            else if (status === 'accepted' || status === 'answered') acceptedCalls += 1;
         });
 
         return {
@@ -124,23 +135,57 @@ function Workreport() {
             totalCallDuration,
             totalInterest,
             missingInterest,
-            planCounts
+            planCounts,
+            missedCalls,
+            rejectedCalls,
+            acceptedCalls
         };
     }, [students]);
 
     const processedStudents = useMemo(() => {
+        const formatForSearch = (dateStrOrVal) => {
+            if (!dateStrOrVal) return '';
+            const d = new Date(dateStrOrVal);
+            if (isNaN(d)) return '';
+
+            // create consistent locale string, then transform to "10-Oct-2025 10.30.47 pm"
+            let s = d.toLocaleString('en-GB', {
+                day: '2-digit',
+                month: 'short',     // "Oct"
+                year: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: true
+            }); // e.g. "10 Oct 2025, 10:30:47 PM" or "10 Oct 2025, 10:30:47 pm"
+
+            // normalize: remove comma, replace ":" with ".", ensure am/pm lowercase
+            s = s.replace(',', '').trim();
+            // replace all colons with dots (use replaceAll if present, otherwise regex)
+            s = typeof s.replaceAll === 'function' ? s.replaceAll(':', '.') : s.replace(/:/g, '.');
+            s = s.toLowerCase(); // make 'pm' lowercase for matching: "10 oct 2025 10.30.47 pm"
+
+            // remove extra spaces that might appear between tokens and collapse them
+            return s.replace(/\s+/g, ' ');
+        };
         let filtered = [...students];
         if (searchTerm) {
             const term = searchTerm.toLowerCase();
             filtered = filtered.filter(s => {
                 const ci = s.callInfo || {};
+
+                const assignedAtFormatted = formatForSearch(s.assignedAt);
+                const completedAtFormatted = formatForSearch(ci.completedAt);
+
                 return (
                     s.name?.toLowerCase().includes(term) ||
                     s.email?.toLowerCase().includes(term) ||
                     s.course?.toLowerCase().includes(term) ||
                     s.place?.toLowerCase().includes(term) ||
                     (ci.callStatus?.toLowerCase().includes(term) ?? false) ||
-                    (ci.planType?.toLowerCase().includes(term) ?? false)
+                    (ci.planType?.toLowerCase().includes(term) ?? false) ||
+                    assignedAtFormatted.includes(term) ||
+                    completedAtFormatted.includes(term)
                 );
             });
         }
@@ -223,12 +268,226 @@ function Workreport() {
     // Course-wise counts (for current selected user)
     const courseCounts = useMemo(() => {
         const map = {};
+
         students.forEach(s => {
-            const c = s.course || 'Unknown';
-            map[c] = (map[c] || 0) + 1;
+            const course = s.course?.toLowerCase().trim();
+
+            // Normalize course names
+            if (course === 'btech' || course === 'btech') {
+                map['BTech'] = (map['BTech'] || 0) + 1;
+            } else if (course === 'plus one' || course === 'plus one') {
+                map['Plus One'] = (map['Plus One'] || 0) + 1;
+            } else if (course === 'plus two' || course === 'plus two') {
+                map['Plus Two'] = (map['Plus Two'] || 0) + 1;
+            } else {
+                map[course] = (map[course] || 0) + 1;
+            }
         });
+
         return map;
     }, [students]);
+    // inside Workreport component (after processedStudents)
+    const formatDisplayDate = (dateVal) => {
+        if (!dateVal) return '';
+        const d = new Date(dateVal);
+        if (isNaN(d)) return '';
+
+        // Format to same style as table but replace ":" with "." and lowercase AM/PM
+        let s = d.toLocaleString('en-GB', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: true
+        }); // e.g. "10 Oct 2025, 10:30:47 PM"
+
+        s = s.replace(',', '').trim();
+        s = typeof s.replaceAll === 'function' ? s.replaceAll(':', '.') : s.replace(/:/g, '.');
+        s = s.toLowerCase();
+        return s.replace(/\s+/g, ' ');
+    };
+    const formatFilenameDate = (date) => {
+        const d = new Date(date);
+        const day = String(d.getDate()).padStart(2, '0');
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const mon = monthNames[d.getMonth()];
+        const year = d.getFullYear();
+        return `${day}-${mon}-${year}`;
+    };
+    const formatDateForComparison = (dateStr) => {
+        if (!dateStr) return null;
+        const d = new Date(dateStr);
+        if (!isNaN(d)) {
+            // Format: "YYYY-MM-DD"
+            return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+        }
+        return null;
+    }
+    const hasSameDateRows = useMemo(() => {
+        return students.some(s => {
+            const ci = s.callInfo || {};
+            if (!s.assignedAt || !ci.completedAt) return false;
+            const assignedAt = new Date(s.assignedAt);
+            const completedAt = new Date(ci.completedAt);
+            return assignedAt.toDateString() === completedAt.toDateString();
+        });
+    }, [students]);
+    const sameDateCount = useMemo(() => {
+        return students.reduce((count, s) => {
+            const ci = s.callInfo || {};
+            if (s.assignedAt && ci.completedAt) {
+                const a = new Date(s.assignedAt);
+                const c = new Date(ci.completedAt);
+                if (a.toDateString() === c.toDateString()) {
+                    return count + 1;
+                }
+            }
+            return count;
+        }, 0);
+    }, [students]);
+
+    const exportToPDF = () => {
+        try {
+            const doc = new jsPDF({
+                orientation: 'landscape',
+                unit: 'pt',
+                format: 'a4'
+            });
+
+            const now = new Date();
+            const username = processedStudents.rows[0]?.assignedTo?.username || 'All';
+            const userEmail = processedStudents.rows[0]?.assignedTo?.email || '-';
+
+            const datePart = formatFilenameDate(now);
+            const filename = `Work-report-${username.replace(/\s+/g, '-').toLowerCase()}-${datePart}.pdf`;
+            const title = `Work Report - ${username}`;
+
+            // 🟦 Title
+            doc.setFontSize(16);
+            doc.text(title, doc.internal.pageSize.getWidth() / 2, 28, { align: 'center' });
+
+            // 🟩 Summary (inline formatting)
+            doc.setFontSize(11);
+            let y = 55;
+
+            const line1 = `Current Assignee: ${username}  |  Assignee Email: ${userEmail}`;
+            doc.text(line1, 40, y);
+
+            y += 16;
+            const line2 = `Total Contacts: ${summary.totalContacts || 0}  |  Completed: ${summary.completed || 0
+                }  |  Pending: ${summary.pending || 0}`;
+            doc.text(line2, 40, y);
+
+            y += 16;
+            const line3 = `Total Call Duration: ${summary.totalCallDuration || 0}  |  Total Interest: ${summary.totalInterest || 0
+                }  |  Missing Interest: ${summary.missingInterest || 0}`;
+            doc.text(line3, 40, y);
+
+            y += 16;
+            const line4 = `Missed Calls: ${summary.missedCalls || 0}  |  Rejected Calls: ${summary.rejectedCalls || 0}  |  Accepted Calls: ${summary.acceptedCalls || 0}`;
+            doc.text(line4, 40, y);
+
+            y += 16;
+            const line5 = `Starter Plan: ${summary.planCounts?.starter || 0}  |  Gold Plan: ${summary.planCounts?.gold || 0
+                }  |  Master Plan: ${summary.planCounts?.master || 0}`;
+            doc.text(line5, 40, y);
+
+
+            y += 16;
+            doc.setFontSize(11);  // same font size as other summary lines
+            doc.text(`Same Date Count: ${sameDateCount}`, 40, y);
+            
+            // 🟨 Course-wise summary
+            y += 20;
+            doc.setFontSize(11);
+            doc.text('Course-wise Counts:', 40, y);
+            y += 14;
+
+
+
+            Object.entries(courseCounts).forEach(([course, cnt]) => {
+                doc.text(`${course}: ${cnt}`, 60, y);
+                y += 14;
+            });
+
+            // 🟧 Table Header
+            const head = [[
+                '#',
+                'Name',
+                'Email',
+                'Phone',
+                'Course',
+                'Place',
+                'Call Status',
+                'Call Duration',
+                'Interested',
+                'Plan Type',
+                'Assigned At',
+                'Completed At',
+                'Same Date?'
+            ]];
+
+            // 🟪 Table Body
+            const body = processedStudents.rows.map((s, index) => {
+                const ci = s.callInfo || {};
+                let sameDateTick = '';
+                if (s.assignedAt && ci.completedAt) {
+                    const a = new Date(s.assignedAt);
+                    const c = new Date(ci.completedAt);
+                    if (a.toDateString() === c.toDateString()) {
+                        sameDateTick = '✔';
+                    }
+                }
+                return [
+                    index + 1,
+                    s.name || '',
+                    s.email || '',
+                    s.phone || '',
+                    s.course || '',
+                    s.place || '',
+                    ci.callStatus ?? '-',
+                    ci.callDuration ?? '-',
+                    ci.interested != null ? (ci.interested ? 'Yes' : 'No') : '-',
+                    ci.planType ?? '-',
+                    formatDisplayDate(s.assignedAt),
+                    formatDisplayDate(ci.completedAt),
+                    sameDateTick
+                ];
+            });
+
+            // 🧾 Render Table
+            autoTable(doc, {
+                head,
+                body,
+                startY: y + 10,
+                styles: { fontSize: 9, cellPadding: 4, overflow: 'linebreak' },
+                headStyles: { fillColor: [41, 128, 185] },
+                columnStyles: {
+                    0: { cellWidth: 25 },
+                    1: { cellWidth: 100 },
+                    2: { cellWidth: 130 },
+                    3: { cellWidth: 80 },
+                    10: { cellWidth: 90 },
+                    11: { cellWidth: 90 }
+                },
+                margin: { top: 36, left: 20, right: 20, bottom: 30 },
+                didDrawPage: function () {
+                    const pageCount = doc.internal.getNumberOfPages();
+                    const pageHeight = doc.internal.pageSize.height;
+                    const footerText = `Page ${doc.internal.getCurrentPageInfo().pageNumber} / ${pageCount}`;
+                    doc.setFontSize(9);
+                    doc.text(footerText, doc.internal.pageSize.getWidth() - 40, pageHeight - 10, { align: 'right' });
+                }
+            });
+
+            doc.save(filename);
+        } catch (err) {
+            console.error('Error exporting PDF:', err);
+        }
+    };
+
 
     return (
         <Layout title={"CRM - Work Report"}>
@@ -323,15 +582,38 @@ function Workreport() {
                                         <div className="table-responsive custom-table-wrapper">
                                             {/* Summary line before the table */}
                                             <div className="summary-line mb-3">
-                                                <strong>Total Contacts:</strong> {summary.totalContacts} |{' '}
-                                                <strong>Completed:</strong> {summary.completed} |{' '}
-                                                <strong>Pending:</strong> {summary.pending} |{' '}
-                                                <strong>Total Call Duration:</strong> {summary.totalCallDuration} |{' '}
-                                                <strong>Total Interest:</strong> {summary.totalInterest} |{' '}
-                                                <strong>Missing Interest:</strong> {summary.missingInterest} |{' '}
-                                                <strong>Starter Plan:</strong> {summary.planCounts.starter} |{' '}
-                                                <strong>Gold Plan:</strong> {summary.planCounts.gold} |{' '}
-                                                <strong>Master Plan:</strong> {summary.planCounts.master}
+                                                {[
+                                                    { label: 'Current Assignee', value: students[0]?.assignedTo?.username || '-' },
+                                                    { label: 'Assignee Email', value: students[0]?.assignedTo?.email || '-' },
+                                                    { label: "Total Contacts", value: summary.totalContacts },
+                                                    { label: "Completed", value: summary.completed },
+                                                    { label: "Pending", value: summary.pending },
+                                                    { label: "Total Call Duration", value: summary.totalCallDuration },
+                                                    { label: "Total Interest", value: summary.totalInterest },
+                                                    { label: "Missing Interest", value: summary.missingInterest },
+                                                    { label: "Missed Calls", value: summary.missedCalls },
+                                                    { label: "Rejected Calls", value: summary.rejectedCalls },
+                                                    { label: "Accepted Calls", value: summary.acceptedCalls },
+                                                    { label: "Starter Plan", value: summary.planCounts.starter },
+                                                    { label: "Gold Plan", value: summary.planCounts.gold },
+                                                    { label: "Master Plan", value: summary.planCounts.master }
+                                                ].map((item, idx, arr) => {
+                                                    let sep;
+                                                    if (idx === 1) {
+                                                        // after "Assignee Email"
+                                                        sep = <br />;
+                                                    } else if ((idx - 2) % 3 === 2 && idx !== arr.length - 1) {
+                                                        // apply line break after every 3 items *after* the first two
+                                                        sep = <br />;
+                                                    } else {
+                                                        sep = ' | ';
+                                                    }
+                                                    return (
+                                                        <span key={idx}>
+                                                            <strong>{item.label}:</strong> {item.value}{sep}
+                                                        </span>
+                                                    );
+                                                })}
                                             </div>
                                             {/* Course-wise count summary below the table */}
                                             <div className="course-summary mt-4">
@@ -344,12 +626,21 @@ function Workreport() {
                                                     ))}
                                                 </ul>
                                             </div>
+                                            {hasSameDateRows && (
+                                                <div className="text-success text-center mb-3" style={{ fontSize: '1rem', fontWeight: 'bold' }}>
+                                                    ✔ Same Assigned and Completed Dates Found
+                                                </div>
+                                            )}
+                                            {sameDateCount > 0 && (
+                                                <div className="text-success text-center mb-2" style={{ fontSize: '1rem', fontWeight: 'bold' }}>
+                                                    ✔ Same Date Count: {sameDateCount}
+                                                </div>
+                                            )}
 
                                             <table className="table custom-table table-hover align-middle">
                                                 <thead className="table-header">
                                                     <tr>
-                                                        {renderHeader('Current Assignee', 'assignedTo.username')}
-                                                        {renderHeader('Assignee Email', 'assignedTo.email')}
+                                                        <th>#</th>
                                                         {renderHeader('Name', 'name')}
                                                         {renderHeader('Email', 'email')}
                                                         {renderHeader('Phone', 'phone')}
@@ -361,49 +652,52 @@ function Workreport() {
                                                         {renderHeader('Plan Type', 'callInfo.planType')}
                                                         {renderHeader('Assigned At', 'assignedAt')}
                                                         {renderHeader('Completed At', 'callInfo.completedAt')}
+                                                        {renderHeader('Same Date?', 'sameDateMatch')}
                                                     </tr>
                                                 </thead>
                                                 <tbody>
                                                     {currentRows.length === 0 ? (
                                                         <tr>
                                                             <td colSpan="13" className="no-data-cell">
-                                                                No students assigned.
+                                                                No matches found.
                                                             </td>
                                                         </tr>
                                                     ) : (
-                                                        currentRows.map((s) => {
+                                                        currentRows.map((s, idx) => {
                                                             const ci = s.callInfo || {};
                                                             const assignedAt = s.assignedAt ? new Date(s.assignedAt) : null;
                                                             const completedAt = ci.completedAt ? new Date(ci.completedAt) : null;
+
+                                                            // Compare only the date, ignoring time
                                                             const isSameDate =
                                                                 assignedAt &&
                                                                 completedAt &&
                                                                 assignedAt.toDateString() === completedAt.toDateString();
+                                                            const serialNo = (effectivePage - 1) * rowsPerPage + idx + 1;
 
                                                             return (
                                                                 <tr
                                                                     key={s._id}
                                                                     className={s.callMarked === 'marked' ? 'marked-row' : ''}
                                                                 >
-                                                                    <td data-label="Current Assignee">{s.assignedTo?.username || ''}</td>
-                                                                    <td data-label="Assignee Email">{s.assignedTo?.email || ''}</td>
+                                                                    <td data-label="#">{serialNo}</td>
                                                                     <td data-label="Name">{s.name}</td>
                                                                     <td data-label="Email">{s.email}</td>
                                                                     <td data-label="Phone">{s.phone}</td>
                                                                     <td data-label="Course">{s.course}</td>
                                                                     <td data-label="Place">{s.place}</td>
-                                                                    <td data-label="Call Status">{ci.callStatus ?? ''}</td>
-                                                                    <td data-label="Call Duration">{ci.callDuration ?? ''}</td>
+                                                                    <td data-label="Call Status">{ci.callStatus ?? '-'}</td>
+                                                                    <td data-label="Call Duration">{ci.callDuration ?? '-'}</td>
                                                                     <td data-label="Interested">
-                                                                        {ci.interested != null ? ci.interested.toString() : ''}
+                                                                        {ci.interested != null ? (ci.interested ? 'Yes' : 'No') : '-'}
                                                                     </td>
-                                                                    <td data-label="Plan Type">{ci.planType ?? ''}</td>
+                                                                    <td data-label="Plan Type">{ci.planType ?? '-'}</td>
                                                                     <td
                                                                         data-label="Assigned At"
                                                                         className={isSameDate ? 'highlight-cell' : ''}
                                                                     >
-                                                                        {s.assignedAt
-                                                                            ? new Date(s.assignedAt).toLocaleString('en-GB', {
+                                                                        {assignedAt
+                                                                            ? assignedAt.toLocaleString('en-GB', {
                                                                                 day: '2-digit',
                                                                                 month: 'short',
                                                                                 year: 'numeric',
@@ -418,8 +712,8 @@ function Workreport() {
                                                                         data-label="Completed At"
                                                                         className={isSameDate ? 'highlight-cell' : ''}
                                                                     >
-                                                                        {ci.completedAt
-                                                                            ? new Date(ci.completedAt).toLocaleString('en-GB', {
+                                                                        {completedAt
+                                                                            ? completedAt.toLocaleString('en-GB', {
                                                                                 day: '2-digit',
                                                                                 month: 'short',
                                                                                 year: 'numeric',
@@ -430,7 +724,22 @@ function Workreport() {
                                                                             })
                                                                             : ''}
                                                                     </td>
+                                                                    <td data-label="Same Date?">
+                                                                        {(() => {
+                                                                            const ci = s.callInfo || {};
+                                                                            if (s.assignedAt && ci.completedAt) {
+                                                                                const a = new Date(s.assignedAt);
+                                                                                const c = new Date(ci.completedAt);
+                                                                                if (a.toDateString() === c.toDateString()) {
+                                                                                    return '✔';  // or use an icon component
+                                                                                }
+                                                                            }
+                                                                            return '';
+                                                                        })()}
+                                                                    </td>
                                                                 </tr>
+
+
                                                             );
                                                         })
                                                     )}
@@ -483,7 +792,17 @@ function Workreport() {
                                         </button>
                                     </div>
                                 )}
-
+                                <div className="me-2 mt-5">
+                                    <Button
+                                        variant="outline-primary"
+                                        className="icon-only-btn p-0"
+                                        onClick={exportToPDF}
+                                        aria-label="Download PDF"
+                                        title="Download PDF"
+                                    >
+                                        <FaFilePdf size={14} />
+                                    </Button>
+                                </div>
 
                             </div>
                         </div>
