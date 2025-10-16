@@ -736,7 +736,7 @@ function DutyList() {
             </Button>
           </Modal.Footer>
         </Modal>*/}
-       {/* <Modal show={showModal} onHide={() => setShowModal(false)}>
+        {/* <Modal show={showModal} onHide={() => setShowModal(false)}>
           <Modal.Header closeButton>
             <Modal.Title>Update Call Status</Modal.Title>
           </Modal.Header>
@@ -813,82 +813,82 @@ function DutyList() {
           </Modal.Footer>
         </Modal>*/}
         <Modal show={showModal} onHide={() => setShowModal(false)}>
-  <Modal.Header closeButton>
-    <Modal.Title>Update Call Status</Modal.Title>
-  </Modal.Header>
-  <Modal.Body>
-    <Form>
-      {/* Call Status */}
-      <Form.Group controlId="callStatus" className="mb-3">
-        <Form.Label>Call Status</Form.Label>
-        <Form.Control
-          as="select"
-          value={formData.callStatus || ''}
-          onChange={handleInputChange}
-          name="callStatus"
-        >
-          <option value="">-- Select --</option>
-          <option value="Missed">Missed</option>
-          <option value="Rejected">Rejected</option>
-          <option value="Accepted">Accepted</option>
-        </Form.Control>
-      </Form.Group>
+          <Modal.Header closeButton>
+            <Modal.Title>Update Call Status</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <Form>
+              {/* Call Status */}
+              <Form.Group controlId="callStatus" className="mb-3">
+                <Form.Label>Call Status</Form.Label>
+                <Form.Control
+                  as="select"
+                  value={formData.callStatus || ''}
+                  onChange={handleInputChange}
+                  name="callStatus"
+                >
+                  <option value="">-- Select --</option>
+                  <option value="Missed">Missed</option>
+                  <option value="Rejected">Rejected</option>
+                  <option value="Accepted">Accepted</option>
+                </Form.Control>
+              </Form.Group>
 
-      {/* Call Duration: Always visible if any callStatus is selected */}
-      {formData.callStatus && (
-        <Form.Group controlId="callDuration" className="mb-3">
-          <Form.Label>Call Duration (minutes)</Form.Label>
-          <Form.Control
-            type="number"
-            value={formData.callDuration || ''}
-            onChange={handleInputChange}
-            name="callDuration"
-          />
-        </Form.Group>
-      )}
+              {/* Call Duration: Always visible if any callStatus is selected */}
+              {formData.callStatus && (
+                <Form.Group controlId="callDuration" className="mb-3">
+                  <Form.Label>Call Duration (minutes)</Form.Label>
+                  <Form.Control
+                    type="number"
+                    value={formData.callDuration || ''}
+                    onChange={handleInputChange}
+                    name="callDuration"
+                  />
+                </Form.Group>
+              )}
 
-      {/* Interested: Always visible if callStatus selected */}
-      {formData.callStatus && (
-        <Form.Group controlId="interested" className="mb-3">
-          <Form.Label>Interested</Form.Label>
-          <Form.Control
-            as="select"
-            value={formData.interested || ''}
-            onChange={handleInputChange}
-            name="interested"
-          >
-            <option value="">-- Select --</option>
-            <option value="Yes">Yes</option>
-            <option value="No">No</option>
-            <option value="DontKnow">Don't Know</option>
-          </Form.Control>
-        </Form.Group>
-      )}
+              {/* Interested: Always visible if callStatus selected */}
+              {formData.callStatus && (
+                <Form.Group controlId="interested" className="mb-3">
+                  <Form.Label>Interested</Form.Label>
+                  <Form.Control
+                    as="select"
+                    value={formData.interested || ''}
+                    onChange={handleInputChange}
+                    name="interested"
+                  >
+                    <option value="">-- Select --</option>
+                    <option value="Yes">Yes</option>
+                    <option value="No">No</option>
+                    <option value="DontKnow">Don't Know</option>
+                  </Form.Control>
+                </Form.Group>
+              )}
 
-      {/* Plan Type: Only if interested === 'Yes' */}
-      {formData.interested === 'Yes' && (
-        <Form.Group controlId="planType" className="mb-3">
-          <Form.Label>Plan Type</Form.Label>
-          <Form.Control
-            as="select"
-            value={formData.planType || ''}
-            onChange={handleInputChange}
-            name="planType"
-          >
-            <option value="">-- Select Plan --</option>
-            <option value="Starter">Starter</option>
-            <option value="Gold">Gold</option>
-            <option value="Master">Master</option>
-          </Form.Control>
-        </Form.Group>
-      )}
-    </Form>
-  </Modal.Body>
-  <Modal.Footer>
-    <Button variant="secondary" onClick={() => setShowModal(false)}>Close</Button>
-    <Button variant="primary" onClick={handleSave}>Save Changes</Button>
-  </Modal.Footer>
-</Modal>
+              {/* Plan Type: Only if interested === 'Yes' */}
+              {formData.interested === 'Yes' && (
+                <Form.Group controlId="planType" className="mb-3">
+                  <Form.Label>Plan Type</Form.Label>
+                  <Form.Control
+                    as="select"
+                    value={formData.planType || ''}
+                    onChange={handleInputChange}
+                    name="planType"
+                  >
+                    <option value="">-- Select Plan --</option>
+                    <option value="Starter">Starter</option>
+                    <option value="Gold">Gold</option>
+                    <option value="Master">Master</option>
+                  </Form.Control>
+                </Form.Group>
+              )}
+            </Form>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" onClick={() => setShowModal(false)}>Close</Button>
+            <Button variant="primary" onClick={handleSave}>Save Changes</Button>
+          </Modal.Footer>
+        </Modal>
 
 
       </div>

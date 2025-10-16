@@ -23,7 +23,7 @@ function Allusers() {
   const pollingInterval = 1000;
 
   useEffect(() => {
-    document.title="CRM - Verify Users"
+    document.title = "CRM - Verify Users"
     const fetchUsers = async () => {
       try {
         const response = await axios.get(`${BASEURL}/all-users`);
@@ -179,7 +179,7 @@ function Allusers() {
                   <input
                     type="text"
                     className="form-control"
-                    placeholder="Search by name, email, phone, status..."
+                    placeholder="Search by anything..."
                     value={searchTerm}
                     onChange={handleSearchChange}
                   />
@@ -219,10 +219,18 @@ function Allusers() {
                   <thead>
                     <tr>
                       <th>#</th>
-                      <th>Name</th>
-                      <th>Email</th>
-                      <th>Phone</th>
-                      <th>Status</th>
+                      <th onClick={() => handleSortColumn('name')} style={{ cursor: 'pointer' }}>
+                        Name {sortKey === 'name' && (sortOrder === 'asc' ? '▲' : '▼')}
+                      </th>
+                      <th onClick={() => handleSortColumn('email')} style={{ cursor: 'pointer' }}>
+                        Email {sortKey === 'email' && (sortOrder === 'asc' ? '▲' : '▼')}
+                      </th>
+                      <th onClick={() => handleSortColumn('phone')} style={{ cursor: 'pointer' }}>
+                        Phone {sortKey === 'phone' && (sortOrder === 'asc' ? '▲' : '▼')}
+                      </th>
+                      <th onClick={() => handleSortColumn('status')} style={{ cursor: 'pointer' }}>
+                        Status {sortKey === 'status' && (sortOrder === 'asc' ? '▲' : '▼')}
+                      </th>
                       <th>Actions</th>
                     </tr>
                   </thead>
@@ -290,7 +298,7 @@ function Allusers() {
                       {rowsPerPage}
                     </Dropdown.Toggle>
                     <Dropdown.Menu>
-                      {[1, 2, 5, 10, 20, 50, 100].map(num => (
+                      {[ 5, 10, 15, 20, 50, 100].map(num => (
                         <Dropdown.Item key={num} active={rowsPerPage === num} onClick={() => { setRowsPerPage(num); setCurrentPage(1); }}>
                           {num}
                         </Dropdown.Item>

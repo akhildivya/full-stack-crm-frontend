@@ -2,15 +2,14 @@ import React, { useEffect, useState } from 'react';
 import Layout from '../../components/layout/Layout';
 import Adminmenu from '../../components/layout/Adminmenu';
 import axios from 'axios';
-import { Table, Dropdown, Button, Modal, Form, Pagination } from 'react-bootstrap';
+import { Table, Dropdown, Button, Modal, Form, Pagination, Tooltip, OverlayTrigger } from 'react-bootstrap';
 import '../../css/viewstudents.css';
 import { toast } from 'react-toastify';
 import { BASEURL } from '../../service/baseUrl'
 import { jsPDF } from 'jspdf';
 import { autoTable } from 'jspdf-autotable';
 import { FaFilePdf } from 'react-icons/fa';
-import Tippy from '@tippyjs/react';
-import 'tippy.js/dist/tippy.css'; 
+
 function Viewstudents() {
   let globalSerialIndex = 1;
   const [students, setStudents] = useState([]);
@@ -313,8 +312,8 @@ function Viewstudents() {
   const sortedStudents = [...filteredStudents].sort((a, b) => {
     let aVal, bVal;
 
-  
-     if (sortColumn === 'status') {
+
+    if (sortColumn === 'status') {
       aVal = a.assignedTo ? 'assigned' : 'unassigned';
       bVal = b.assignedTo ? 'assigned' : 'unassigned';
     } else {
@@ -462,103 +461,103 @@ function Viewstudents() {
     doc.save('crm_contact_details_summary_report.pdf');
   };
 
-const exportAssignedToPDF = () => {
-  const doc = new jsPDF({ unit: 'pt', format: 'a4' });
-  const margin = { top: 60, bottom: 40, left: 10, right: 10 };
-  const pageWidth = doc.internal.pageSize.getWidth();
+  const exportAssignedToPDF = () => {
+    const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+    const margin = { top: 60, bottom: 40, left: 10, right: 10 };
+    const pageWidth = doc.internal.pageSize.getWidth();
 
-  // Apply search filter
-  const lowerSearchTerm = assignedSearchTerm.trim().toLowerCase();
-  const filtered = assignedStudents.filter(stu => {
-    if (!lowerSearchTerm) return true;
-    const checks = [
-      stu.name?.toLowerCase(),
-      stu.email?.toLowerCase(),
-      stu.phone?.toLowerCase(),
-      stu.course?.toLowerCase(),
-      stu.place?.toLowerCase(),
-      stu.assignedTo?.username?.toLowerCase(),
-      stu.assignedTo?.email?.toLowerCase(),
-      stu.assignedAt ? formatAssignedDate(stu.assignedAt).toLowerCase() : ''
-    ];
-    return checks.some(str => str?.includes(lowerSearchTerm));
-  });
-
-  // Apply sorting
-  const { key, direction } = assignedSortConfig;
-  if (key) {
-    filtered.sort((a, b) => {
-      const aVal = getNested(a, key);
-      const bVal = getNested(b, key);
-      if (aVal == null && bVal == null) return 0;
-      if (aVal == null) return 1;
-      if (bVal == null) return -1;
-      const aStr = aVal.toString().toLowerCase();
-      const bStr = bVal.toString().toLowerCase();
-      return direction === 'asc' ? aStr.localeCompare(bStr) : bStr.localeCompare(aStr);
+    // Apply search filter
+    const lowerSearchTerm = assignedSearchTerm.trim().toLowerCase();
+    const filtered = assignedStudents.filter(stu => {
+      if (!lowerSearchTerm) return true;
+      const checks = [
+        stu.name?.toLowerCase(),
+        stu.email?.toLowerCase(),
+        stu.phone?.toLowerCase(),
+        stu.course?.toLowerCase(),
+        stu.place?.toLowerCase(),
+        stu.assignedTo?.username?.toLowerCase(),
+        stu.assignedTo?.email?.toLowerCase(),
+        stu.assignedAt ? formatAssignedDate(stu.assignedAt).toLowerCase() : ''
+      ];
+      return checks.some(str => str?.includes(lowerSearchTerm));
     });
-  }
 
- const summaryText = `Summary: ${Object.entries(assigneeCounts)
-    .map(([name, count]) => `${name}: ${count}`)
-    .join(' | ')}`;
-  // Prepare data rows
-  const dataRows = filtered.map((stu, idx) => [
-    assignedIdxFirst + idx + 1,
-    stu.assignedTo?.username || stu.assignedTo?._id || '',
-    formatAssignedDate(stu.assignedAt) || '',
-    stu.name || '',
-    stu.email || '',
-    stu.phone || '',
-    stu.course || '',
-    stu.place || ''
-  ]);
-
-  // Define column widths
-  const columnWidths = [30, 70, 70, 100, 100, 70, 60, 70];
-
-  // Generate the table
-  autoTable(doc, {
-    startY: margin.top,
-    margin,
-    head: [
-      ['#', 'Current Assignee', 'Assigned At', 'Name', 'Email', 'Phone', 'Course', 'Place']
-    ],
-    body: dataRows,
-    theme: 'striped',
-    headStyles: { fillColor: [0, 123, 255], textColor: [255, 255, 255] },
-    columnStyles: {
-      0: { cellWidth: columnWidths[0] },
-      1: { cellWidth: columnWidths[1] },
-      2: { cellWidth: columnWidths[2] },
-      3: { cellWidth: columnWidths[3] },
-      4: { cellWidth: columnWidths[4] },
-      5: { cellWidth: columnWidths[5], halign: 'center' },
-      6: { cellWidth: columnWidths[6], halign: 'center' },
-      7: { cellWidth: columnWidths[7] }
-    },
-    styles: {
-      overflow: 'linebreak',
-      cellWidth: 'auto',
-      fontSize: 10,
-      lineWidth: 0.1
-    },
-    tableWidth: 'auto',
-    didDrawPage: (data) => {
-      doc.setFontSize(14);
-      doc.setTextColor(40);
-      doc.text("CRM- Assigned Leads Report", pageWidth / 2, margin.top - 30, { align: 'center' });
- 
-      const pageCount = doc.internal.getNumberOfPages();
-      doc.setFontSize(10);
-      doc.text(summaryText, margin.left, margin.top  -5);
-      const footer = `Page ${doc.internal.getCurrentPageInfo().pageNumber} of ${pageCount}`;
-      doc.text(footer, pageWidth / 2, doc.internal.pageSize.getHeight() - 10, { align: 'center' });
+    // Apply sorting
+    const { key, direction } = assignedSortConfig;
+    if (key) {
+      filtered.sort((a, b) => {
+        const aVal = getNested(a, key);
+        const bVal = getNested(b, key);
+        if (aVal == null && bVal == null) return 0;
+        if (aVal == null) return 1;
+        if (bVal == null) return -1;
+        const aStr = aVal.toString().toLowerCase();
+        const bStr = bVal.toString().toLowerCase();
+        return direction === 'asc' ? aStr.localeCompare(bStr) : bStr.localeCompare(aStr);
+      });
     }
-  });
 
-  doc.save('CRM_Assigned_Leads_Report.pdf');
-};
+    const summaryText = `Summary: ${Object.entries(assigneeCounts)
+      .map(([name, count]) => `${name}: ${count}`)
+      .join(' | ')}`;
+    // Prepare data rows
+    const dataRows = filtered.map((stu, idx) => [
+      assignedIdxFirst + idx + 1,
+      stu.assignedTo?.username || stu.assignedTo?._id || '',
+      formatAssignedDate(stu.assignedAt) || '',
+      stu.name || '',
+      stu.email || '',
+      stu.phone || '',
+      stu.course || '',
+      stu.place || ''
+    ]);
+
+    // Define column widths
+    const columnWidths = [30, 70, 70, 100, 100, 70, 60, 70];
+
+    // Generate the table
+    autoTable(doc, {
+      startY: margin.top,
+      margin,
+      head: [
+        ['#', 'Current Assignee', 'Assigned At', 'Name', 'Email', 'Phone', 'Course', 'Place']
+      ],
+      body: dataRows,
+      theme: 'striped',
+      headStyles: { fillColor: [0, 123, 255], textColor: [255, 255, 255] },
+      columnStyles: {
+        0: { cellWidth: columnWidths[0] },
+        1: { cellWidth: columnWidths[1] },
+        2: { cellWidth: columnWidths[2] },
+        3: { cellWidth: columnWidths[3] },
+        4: { cellWidth: columnWidths[4] },
+        5: { cellWidth: columnWidths[5], halign: 'center' },
+        6: { cellWidth: columnWidths[6], halign: 'center' },
+        7: { cellWidth: columnWidths[7] }
+      },
+      styles: {
+        overflow: 'linebreak',
+        cellWidth: 'auto',
+        fontSize: 10,
+        lineWidth: 0.1
+      },
+      tableWidth: 'auto',
+      didDrawPage: (data) => {
+        doc.setFontSize(14);
+        doc.setTextColor(40);
+        doc.text("CRM- Assigned Leads Report", pageWidth / 2, margin.top - 30, { align: 'center' });
+
+        const pageCount = doc.internal.getNumberOfPages();
+        doc.setFontSize(10);
+        doc.text(summaryText, margin.left, margin.top - 5);
+        const footer = `Page ${doc.internal.getCurrentPageInfo().pageNumber} of ${pageCount}`;
+        doc.text(footer, pageWidth / 2, doc.internal.pageSize.getHeight() - 10, { align: 'center' });
+      }
+    });
+
+    doc.save('CRM_Assigned_Leads_Report.pdf');
+  };
 
 
 
@@ -633,7 +632,7 @@ const exportAssignedToPDF = () => {
                       Sort by: {sortColumn.charAt(0).toUpperCase() + sortColumn.slice(1)}
                     </Dropdown.Toggle>
                     <Dropdown.Menu>
-                      {['name', 'email', 'phone', 'course', 'place', 'status','callMarked'].map(col => (
+                      {['name', 'email', 'phone', 'course', 'place', 'status', 'callMarked'].map(col => (
                         <Dropdown.Item key={col} onClick={() => handleSortChange(col)}>
                           {col.charAt(0).toUpperCase() + col.slice(1)}
                         </Dropdown.Item>
@@ -751,7 +750,40 @@ const exportAssignedToPDF = () => {
                               (student.assignedTo && student.callMarked === 'marked' ? "name-strikethrough " : "")
                             }
                           >
-                            {student.name}
+                            <OverlayTrigger
+                              placement="top"
+                              overlay={
+                                <Tooltip id={`tooltip-assignee-${student._id}`}>
+                                  <div>
+                                    <strong>Assignee:</strong> {student.assignedTo?.username || 'None'}
+                                  </div>
+                                  <div>
+                                    <strong>Assigned Date:</strong>{" "}
+                                    {student.assignedAt
+                                      ? new Date(student.assignedAt).toLocaleString('en-IN', {
+                                        day: '2-digit',
+                                        month: 'short',
+                                        year: 'numeric',
+                                        hour: '2-digit',
+                                        minute: '2-digit',
+                                        second: '2-digit',
+                                        hour12: true,
+                                      })
+                                      : 'None'}
+                                  </div>
+                                </Tooltip>
+                              }
+                            >
+                              <span style={{
+                                textDecoration:
+                                  student.assignedTo && student.callMarked === 'marked'
+                                    ? "line-through"
+                                    : "none"
+                              }}>
+                                {student.name}
+                              </span>
+                            </OverlayTrigger>
+
                           </td>
                           <td className={`align-middle ${student.assignedTo && student.callMarked === 'marked' ? 'name-strikethrough' : ''}`}>{student.email}</td>
                           <td className={`align-middle ${student.assignedTo && student.callMarked === 'marked' ? 'name-strikethrough' : ''}`}>{student.phone}</td>
@@ -833,7 +865,7 @@ const exportAssignedToPDF = () => {
                       {rowsPerPage}
                     </Dropdown.Toggle>
                     <Dropdown.Menu>
-                      {[1, 2, 5, 10, 20,30,40, 50,60,80,100].map(num => (
+                      {[1, 2, 5, 10, 20, 30, 40, 50, 60, 80, 100].map(num => (
                         <Dropdown.Item key={num} active={rowsPerPage === num} onClick={() => { setRowsPerPage(num); setCurrentPage(1); }}>
                           {num}
                         </Dropdown.Item>
@@ -1014,23 +1046,40 @@ const exportAssignedToPDF = () => {
 
               if (alreadyAssigned.length > 0) {
                 const studentCount = alreadyAssigned.length;
-                const studentLabel = studentCount > 1 ? 'students' : 'student';
+                const studentLabel = studentCount > 1 ? 'students are' : 'student is';
                 toast.info(
-                  `The following ${studentLabel} are already assigned: ${alreadyAssigned
-                    .map(stu => {
-                      const assignedToUsername = stu.assignedTo ? stu.assignedTo.username : 'Unknown';
-                      return `${stu.name} : already assigned to ${assignedToUsername} on ${new Date(stu.assignedAt).toLocaleDateString()}`;
-                    })
-                    .join(', ')}`, {
-                  position: "top-center",
-                  autoClose: 5000,
-                  hideProgressBar: false,
-                  closeOnClick: false,
-                  pauseOnHover: true,
-                  draggable: true,
-                  progress: undefined,
-                  theme: "light",
-                });
+                  <>
+                    <span>
+                      The following {studentLabel}  already assigned:
+                      <br />
+                      {alreadyAssigned
+                        .map(stu => {
+                          const assignedToUsername = stu.assignedTo ? stu.assignedTo.username : 'Unknown';
+                          return `${stu.name} : already assigned to ${assignedToUsername} on ${new Date(stu.assignedAt).toLocaleDateString('en-IN', {
+                            day: '2-digit',
+                            month: 'short',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            second: '2-digit',
+                            hour12: true,
+                          })}`;
+                        })
+                        .join(', ')}
+                    </span>
+                  </>,
+                  {
+                    position: "top-center",
+                    autoClose: 5000,
+                    hideProgressBar: false,
+                    closeOnClick: false,
+                    pauseOnHover: true,
+                    draggable: true,
+                    progress: undefined,
+                    theme: "light",
+                    allowHtml: true,
+                  }
+                );
                 return;
               }
 

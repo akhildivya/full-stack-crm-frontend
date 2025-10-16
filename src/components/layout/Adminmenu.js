@@ -77,6 +77,11 @@ function Adminmenu() {
               <span>Work report</span>
             </NavLink>
 
+            <NavLink to="/admin-dashboard/summary-report" className={linkClass}>
+              <i className="bi bi-file-pdf me-2" aria-hidden="true"></i>
+              <span>Summary</span>
+            </NavLink>
+
             <NavLink to="/admin-dashboard/about" className={linkClass}>
               <i className="bi bi-info-circle-fill me-2" aria-hidden="true"></i>
               <span>About</span>
