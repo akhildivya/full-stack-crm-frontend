@@ -19,7 +19,7 @@ function Workreport() {
     const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
     const [currentPage, setCurrentPage] = useState(1);
     const [rowsPerPage, setRowsPerPage] = useState(10);
-
+    const [bsummary, setSummary] = useState({});
     useEffect(() => {
         const fetchUsers = async () => {
             try {
@@ -47,7 +47,8 @@ function Workreport() {
                 const res = await axios.get(`${BASEURL}/admin/get-work-report`, {
                     params: { assignedTo: selectedUserId }
                 });
-                setStudents(res.data);
+                setStudents(res.data.students || []);
+                setSummary(res.data.summary || {});
             } catch (err) {
                 console.error('Error fetching assigned students:', err);
                 setError('Failed to fetch students');
@@ -85,16 +86,9 @@ function Workreport() {
         let completed = 0;
         let pending = 0;
         let totalCallDuration = 0;
-        let totalInterest = 0;
-        let missingInterest = 0;
-        let missedCalls = 0;
-        let rejectedCalls = 0;
-        let acceptedCalls = 0;
-        const planCounts = {
-            starter: 0,
-            gold: 0,
-            master: 0
-        };
+        let countYes = 0, countNo = 0, countInformLater = 0;
+        const planCounts = { starter: 0, gold: 0, master: 0 };
+        let missedCalls = 0, rejectedCalls = 0, acceptedCalls = 0;
 
         students.forEach(s => {
             totalContacts += 1;
@@ -110,10 +104,12 @@ function Workreport() {
                 totalCallDuration += Number(ci.callDuration);
             }
 
-            if (ci.interested != null) {
-                totalInterest += Number(ci.interested);
+            if (ci.interested === true) {
+                countYes += 1;
+            } else if (ci.interested === false) {
+                countNo += 1;
             } else {
-                missingInterest += 1;
+                countInformLater += 1;
             }
 
             if (ci.planType) {
@@ -122,23 +118,33 @@ function Workreport() {
                 else if (pt.includes('gold')) planCounts.gold += 1;
                 else if (pt.includes('master')) planCounts.master += 1;
             }
+
             const status = ci.callStatus?.toLowerCase();
             if (status === 'missed') missedCalls += 1;
             else if (status === 'rejected') rejectedCalls += 1;
             else if (status === 'accepted' || status === 'answered') acceptedCalls += 1;
         });
 
+        const totalInterest = countYes + countNo + countInformLater;
+        const missingInterest = countNo + countInformLater;
+        const totalSeconds = Math.round(totalCallDuration * 60);
         return {
             totalContacts,
             completed,
             pending,
             totalCallDuration,
-            totalInterest,
-            missingInterest,
+            totalSeconds,
             planCounts,
             missedCalls,
             rejectedCalls,
-            acceptedCalls
+            acceptedCalls,
+
+            countYes,
+            countNo,
+            countInformLater,
+
+            totalInterest,
+            missingInterest
         };
     }, [students]);
 
@@ -348,145 +354,158 @@ function Workreport() {
         }, 0);
     }, [students]);
 
-    const exportToPDF = () => {
-        try {
-            const doc = new jsPDF({
-                orientation: 'landscape',
-                unit: 'pt',
-                format: 'a4'
-            });
+  const exportToPDF = () => {
+  try {
+    const doc = new jsPDF({
+      orientation: 'landscape',
+      unit: 'pt',
+      format: 'a4'
+    });
 
-            const now = new Date();
-            const username = processedStudents.rows[0]?.assignedTo?.username || 'All';
-            const userEmail = processedStudents.rows[0]?.assignedTo?.email || '-';
+    const now = new Date();
+    const username = processedStudents.rows[0]?.assignedTo?.username || 'All';
+    const userEmail = processedStudents.rows[0]?.assignedTo?.email || '-';
 
-            const datePart = formatFilenameDate(now);
-            const filename = `Work-report-${username.replace(/\s+/g, '-').toLowerCase()}-${datePart}.pdf`;
-            const title = `Work Report - ${username}`;
+    const datePart = formatFilenameDate(now);
+    const filename = `Work-report-${username.replace(/\s+/g, '-').toLowerCase()}-${datePart}.pdf`;
+    const title = `Work Report - ${username}`;
 
-            // 🟦 Title
-            doc.setFontSize(16);
-            doc.text(title, doc.internal.pageSize.getWidth() / 2, 28, { align: 'center' });
+    // Title
+    doc.setFontSize(16);
+    doc.text(title, doc.internal.pageSize.getWidth() / 2, 28, { align: 'center' });
 
-            // 🟩 Summary (inline formatting)
-            doc.setFontSize(11);
-            let y = 55;
+    // Summary lines
+    doc.setFontSize(11);
+    let y = 55;
 
-            const line1 = `Current Assignee: ${username}  |  Assignee Email: ${userEmail}`;
-            doc.text(line1, 40, y);
+    const line1 = `Current Assignee: ${username}  |  Assignee Email: ${userEmail}`;
+    doc.text(line1, 40, y);
 
-            y += 16;
-            const line2 = `Total Contacts: ${summary.totalContacts || 0}  |  Completed: ${summary.completed || 0
-                }  |  Pending: ${summary.pending || 0}`;
-            doc.text(line2, 40, y);
+    y += 16;
+    const line2 = `Total Contacts: ${summary.totalContacts || 0}  |  Completed: ${summary.completed || 0}  |  Pending: ${summary.pending || 0}`;
+    doc.text(line2, 40, y);
 
-            y += 16;
-            const line3 = `Total Call Duration: ${summary.totalCallDuration || 0}  |  Total Interest: ${summary.totalInterest || 0
-                }  |  Missing Interest: ${summary.missingInterest || 0}`;
-            doc.text(line3, 40, y);
+    y += 16;
+    // Format total call duration
+    const sec = summary.totalSeconds || 0;
+    const m = Math.floor(sec / 60);
+    const s = sec % 60;
+    const durStr = (m > 0 ? `${m} min ` : '') + `${s} sec`;
 
-            y += 16;
-            const line4 = `Missed Calls: ${summary.missedCalls || 0}  |  Rejected Calls: ${summary.rejectedCalls || 0}  |  Accepted Calls: ${summary.acceptedCalls || 0}`;
-            doc.text(line4, 40, y);
+    const line3 = `Total Call Duration: ${durStr}  |  Total Interest: ${summary.totalInterest || 0}  |  Missing Interest: ${summary.missingInterest || 0}`;
+    doc.text(line3, 40, y);
 
-            y += 16;
-            const line5 = `Starter Plan: ${summary.planCounts?.starter || 0}  |  Gold Plan: ${summary.planCounts?.gold || 0
-                }  |  Master Plan: ${summary.planCounts?.master || 0}`;
-            doc.text(line5, 40, y);
+    y += 16;
+    const line4 = `Missed Calls: ${summary.missedCalls || 0}  |  Rejected Calls: ${summary.rejectedCalls || 0}  |  Accepted Calls: ${summary.acceptedCalls || 0}`;
+    doc.text(line4, 40, y);
 
+    y += 16;
+    const line5 = `Starter Plan: ${summary.planCounts?.starter || 0}  |  Gold Plan: ${summary.planCounts?.gold || 0}  |  Master Plan: ${summary.planCounts?.master || 0}`;
+    doc.text(line5, 40, y);
 
-            y += 16;
-            doc.setFontSize(11);  // same font size as other summary lines
-            doc.text(`Same Date Count: ${sameDateCount}`, 40, y);
-            
-            // 🟨 Course-wise summary
-            y += 20;
-            doc.setFontSize(11);
-            doc.text('Course-wise Counts:', 40, y);
-            y += 14;
+    y += 16;
+    doc.setFontSize(11);
+    doc.text(`Same Date Count: ${sameDateCount}`, 40, y);
 
+    // Add Yes/No/Inform Later counts
+    y += 20;
+    doc.text(`Yes: ${summary.countYes || 0}  |  No: ${summary.countNo || 0}  |  Inform Later: ${summary.countInformLater || 0}`, 40, y);
 
+    // Course-wise summary
+    y += 20;
+    doc.setFontSize(11);
+    doc.text('Course-wise Counts:', 40, y);
+    y += 14;
+    Object.entries(courseCounts).forEach(([course, cnt]) => {
+      doc.text(`${course}: ${cnt}`, 60, y);
+      y += 14;
+    });
 
-            Object.entries(courseCounts).forEach(([course, cnt]) => {
-                doc.text(`${course}: ${cnt}`, 60, y);
-                y += 14;
-            });
+    // Table header
+    const head = [[
+      '#',
+      'Name',
+      'Email',
+      'Phone',
+      'Course',
+      'Place',
+      'Call Status',
+      'Call Duration',
+      'Interested',
+      'Plan Type',
+      'Assigned At',
+      'Completed At',
+      'Same Date?'
+    ]];
 
-            // 🟧 Table Header
-            const head = [[
-                '#',
-                'Name',
-                'Email',
-                'Phone',
-                'Course',
-                'Place',
-                'Call Status',
-                'Call Duration',
-                'Interested',
-                'Plan Type',
-                'Assigned At',
-                'Completed At',
-                'Same Date?'
-            ]];
-
-            // 🟪 Table Body
-            const body = processedStudents.rows.map((s, index) => {
-                const ci = s.callInfo || {};
-                let sameDateTick = '';
-                if (s.assignedAt && ci.completedAt) {
-                    const a = new Date(s.assignedAt);
-                    const c = new Date(ci.completedAt);
-                    if (a.toDateString() === c.toDateString()) {
-                        sameDateTick = '✔';
-                    }
-                }
-                return [
-                    index + 1,
-                    s.name || '',
-                    s.email || '',
-                    s.phone || '',
-                    s.course || '',
-                    s.place || '',
-                    ci.callStatus ?? '-',
-                    ci.callDuration ?? '-',
-                    ci.interested != null ? (ci.interested ? 'Yes' : 'No') : '-',
-                    ci.planType ?? '-',
-                    formatDisplayDate(s.assignedAt),
-                    formatDisplayDate(ci.completedAt),
-                    sameDateTick
-                ];
-            });
-
-            // 🧾 Render Table
-            autoTable(doc, {
-                head,
-                body,
-                startY: y + 10,
-                styles: { fontSize: 9, cellPadding: 4, overflow: 'linebreak' },
-                headStyles: { fillColor: [41, 128, 185] },
-                columnStyles: {
-                    0: { cellWidth: 25 },
-                    1: { cellWidth: 100 },
-                    2: { cellWidth: 130 },
-                    3: { cellWidth: 80 },
-                    10: { cellWidth: 90 },
-                    11: { cellWidth: 90 }
-                },
-                margin: { top: 36, left: 20, right: 20, bottom: 30 },
-                didDrawPage: function () {
-                    const pageCount = doc.internal.getNumberOfPages();
-                    const pageHeight = doc.internal.pageSize.height;
-                    const footerText = `Page ${doc.internal.getCurrentPageInfo().pageNumber} / ${pageCount}`;
-                    doc.setFontSize(9);
-                    doc.text(footerText, doc.internal.pageSize.getWidth() - 40, pageHeight - 10, { align: 'right' });
-                }
-            });
-
-            doc.save(filename);
-        } catch (err) {
-            console.error('Error exporting PDF:', err);
+    // Table body
+    const body = processedStudents.rows.map((s, index) => {
+      const ci = s.callInfo || {};
+      let sameDateTick = '';
+      if (s.assignedAt && ci.completedAt) {
+        const a = new Date(s.assignedAt);
+        const c = new Date(ci.completedAt);
+        if (a.toDateString() === c.toDateString()) {
+          sameDateTick = '✔';
         }
-    };
+      }
+
+      // Format each row’s call duration into “min sec”
+      let rowDurStr = '-';
+      if (ci.callDuration != null && !isNaN(ci.callDuration)) {
+        const rowSec = Math.round(ci.callDuration * 60);
+        const rm = Math.floor(rowSec / 60);
+        const rs = rowSec % 60;
+        rowDurStr = (rm > 0 ? `${rm} min ` : '') + `${rs} sec`;
+      }
+
+      return [
+        index + 1,
+        s.name || '',
+        s.email || '',
+        s.phone || '',
+        s.course || '',
+        s.place || '',
+        ci.callStatus ?? '-',
+        rowDurStr,
+        ci.interested != null ? (ci.interested ? 'Yes' : 'No') : 'Inform Later',
+        ci.planType ?? '-',
+        formatDisplayDate(s.assignedAt),
+        formatDisplayDate(ci.completedAt),
+        sameDateTick
+      ];
+    });
+
+    // Render table
+    autoTable(doc, {
+      head,
+      body,
+      startY: y + 10,
+      styles: { fontSize: 9, cellPadding: 4, overflow: 'linebreak' },
+      headStyles: { fillColor: [41, 128, 185] },
+      columnStyles: {
+        0: { cellWidth: 25 },
+        1: { cellWidth: 100 },
+        2: { cellWidth: 130 },
+        3: { cellWidth: 80 },
+        10: { cellWidth: 90 },
+        11: { cellWidth: 90 }
+      },
+      margin: { top: 36, left: 20, right: 20, bottom: 30 },
+      didDrawPage: function () {
+        const pageCount = doc.internal.getNumberOfPages();
+        const pageHeight = doc.internal.pageSize.height;
+        const footerText = `Page ${doc.internal.getCurrentPageInfo().pageNumber} / ${pageCount}`;
+        doc.setFontSize(9);
+        doc.text(footerText, doc.internal.pageSize.getWidth() - 40, pageHeight - 10, { align: 'right' });
+      }
+    });
+
+    doc.save(filename);
+  } catch (err) {
+    console.error('Error exporting PDF:', err);
+  }
+};
 
 
     return (
@@ -588,9 +607,21 @@ function Workreport() {
                                                     { label: "Total Contacts", value: summary.totalContacts },
                                                     { label: "Completed", value: summary.completed },
                                                     { label: "Pending", value: summary.pending },
-                                                    { label: "Total Call Duration", value: summary.totalCallDuration },
+                                                    { label: "Total Call Duration (min)", value: summary.totalCallDuration },
+                                                    {
+                                                        label: "Total Call Duration (sec)",
+                                                        value: (() => {
+                                                            const sec = summary.totalSeconds || 0;
+                                                            const m = Math.floor(sec / 60);
+                                                            const s = sec % 60;
+                                                            return (m > 0 ? `${m} min ` : '') + `${s} sec`;
+                                                        })()
+                                                    },
                                                     { label: "Total Interest", value: summary.totalInterest },
                                                     { label: "Missing Interest", value: summary.missingInterest },
+                                                    { label: "Yes", value: summary.countYes },
+                                                    { label: "No", value: summary.countNo },
+                                                    { label: "Inform Later", value: summary.countInformLater },
                                                     { label: "Missed Calls", value: summary.missedCalls },
                                                     { label: "Rejected Calls", value: summary.rejectedCalls },
                                                     { label: "Accepted Calls", value: summary.acceptedCalls },
@@ -687,9 +718,20 @@ function Workreport() {
                                                                     <td data-label="Course">{s.course}</td>
                                                                     <td data-label="Place">{s.place}</td>
                                                                     <td data-label="Call Status">{ci.callStatus ?? '-'}</td>
-                                                                    <td data-label="Call Duration">{ci.callDuration ?? '-'}</td>
+                                                                    <td data-label="Call Duration">
+                                                                        {ci.callDuration != null && !isNaN(ci.callDuration) ? (() => {
+                                                                            const totalSec = Math.round(ci.callDuration * 60);
+                                                                            const m = Math.floor(totalSec / 60);
+                                                                            const s = totalSec % 60;
+                                                                            return (m > 0 ? `${m} min ` : '') + `${s} sec`;
+                                                                        })() : '-'}
+                                                                    </td>
                                                                     <td data-label="Interested">
-                                                                        {ci.interested != null ? (ci.interested ? 'Yes' : 'No') : '-'}
+                                                                        {ci.interested === true
+                                                                            ? 'Yes'
+                                                                            : ci.interested === false
+                                                                                ? 'No'
+                                                                                : 'Inform Later'}
                                                                     </td>
                                                                     <td data-label="Plan Type">{ci.planType ?? '-'}</td>
                                                                     <td

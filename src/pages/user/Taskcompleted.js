@@ -66,7 +66,7 @@ function Taskcompleted() {
 
       const callStatus = s.callInfo?.callStatus || '';
       const callDuration = s.callInfo?.callDuration ?? '';
-      const interested = s.callInfo?.interested === true ? 'Yes' : s.callInfo?.interested === false ? 'No' : '';
+      const interested = s.callInfo?.interested === true ? 'Yes' : s.callInfo?.interested === false ? 'No' : 'Inform Later';
       const planType = s.callInfo?.planType || '';
       const assignedAt = s.assignedAt ? new Date(s.assignedAt).toLocaleString('en-GB', {
         day: '2-digit',
@@ -115,8 +115,8 @@ function Taskcompleted() {
         aVal = a.callInfo?.callDuration ?? '';
         bVal = b.callInfo?.callDuration ?? '';
       } else if (sortKey === 'interested') {
-        aVal = a.callInfo?.interested === true ? 'Yes' : a.callInfo?.interested === false ? 'No' : '';
-        bVal = b.callInfo?.interested === true ? 'Yes' : b.callInfo?.interested === false ? 'No' : '';
+        aVal = a.callInfo?.interested === true ? 'Yes' : a.callInfo?.interested === false ? 'No' : 'Inform Later';
+        bVal = b.callInfo?.interested === true ? 'Yes' : b.callInfo?.interested === false ? 'No' : 'Inform Later';
       } else if (sortKey === 'planType') {
         aVal = a.callInfo?.planType ?? '';
         bVal = b.callInfo?.planType ?? '';
@@ -315,14 +315,20 @@ function Taskcompleted() {
                 </div>
                 <div className="col-md-4 mb-2">
                   <div className="summary-card bg-danger text-white p-3 rounded shadow-sm">
-                    <h6>Total Interestes</h6>
+                    <h6>Interested (Yes)</h6>
                     <h3>{summary.totalInterested}</h3>
                   </div>
                 </div>
                 <div className="col-md-4 mb-2">
                   <div className="summary-card bg-secondary text-white p-3 rounded shadow-sm">
-                    <h6>Missing Interest</h6>
-                    <h3>{summary.missingInterest}</h3>
+                    <h6>Not Interested (No)</h6>
+                    <h3>{summary.totalNotInterested}</h3>
+                  </div>
+                </div>
+                <div className="col-md-4 mb-2">
+                  <div className="summary-card bg-secondary text-dark p-3 rounded shadow-sm">
+                    <h6>Inform Later</h6>
+                    <h3>{summary.missingInterest || 0}</h3>
                   </div>
                 </div>
               </div>
@@ -440,8 +446,12 @@ function Taskcompleted() {
                         <td>{s.phone}</td>
                         <td>{s.course}</td>
                         <td>{s.callInfo?.callStatus || 'Pending'}</td>
-                        <td>{s.callInfo?.callDuration ?? '-'}</td>
-                        <td>{s.callInfo?.interested === true ? 'Yes' : s.callInfo?.interested === false ? 'No' : '-'}</td>
+                        <td>
+                          {s.callInfo?.callDuration !== null && s.callInfo?.callDuration !== undefined
+                            ? `${Math.round(s.callInfo.callDuration * 60)} sec`
+                            : '-'}
+                        </td>
+                        <td>{s.callInfo?.interested === true ? 'Yes' : s.callInfo?.interested === false ? 'No' : 'Inform Later'}</td>
                         <td>{s.callInfo?.planType || '-'}</td>
                         <td>{s.assignedAt ? new Date(s.assignedAt).toLocaleString('en-GB', {
                           day: '2-digit',
@@ -478,7 +488,7 @@ function Taskcompleted() {
                   </div>
                   <div>
                     <select className="form-select form-select-sm" value={itemsPerPage} onChange={e => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}>
-                      {[ 5, 10, 15, 20, 25, 30, 35, 40, 50, 100].map(size => <option key={size} value={size}>{size}</option>)}
+                      {[5, 10, 15, 20, 25, 30, 35, 40, 50, 100].map(size => <option key={size} value={size}>{size}</option>)}
                     </select>
                   </div>
                 </div>

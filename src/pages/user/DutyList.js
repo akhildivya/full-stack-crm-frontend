@@ -184,9 +184,18 @@ function DutyList() {
 
   const handleSave = async () => {
     if (!selectedStudent) return;
+     // Convert minutes + seconds to decimal minutes
+  const minutes = parseInt(formData.callDurationMinutes || 0, 10);
+  const seconds = parseInt(formData.callDurationSeconds || 0, 10);
+  const totalDurationInMinutes = minutes + seconds / 60;
+
+  const payload = {
+    ...formData,
+    callDuration: totalDurationInMinutes || null, // backend expects minutes
+  };
     try {
       const response = await axios.put(
-        `${BASEURL}/students/${selectedStudent._id}/status`,
+        `${BASEURL}/students/${selectedStudent._id}/status`,payload,
         { ...formData },
         { headers: { Authorization: auth.token } }
       );
@@ -683,135 +692,7 @@ function DutyList() {
           </main>
         </div>
 
-        {/*<Modal show={showModal} onHide={() => setShowModal(false)}>
-          <Modal.Header closeButton>
-            <Modal.Title>Update Call Status</Modal.Title>
-          </Modal.Header>
-          <Modal.Body>
-            <Form>
-              <Form.Group controlId="callStatus">
-                <Form.Label>Call Status</Form.Label>
-                <Form.Control as="select" value={formData.callStatus} onChange={handleInputChange} name="callStatus">
-                  <option value="missed">Missed</option>
-                  <option value="rejected">Rejected</option>
-                  <option value="accepted">Accepted</option>
-                </Form.Control>
-              </Form.Group>
-
-              {formData.callStatus === 'accepted' && (
-                <>
-                  <Form.Group controlId="callDuration">
-                    <Form.Label>Call Duration (minutes)</Form.Label>
-                    <Form.Control type="number" value={formData.callDuration} onChange={handleInputChange} name="callDuration" />
-                  </Form.Group>
-
-                  <Form.Group controlId="interested">
-                    <Form.Label>Interested</Form.Label>
-                    <Form.Control as="select" value={formData.interested} onChange={handleInputChange} name="interested">
-                      <option value="yes">Yes</option>
-                      <option value="no">No</option>
-                    </Form.Control>
-                  </Form.Group>
-
-                  {formData.interested === 'yes' && (
-                    <Form.Group controlId="planType">
-                      <Form.Label>Plan Type</Form.Label>
-                      <Form.Control as="select" value={formData.planType} onChange={handleInputChange} name="planType">
-                        <option value="starter">Starter</option>
-                        <option value="gold">Gold</option>
-                        <option value="master">Master</option>
-                      </Form.Control>
-                    </Form.Group>
-                  )}
-                </>
-              )}
-            </Form>
-          </Modal.Body>
-          <Modal.Footer>
-            <Button variant="secondary" onClick={() => setShowModal(false)}>
-              Close
-            </Button>
-            <Button variant="primary" onClick={handleSave}>
-              Save Changes
-            </Button>
-          </Modal.Footer>
-        </Modal>*/}
-        {/* <Modal show={showModal} onHide={() => setShowModal(false)}>
-          <Modal.Header closeButton>
-            <Modal.Title>Update Call Status</Modal.Title>
-          </Modal.Header>
-          <Modal.Body>
-            <Form>
-              <Form.Group controlId="callStatus">
-                <Form.Label>Call Status</Form.Label>
-                <Form.Control
-                  as="select"
-                  value={formData.callStatus}
-                  onChange={handleInputChange}
-                  name="callStatus"
-                >
-                  <option value="">-- Select --</option>
-                  <option value="Missed">Missed</option>
-                  <option value="Rejected">Rejected</option>
-                  <option value="Accepted">Accepted</option>
-                </Form.Control>
-              </Form.Group>
-
-              {formData.callStatus === 'accepted' && (
-                <>
-                  <Form.Group controlId="callDuration">
-                    <Form.Label>Call Duration (minutes)</Form.Label>
-                    <Form.Control
-                      type="number"
-                      value={formData.callDuration}
-                      onChange={handleInputChange}
-                      name="callDuration"
-                    />
-                  </Form.Group>
-
-                  <Form.Group controlId="interested">
-                    <Form.Label>Interested</Form.Label>
-                    <Form.Control
-                      as="select"
-                      value={formData.interested}
-                      onChange={handleInputChange}
-                      name="interested"
-                    >
-                      <option value="">-- Select --</option>
-                      <option value="Yes">Yes</option>
-                      <option value="No">No</option>
-                    </Form.Control>
-                  </Form.Group>
-
-                  {formData.interested === 'yes' && (
-                    <Form.Group controlId="planType">
-                      <Form.Label>Plan Type</Form.Label>
-                      <Form.Control
-                        as="select"
-                        value={formData.planType}
-                        onChange={handleInputChange}
-                        name="planType"
-                      >
-                        <option value="">-- Select Plan --</option>
-                        <option value="Starter">Starter</option>
-                        <option value="Gold">Gold</option>
-                        <option value="Master">Master</option>
-                      </Form.Control>
-                    </Form.Group>
-                  )}
-                </>
-              )}
-            </Form>
-          </Modal.Body>
-          <Modal.Footer>
-            <Button variant="secondary" onClick={() => setShowModal(false)}>
-              Close
-            </Button>
-            <Button variant="primary" onClick={handleSave}>
-              Save Changes
-            </Button>
-          </Modal.Footer>
-        </Modal>*/}
+       
         <Modal show={showModal} onHide={() => setShowModal(false)}>
           <Modal.Header closeButton>
             <Modal.Title>Update Call Status</Modal.Title>
@@ -835,15 +716,39 @@ function DutyList() {
               </Form.Group>
 
               {/* Call Duration: Always visible if any callStatus is selected */}
+              {/* Call Duration: Always visible if any callStatus is selected */}
               {formData.callStatus && (
                 <Form.Group controlId="callDuration" className="mb-3">
-                  <Form.Label>Call Duration (minutes)</Form.Label>
-                  <Form.Control
-                    type="number"
-                    value={formData.callDuration || ''}
-                    onChange={handleInputChange}
-                    name="callDuration"
-                  />
+                  <Form.Label>Call Duration</Form.Label>
+                  <div className="d-flex align-items-center gap-2">
+                    {/* Minutes Dropdown */}
+                    <Form.Control
+                      as="select"
+                      name="callDurationMinutes"
+                      value={formData.callDurationMinutes || ''}
+                      onChange={handleInputChange}
+                      style={{ width: '50%' }}
+                    >
+                      <option value="">Minutes</option>
+                      {[...Array(60)].map((_, i) => (
+                        <option key={i} value={i}>{i} min</option>
+                      ))}
+                    </Form.Control>
+
+                    {/* Seconds Dropdown */}
+                    <Form.Control
+                      as="select"
+                      name="callDurationSeconds"
+                      value={formData.callDurationSeconds || ''}
+                      onChange={handleInputChange}
+                      style={{ width: '50%' }}
+                    >
+                      <option value="">Seconds</option>
+                      {[...Array(60)].map((_, i) => (
+                        <option key={i} value={i}>{i} sec</option>
+                      ))}
+                    </Form.Control>
+                  </div>
                 </Form.Group>
               )}
 
@@ -860,7 +765,7 @@ function DutyList() {
                     <option value="">-- Select --</option>
                     <option value="Yes">Yes</option>
                     <option value="No">No</option>
-                    <option value="DontKnow">Don't Know</option>
+                    <option value="Inform Later">Inform Later</option>
                   </Form.Control>
                 </Form.Group>
               )}

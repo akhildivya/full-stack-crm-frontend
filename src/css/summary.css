@@ -1,32 +1,23 @@
-@media screen and (max-width: 767px) {
-  .custom-table,
-  .custom-table thead,
-  .custom-table tbody,
-  .custom-table th,
-  .custom-table td,
-  .custom-table tr {
-    display: block;
-  }
-  .custom-table thead tr {
-    position: absolute;
-    top: -9999px;
-    left: -9999px;
-  }
-  .custom-table tr {
-    margin-bottom: 1rem;
-    border: 1px solid #ddd;
-    padding: 8px;
-  }
-  .custom-table td {
-    position: relative;
-    padding-left: 50%;
-    border: none;
-    text-align: left;
-  }
-  .custom-table td::before {
-    content: attr(data-label);
-    position: absolute;
-    left: 8px;
-    font-weight: bold;
-  }
+.table-responsive {
+  overflow-x: auto;
+}
+
+.custom-table,
+.custom-table thead,
+.custom-table tbody,
+.custom-table th,
+.custom-table td,
+.custom-table tr {
+  display: block;
+}
+
+.custom-table th,
+.custom-table td {
+  text-align: left;
+  padding: 8px;
+  white-space: nowrap;
+}
+
+.custom-table tr:nth-child(even) {
+  background-color: #f2f2f2;
 }

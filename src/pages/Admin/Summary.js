@@ -9,9 +9,7 @@ import { autoTable } from 'jspdf-autotable';
 
 function Summary() {
   const [userSummary, setUserSummary] = useState([]);
-  // local states to mirror react-table pagination
   const [itemsPerPage, setItemsPerPage] = useState(10);
-  // Note: react-table gives pageIndex (0-based). We'll use that directly.
 
   useEffect(() => {
     axios
@@ -22,6 +20,7 @@ function Summary() {
 
   const columns = useMemo(
     () => [
+       { Header: '#', accessor: 'slno', Cell: ({ row }) => row.index + 1 },
       { Header: 'Name', accessor: 'name' },
       { Header: 'Email', accessor: 'email' },
       { Header: 'Phone', accessor: 'phone' },
@@ -38,8 +37,7 @@ function Summary() {
     getTableProps,
     getTableBodyProps,
     headerGroups,
-    // instead of `rows`, use `page` for current page
-    page, 
+    page,
     prepareRow,
     state: { pageIndex, globalFilter },
     setGlobalFilter,
@@ -48,7 +46,6 @@ function Summary() {
     canPreviousPage,
     canNextPage,
     pageCount,
-    pageOptions,
   } = useTable(
     {
       columns,
@@ -57,17 +54,15 @@ function Summary() {
         pageIndex: 0,
         pageSize: itemsPerPage,
       },
-      manualPagination: false, // default client-side pagination
+      manualPagination: false,
     },
     useGlobalFilter,
     useSortBy,
     usePagination
   );
 
-  // Whenever itemsPerPage changes, update table's pageSize
   useEffect(() => {
     setPageSize(itemsPerPage);
-    // Optionally reset to first page
     gotoPage(0);
   }, [itemsPerPage, setPageSize, gotoPage]);
 
@@ -117,7 +112,7 @@ function Summary() {
                   Export to PDF
                 </button>
               </div>
-              <div className="table-wrapper">
+              <div className="table-responsive">
                 <table {...getTableProps()} className="table custom-table">
                   <thead>
                     {headerGroups.map((headerGroup) => (
@@ -143,7 +138,9 @@ function Summary() {
                       return (
                         <tr {...row.getRowProps()}>
                           {row.cells.map((cell) => (
-                            <td {...cell.getCellProps()} data-label={cell.column.Header}>{cell.render('Cell')}</td>
+                            <td {...cell.getCellProps()} data-label={cell.column.Header}>
+                              {cell.render('Cell')}
+                            </td>
                           ))}
                         </tr>
                       );
@@ -152,18 +149,10 @@ function Summary() {
                 </table>
               </div>
 
-              {/* Your new pagination UI */}
               <div className="d-flex justify-content-between align-items-center mt-3">
                 <div>
                   <button
                     className="btn btn-outline-primary me-2"
-                    onClick={() => gotoPage(0)}
-                    disabled={!canPreviousPage}
-                  >
-                    &laquo;
-                  </button>
-                  <button
-                    className="btn btn-outline-primary"
                     onClick={() => gotoPage(pageIndex - 1)}
                     disabled={!canPreviousPage}
                   >
@@ -176,22 +165,13 @@ function Summary() {
                   >
                     &rsaquo;
                   </button>
-                  <button
-                    className="btn btn-outline-primary ms-2"
-                    onClick={() => gotoPage(pageCount - 1)}
-                    disabled={!canNextPage}
-                  >
-                    &raquo;
-                  </button>
                 </div>
 
                 <div className="d-flex align-items-center gap-2">
                   <select
                     className="form-select form-select-sm"
                     value={itemsPerPage}
-                    onChange={(e) => {
-                      setItemsPerPage(Number(e.target.value));
-                    }}
+                    onChange={(e) => setItemsPerPage(Number(e.target.value))}
                   >
                     {[2, 5, 10, 15, 20, 25, 30, 35, 40, 50, 100].map((size) => (
                       <option key={size} value={size}>
@@ -199,9 +179,7 @@ function Summary() {
                       </option>
                     ))}
                   </select>
-                  <span>
-                    Page {pageIndex + 1} of {pageCount}
-                  </span>
+                  
                 </div>
               </div>
             </div>
