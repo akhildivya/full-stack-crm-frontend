@@ -20,7 +20,7 @@ function Summary() {
 
   const columns = useMemo(
     () => [
-       { Header: '#', accessor: 'slno', Cell: ({ row }) => row.index + 1 },
+      { Header: '#', accessor: 'slno', Cell: ({ row }) => row.index + 1 },
       { Header: 'Name', accessor: 'name' },
       { Header: 'Email', accessor: 'email' },
       { Header: 'Phone', accessor: 'phone' },
@@ -179,7 +179,7 @@ function Summary() {
                       </option>
                     ))}
                   </select>
-                  
+
                 </div>
               </div>
             </div>
