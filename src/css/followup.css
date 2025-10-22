@@ -1,0 +1,15 @@
+.table-responsive {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Style adjustments for the input and select elements */
+.form-control,
+.form-select {
+  min-width: 150px;
+}
+
+/* Adjust button styling */
+.btn {
+  min-width: 120px;
+}

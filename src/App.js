@@ -24,6 +24,7 @@ import DutyList from "./pages/user/DutyList";
 import Taskcompleted from "./pages/user/Taskcompleted";
 import Workreport from "./pages/Admin/Workreport";
 import Summary from "./pages/Admin/Summary";
+import Followup from "./pages/Admin/Followup";
 
 function App() {
   return (
@@ -48,6 +49,7 @@ function App() {
           <Route path='alloted-duties' element={<Duties />}> </Route>
           <Route path='work-report' element={<Workreport />}></Route>
           <Route path='summary-report' element={<Summary />}></Route>
+          <Route path='follow-up' element={<Followup />}></Route>
         </Route>
         <Route path='/register' element={<Register />}></Route>
         <Route path='/login' element={<Login />}></Route>

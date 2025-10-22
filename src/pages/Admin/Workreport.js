@@ -8,6 +8,7 @@ import { autoTable } from 'jspdf-autotable';
 import { FaFilePdf } from 'react-icons/fa';
 import { Button } from 'react-bootstrap';
 import { toast } from 'react-toastify';
+import { Dropdown } from 'react-bootstrap';
 function Workreport() {
     const [users, setUsers] = useState([]);
     const [selectedUserId, setSelectedUserId] = useState('');
@@ -183,6 +184,12 @@ function Workreport() {
 
                 const assignedAtFormatted = formatForSearch(s.assignedAt);
                 const completedAtFormatted = formatForSearch(ci.completedAt);
+                const interestedText =
+                    ci.interested === true
+                        ? 'yes'
+                        : ci.interested === false
+                            ? 'no'
+                            : 'inform later';
 
                 return (
                     s.name?.toLowerCase().includes(term) ||
@@ -191,6 +198,7 @@ function Workreport() {
                     s.place?.toLowerCase().includes(term) ||
                     (ci.callStatus?.toLowerCase().includes(term) ?? false) ||
                     (ci.planType?.toLowerCase().includes(term) ?? false) ||
+                    interestedText.includes(term) ||
                     assignedAtFormatted.includes(term) ||
                     completedAtFormatted.includes(term)
                 );
@@ -205,6 +213,12 @@ function Workreport() {
                     const innerKey = key.split('.')[1];
                     aVal = (a.callInfo && a.callInfo[innerKey]) ?? '';
                     bVal = (b.callInfo && b.callInfo[innerKey]) ?? '';
+                    if (innerKey === 'interested') {
+                        const normalize = v =>
+                            v === true ? 'yes' : v === false ? 'no' : 'inform later';
+                        aVal = normalize(aVal);
+                        bVal = normalize(bVal);
+                    }
                 } else {
                     aVal = a[key];
                     bVal = b[key];
@@ -603,7 +617,60 @@ function Workreport() {
             alert('Failed to bulk delete students');
         }
     };
+    const handleBulkAdmission = async () => {
+        // get selectedIds, ask confirm, then send to backend: move to “admission” table
+        try {
+            await axios.post(`${BASEURL}/admin/move-to-admission`, { ids: selectedIds });
+            // remove those students from current table state
+            setStudents(prev => prev.filter(s => !selectedIds.includes(s._id)));
+            toast.success("Moved to Admission successfully", {
+                position: "top-center",
+                autoClose: 5000,
+                hideProgressBar: false,
+                closeOnClick: false,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+                theme: "light",
 
+            });
+            // clear selectedIds, refresh summary if needed
+            setSelectedIds([]);
+        } catch (err) {
+            toast.error("Failed to move to Admission", {
+                position: "top-center",
+                autoClose: 5000,
+                hideProgressBar: false,
+                closeOnClick: false,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+                theme: "light",
+
+            });
+        }
+    };
+
+    const handleBulkContactLater = async () => {
+        try {
+            await axios.post(`${BASEURL}/admin/move-to-contact-later`, { ids: selectedIds });
+            setStudents(prev => prev.filter(s => !selectedIds.includes(s._id)));
+            toast.success("Moved to Contact Later successfully", {
+                position: "top-center",
+                autoClose: 5000,
+                hideProgressBar: false,
+                closeOnClick: false,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+                theme: "light",
+
+            });
+            setSelectedIds([]);
+        } catch (err) {
+            toast.error("Failed to move to Contact Later",);
+        }
+    };
     return (
         <Layout title={"CRM - Work Report"}>
             <div className="container-fluid m-3 p-3 admin-root">
@@ -650,39 +717,31 @@ function Workreport() {
                                             </select>
                                         )}
                                     </div>
-                                    <div className="col-md-4 mb-2">
-                                        <label htmlFor="sortBy">Sort By:</label>
-                                        <select
-                                            id="sortBy"
-                                            className="form-select"
-                                            value={sortConfig.key || ''}
-                                            onChange={(e) => requestSort(e.target.value)}
-                                        >
-                                            <option value="">Select</option>
-                                            <option value="name">Name</option>
-                                            <option value="email">Email</option>
-                                            <option value="phone">Phone</option>
-                                            <option value="course">Course</option>
-                                            <option value="place">Place</option>
-                                            <option value="callInfo.callStatus">Call Status</option>
-                                            <option value="callInfo.callDuration">Call Duration</option>
-                                            <option value="callInfo.interested">Interested</option>
-                                            <option value="callInfo.planType">Plan Type</option>
-                                            <option value="assignedAt">Assigned At</option>
-                                            <option value="callInfo.completedAt">Completed At</option>
-                                        </select>
-                                    </div>
-                                    <div className="col-md-4 mb-2">
-                                        <label htmlFor="sortDirection">Direction:</label>
-                                        <select
-                                            id="sortDirection"
-                                            className="form-select"
-                                            value={sortConfig.direction}
-                                            onChange={(e) => setSortConfig({ ...sortConfig, direction: e.target.value })}
-                                        >
-                                            <option value="asc">Ascending</option>
-                                            <option value="desc">Descending</option>
-                                        </select>
+                                    <div className="d-flex flex-wrap gap-3">
+                                        {/* Sort By Dropdown */}
+                                        <Dropdown className="w-100 w-md-auto">
+                                            <Dropdown.Toggle variant="outline-secondary" id="dropdown-sort-column">
+                                                Sort by: {sortConfig.key || 'Select'}
+                                            </Dropdown.Toggle>
+                                            <Dropdown.Menu>
+                                                {['name', 'email', 'phone', 'course', 'place', 'callInfo.callStatus', 'callInfo.callDuration', 'callInfo.interested', 'callInfo.planType', 'assignedAt', 'callInfo.completedAt'].map(col => (
+                                                    <Dropdown.Item key={col} onClick={() => requestSort(col)}>
+                                                        {col.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
+                                                    </Dropdown.Item>
+                                                ))}
+                                            </Dropdown.Menu>
+                                        </Dropdown>
+
+                                        {/* Direction Dropdown */}
+                                        <Dropdown className="w-100 w-md-auto">
+                                            <Dropdown.Toggle variant="outline-secondary" id="dropdown-sort-order">
+                                                {sortConfig.direction === 'asc' ? 'Ascending' : 'Descending'}
+                                            </Dropdown.Toggle>
+                                            <Dropdown.Menu>
+                                                <Dropdown.Item onClick={() => setSortConfig({ ...sortConfig, direction: 'asc' })}>Ascending</Dropdown.Item>
+                                                <Dropdown.Item onClick={() => setSortConfig({ ...sortConfig, direction: 'desc' })}>Descending</Dropdown.Item>
+                                            </Dropdown.Menu>
+                                        </Dropdown>
                                     </div>
                                 </div>
 
@@ -759,7 +818,25 @@ function Workreport() {
                                                     ✔ Same Date Count: {sameDateCount}
                                                 </div>
                                             )}
-                                            <div className="mb-3 d-flex justify-content-end">
+                                            <div className="mb-3 d-flex justify-content-end gap-2">
+                                                <Button
+                                                    variant="primary"
+                                                    size="sm"
+                                                    disabled={selectedIds.length === 0}
+                                                    onClick={handleBulkAdmission}
+                                                >
+                                                    Admission Selected ({selectedIds.length})
+                                                </Button>
+
+                                                <Button
+                                                    variant="warning"
+                                                    size="sm"
+                                                    disabled={selectedIds.length === 0}
+                                                    onClick={handleBulkContactLater}
+                                                >
+                                                    Contact Later Selected ({selectedIds.length})
+                                                </Button>
+
                                                 <Button
                                                     variant="danger"
                                                     size="sm"

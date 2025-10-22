@@ -7,6 +7,18 @@ import { useTable, useSortBy, usePagination, useGlobalFilter } from 'react-table
 import { jsPDF } from 'jspdf';
 import { autoTable } from 'jspdf-autotable';
 
+// Import Recharts components
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer
+} from 'recharts';
+
 function Summary() {
   const [userSummary, setUserSummary] = useState([]);
   const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -91,6 +103,16 @@ function Summary() {
     doc.save('user_summary.pdf');
   };
 
+  // Prepare data for the chart: for example map each user to an object
+  // Could also sort/group by name etc
+  const chartData = useMemo(() => {
+    // Filter out entries lacking name or duration if needed
+    return userSummary.map(user => ({
+      name: user.name,
+      totalDuration: user.totalDuration,
+    }));
+  }, [userSummary]);
+
   return (
     <Layout title={'CRM - Summary Report'}>
       <div className="container-fluid m-3 p-3 admin-root">
@@ -112,6 +134,31 @@ function Summary() {
                   Export to PDF
                 </button>
               </div>
+
+              {/* Chart section */}
+              <div style={{ width: '100%', height: 300, marginBottom: '2rem' }}>
+                <ResponsiveContainer>
+                  <LineChart
+                    data={chartData}
+                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Line
+                      type="monotone"
+                      dataKey="totalDuration"
+                      name="Total Call Duration"
+                      stroke="#8884d8"
+                      activeDot={{ r: 8 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+
+              {/* Table section */}
               <div className="table-responsive">
                 <table {...getTableProps()} className="table custom-table">
                   <thead>
@@ -179,9 +226,9 @@ function Summary() {
                       </option>
                     ))}
                   </select>
-
                 </div>
               </div>
+
             </div>
           </main>
         </div>
