@@ -6,6 +6,10 @@ import { jsPDF } from 'jspdf';
 import { autoTable } from 'jspdf-autotable';
 import { BASEURL } from '../../service/baseUrl';
 import '../../css/followup.css'
+import { Dropdown, Button } from 'react-bootstrap';
+import { FaTrash } from 'react-icons/fa';
+import { FaFilePdf } from 'react-icons/fa'
+import { toast } from 'react-toastify';
 const ROWS_PER_PAGE_OPTIONS = [5, 10, 25, 50];
 
 function Followup() {
@@ -58,72 +62,153 @@ function Followup() {
     // derived paginated rows
     const totalPages = Math.ceil(totalCount / rowsPerPage);
 
+
+    const handleDelete = async (id) => {
+        // Define the custom toast component
+        const ConfirmDeleteToast = ({ closeToast }) => (
+            <div>
+                <p>Are you sure you want to delete this record?</p>
+                <div style={{ marginTop: '8px', display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                    <button
+                        onClick={async () => {
+                            closeToast(); // Close the toast immediately
+                            try {
+                                await axios.delete(`${BASEURL}/admin/followup/${mode}/${id}`);
+                                setRows(prev => prev.filter(r => r._id !== id));
+                                setTotalCount(prev => prev - 1);
+                                toast.success('Record deleted successfully', {
+                                    position: "top-right",
+                                    autoClose: 5000,
+                                    hideProgressBar: false,
+                                    closeOnClick: false,
+                                    pauseOnHover: true,
+                                    draggable: true,
+                                    progress: undefined,
+                                    theme: "light",
+
+                                });
+                            } catch (err) {
+                                console.error('Error deleting record', err);
+                                toast.error('Failed to delete record', {
+                                    position: "top-center",
+                                    autoClose: 5000,
+                                    hideProgressBar: false,
+                                    closeOnClick: false,
+                                    pauseOnHover: true,
+                                    draggable: true,
+                                    progress: undefined,
+                                    theme: "light",
+
+                                });
+                            }
+                        }}
+                        style={{ background: '#d9534f', color: '#fff', border: 'none', padding: '4px 8px', borderRadius: '4px' }}
+                    >
+                        Confirm
+                    </button>
+                    <button
+                        onClick={() => {
+                            closeToast(); // Close the toast immediately
+                            toast.info('Deletion cancelled', {
+                                position: "top-center",
+                                autoClose: 5000,
+                                hideProgressBar: false,
+                                closeOnClick: false,
+                                pauseOnHover: true,
+                                draggable: true,
+                                progress: undefined,
+                                theme: "light",
+
+                            });
+                        }}
+                        style={{ background: '#6c757d', color: '#fff', border: 'none', padding: '4px 8px', borderRadius: '4px' }}
+                    >
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        );
+
+        // Show the custom toast
+        toast(<ConfirmDeleteToast />, {
+            autoClose: false,
+            closeOnClick: false,
+            draggable: false,
+            position: 'top-center',
+        });
+    };
     return (
-        <Layout title={"CRM- Follow Up"}>
-            <div className="container-fluid m‐3 p‐3 admin-root">
+        <Layout title={"CRM - Follow Up"}>
+            <div className="container-fluid m-3 p-3 admin-root">
                 <div className="row">
                     <aside className="col-md-3">
                         <Adminmenu />
                     </aside>
                     <main className="col-md-9">
                         <div className="card admin-card p-4">
+                            {/* Controls Toolbar */}
 
-                            {/* Dropdown for mode */}
                             <div className="mb-3">
-                                <label>Select Table: </label>
-                                <select
-                                    className="form-select w-auto d-inline-block ms-2"
-                                    value={mode}
-                                    onChange={e => {
-                                        setMode(e.target.value);
-                                        setPage(1);
-                                    }}
-                                >
-                                    <option value="admission">Admission</option>
-                                    <option value="contactLater">Contact Later</option>
-                                </select>
-                            </div>
+                                <div className="d-flex flex-wrap gap-2">
+                                    {/* Search Input */}
+                                    <div style={{ flex: '1 1 200px', minWidth: '200px' }}>
+                                        <input
+                                            id="searchInput"
+                                            type="text"
+                                            className="form-control w-100"
+                                            placeholder="Search…"
+                                            value={searchTerm}
+                                            onChange={e => {
+                                                setSearchTerm(e.target.value);
+                                                setPage(1);
+                                            }}
+                                        />
+                                    </div>
 
-                            {/* Search / Sort toolbar */}
-                            {/* Search / Sort toolbar */}
-                            <div className="mb-3 d-flex flex-wrap gap-2">
-                                <div className="d-flex flex-column flex-sm-row gap-2">
-                                    <input
-                                        type="text"
-                                        placeholder="Search…"
-                                        className="form-control flex-grow-1"
-                                        value={searchTerm}
-                                        onChange={e => {
-                                            setSearchTerm(e.target.value);
-                                            setPage(1);
-                                        }}
-                                    />
-                                    <select
-                                        className="form-select w-auto"
-                                        value={sortKey}
-                                        onChange={e => setSortKey(e.target.value)}
-                                    >
-                                        <option value="">Sort By</option>
-                                        <option value="name">Name</option>
-                                        <option value="email">Email</option>
-                                        <option value="course">Course</option>
-                                        <option value="movedAt">Moved At</option>
-                                    </select>
-                                    <select
-                                        className="form-select w-auto"
-                                        value={sortDir}
-                                        onChange={e => setSortDir(e.target.value)}
-                                    >
-                                        <option value="asc">Ascending</option>
-                                        <option value="desc">Descending</option>
-                                    </select>
+                                    {/* Select Table Dropdown */}
+                                    <div style={{ flex: '1 1 200px', minWidth: '200px' }}>
+                                        <Dropdown onSelect={value => { setMode(value); setPage(1); }}>
+                                            <Dropdown.Toggle variant="secondary" className="w-100">
+                                                {mode || "Select Table"}
+                                            </Dropdown.Toggle>
+                                            <Dropdown.Menu>
+                                                <Dropdown.Item eventKey="admission">Admission</Dropdown.Item>
+                                                <Dropdown.Item eventKey="contactLater">Contact Later</Dropdown.Item>
+                                            </Dropdown.Menu>
+                                        </Dropdown>
+                                    </div>
+
+                                    {/* Sort By Dropdown */}
+                                    <div style={{ flex: '1 1 200px', minWidth: '200px' }}>
+                                        <Dropdown onSelect={value => setSortKey(value)}>
+                                            <Dropdown.Toggle variant="secondary" className="w-100">
+                                                {sortKey || "Sort By"}
+                                            </Dropdown.Toggle>
+                                            <Dropdown.Menu>
+                                                <Dropdown.Item eventKey="name">Name</Dropdown.Item>
+                                                <Dropdown.Item eventKey="email">Email</Dropdown.Item>
+                                                <Dropdown.Item eventKey="course">Course</Dropdown.Item>
+                                                <Dropdown.Item eventKey="movedAt">Moved At</Dropdown.Item>
+                                            </Dropdown.Menu>
+                                        </Dropdown>
+                                    </div>
+
+                                    {/* Sort Order Dropdown */}
+                                    <div style={{ flex: '1 1 200px', minWidth: '200px' }}>
+                                        <Dropdown onSelect={value => setSortDir(value)}>
+                                            <Dropdown.Toggle variant="secondary" className="w-100">
+                                                {sortDir || "Order"}
+                                            </Dropdown.Toggle>
+                                            <Dropdown.Menu>
+                                                <Dropdown.Item eventKey="asc">Ascending</Dropdown.Item>
+                                                <Dropdown.Item eventKey="desc">Descending</Dropdown.Item>
+                                            </Dropdown.Menu>
+                                        </Dropdown>
+                                    </div>
+
+
                                 </div>
-
-                                <button className="btn btn-success ms-auto" onClick={handleExportPDF}>
-                                    Export to PDF
-                                </button>
                             </div>
-
 
                             {/* Table */}
                             <div className="table-responsive">
@@ -131,7 +216,13 @@ function Followup() {
                                     <thead>
                                         <tr>
                                             <th>#</th>
-                                            <th>Name</th><th>Email</th><th>Phone</th><th>Course</th><th>Place</th><th>Moved At</th>
+                                            <th>Name</th>
+                                            <th>Email</th>
+                                            <th>Phone</th>
+                                            <th>Course</th>
+                                            <th>Place</th>
+                                            <th>Moved At</th>
+                                            <th>Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -146,7 +237,24 @@ function Followup() {
                                                     <td>{r.phone}</td>
                                                     <td>{r.course}</td>
                                                     <td>{r.place}</td>
-                                                    <td>{new Date(r.movedAt).toLocaleString()}</td>
+                                                    <td>{new Date(r.movedAt).toLocaleString('en-GB', {
+                                                        day: '2-digit',
+                                                        month: 'short',     // "Oct"
+                                                        year: 'numeric',
+                                                        hour: 'numeric',
+                                                        minute: '2-digit',
+                                                        second: '2-digit',
+                                                        hour12: true
+                                                    })}</td>
+                                                    <td>
+                                                        <button
+                                                            className="btn btn-sm btn-outline-danger"
+                                                            onClick={() => handleDelete(r._id)}
+                                                            title="Delete record"
+                                                        >
+                                                            <FaTrash size={14} />
+                                                        </button>
+                                                    </td>
                                                 </tr>
                                             ))
                                         )}
@@ -154,7 +262,7 @@ function Followup() {
                                 </table>
                             </div>
 
-                            {/* Pagination & rows per page */}
+                            {/* Pagination & Rows Per Page */}
                             <div className="d-flex justify-content-between align-items-center mt-3">
                                 <div>
                                     <button
@@ -162,41 +270,68 @@ function Followup() {
                                         onClick={() => setPage(page - 1)}
                                         disabled={page <= 1}
                                     >
-                                        Previous
+                                        &lsaquo;
                                     </button>
-
                                     <button
                                         className="btn btn-outline-primary ms-2"
                                         onClick={() => setPage(page + 1)}
                                         disabled={page >= totalPages}
                                     >
-                                        Next
+                                        &rsaquo;
                                     </button>
                                 </div>
-
                                 <div>
+                                    <Dropdown>
+                                        <Dropdown.Toggle variant="outline-secondary" size="sm">
+                                            {rowsPerPage === totalCount ? 'All' : rowsPerPage}
+                                        </Dropdown.Toggle>
 
-                                    <select
-                                        className="form-select w-auto d-inline-block ms-2"
-                                        value={rowsPerPage}
-                                        onChange={e => {
-                                            setRowsPerPage(Number(e.target.value));
-                                            setPage(1);
-                                        }}
-                                    >
-                                        {ROWS_PER_PAGE_OPTIONS.map(opt => (
-                                            <option key={opt} value={opt}>{opt}</option>
-                                        ))}
-                                        <option value={totalCount}>All</option>
-                                    </select>
+                                        <Dropdown.Menu>
+                                            {ROWS_PER_PAGE_OPTIONS.map(opt => (
+                                                <Dropdown.Item
+                                                    key={opt}
+                                                    active={opt === rowsPerPage}
+                                                    onClick={() => {
+                                                        setRowsPerPage(opt);
+                                                        setPage(1); // Reset to first page when changing rows per page
+                                                    }}
+                                                >
+                                                    {opt}
+                                                </Dropdown.Item>
+                                            ))}
+                                            <Dropdown.Item
+                                                key={totalCount}
+                                                active={totalCount === rowsPerPage}
+                                                onClick={() => {
+                                                    setRowsPerPage(totalCount);
+                                                    setPage(1);
+                                                }}
+                                            >
+                                                All
+                                            </Dropdown.Item>
+                                        </Dropdown.Menu>
+                                    </Dropdown>
                                 </div>
                             </div>
-
+                            {/* Export Button */}
+                            <div className='me-2 mt-2' style={{ flex: '0 0 auto' }}>
+                                <Button
+                                    variant="outline-primary"
+                                    className="icon-only-btn p-2"
+                                    onClick={handleExportPDF}
+                                    aria-label="Download PDF"
+                                    title="Download PDF"
+                                >
+                                    <FaFilePdf size={16} />
+                                </Button>
+                            </div>
                         </div>
                     </main>
                 </div>
             </div>
         </Layout>
+
+
     );
 }
 

@@ -1,10 +1,9 @@
 import React from 'react'
 import Layout from '../components/layout/Layout'
-import { useAuth } from '../context/auth'
 import '../css/home.css'
 import { Link } from 'react-router-dom'
 function HomePage() {
-    const [auth, setAuth] = useAuth()
+
     return (
 
         <Layout title={"CRM - Superhero Learning"}>
@@ -35,6 +34,7 @@ function HomePage() {
                     </div>
                 </section>
 
+
                 {/* Features Section */}
                 <section className="features-section">
                     <h2>Why Superhhero CRM?</h2>
@@ -57,7 +57,40 @@ function HomePage() {
                     </div>
                 </section>
 
-                
+
+               {/* <section className="video-info-section">
+                    <div className="video-info-inner">
+                        
+                        <div className="video-wrapper">
+                            <video
+                                src="/videos/crm-intro.mkv"
+                                controls
+                                autoPlay
+                                loop
+                                muted
+                                 playsInline     
+                                className="video-crm"
+                            />
+                             <source src="/videos/crm-intro.mp4" type="video/mp4" />
+                        </div>
+
+                       
+                        <div className="info-text">
+                            <h2>Why Choose Our CRM?</h2>
+                            <p>
+                                The <strong>Superhero CRM</strong> empowers your team to work smarter —
+                                centralise customer data, automate tasks, monitor sales pipelines,
+                                and nurture relationships all in one platform.
+                            </p>
+                            <ul className="info-list">
+                                <li><strong>Centralised Data</strong> – One source of truth for every customer.</li>
+                                <li><strong>Automated Workflows</strong> – Spend less time on repetitive tasks.</li>
+                                <li><strong>Actionable Insights</strong> – Get real-time sales analytics and drive growth.</li>
+                            </ul>
+                            
+                        </div>
+                    </div>
+                </section>*/}
             </div>
         </Layout>
 

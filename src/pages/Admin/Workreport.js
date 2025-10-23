@@ -8,7 +8,9 @@ import { autoTable } from 'jspdf-autotable';
 import { FaFilePdf } from 'react-icons/fa';
 import { Button } from 'react-bootstrap';
 import { toast } from 'react-toastify';
-import { Dropdown } from 'react-bootstrap';
+import { Dropdown, ButtonGroup } from 'react-bootstrap';
+import { Accordion } from 'react-bootstrap';
+
 function Workreport() {
     const [users, setUsers] = useState([]);
     const [selectedUserId, setSelectedUserId] = useState('');
@@ -22,6 +24,8 @@ function Workreport() {
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [bsummary, setSummary] = useState({});
     const [selectedIds, setSelectedIds] = useState([]);
+
+
     useEffect(() => {
         const fetchUsers = async () => {
             try {
@@ -599,24 +603,89 @@ function Workreport() {
             }
         );
     };
-
     const handleBulkDelete = async () => {
         if (selectedIds.length === 0) {
-            alert('No students selected for deletion.');
+            toast.info('No students selected for deletion.', {
+                position: "top-center",
+                autoClose: 3000,
+                hideProgressBar: false,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: true,
+                theme: "light",
+            });
             return;
         }
-        if (!window.confirm(`Delete ${selectedIds.length} selected students?`)) return;
-        try {
-            await axios.delete(`${BASEURL}/admin/bulk-delete-students`, {
-                data: { ids: selectedIds },
-            });
-            setStudents((prev) => prev.filter((s) => !selectedIds.includes(s._id)));
-            setSelectedIds([]);
-        } catch (err) {
-            console.error(err);
-            alert('Failed to bulk delete students');
-        }
+
+        // Show custom confirmation toast
+        const toastId = toast.warn(
+            <div>
+                <p>Delete {selectedIds.length} selected students?</p>
+                <div style={{ marginTop: '8px', display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                    <button
+                        onClick={async () => {
+                            toast.dismiss(toastId);
+                            try {
+                                await axios.delete(`${BASEURL}/admin/bulk-delete-students`, {
+                                    data: { ids: selectedIds },
+                                });
+                                setStudents((prev) => prev.filter((s) => !selectedIds.includes(s._id)));
+                                setSelectedIds([]);
+                                toast.success(`${selectedIds.length} students deleted successfully`, {
+                                    position: "top-center",
+                                    autoClose: 5000,
+                                    hideProgressBar: false,
+                                    closeOnClick: false,
+                                    pauseOnHover: true,
+                                    draggable: true,
+                                    theme: "light",
+                                });
+                            } catch (err) {
+                                console.error(err);
+                                toast.error('Failed to bulk delete students', {
+                                    position: "top-center",
+                                    autoClose: 5000,
+                                    hideProgressBar: false,
+                                    closeOnClick: false,
+                                    pauseOnHover: true,
+                                    draggable: true,
+                                    theme: "light",
+                                });
+                            }
+                        }}
+                        style={{ background: '#d9534f', color: '#fff', border: 'none', padding: '4px 8px', borderRadius: '4px' }}
+                    >
+                        Confirm
+                    </button>
+
+                    <button
+                        onClick={() => {
+                            toast.dismiss(toastId);
+                            toast.info("Bulk deletion cancelled", {
+                                position: "top-center",
+                                autoClose: 3000,
+                                hideProgressBar: false,
+                                closeOnClick: true,
+                                pauseOnHover: true,
+                                draggable: true,
+                                theme: "light",
+                            });
+                        }}
+                        style={{ background: '#6c757d', color: '#fff', border: 'none', padding: '4px 8px', borderRadius: '4px' }}
+                    >
+                        Cancel
+                    </button>
+                </div>
+            </div>,
+            {
+                autoClose: false,
+                closeOnClick: false,
+                draggable: false,
+                position: 'top-center',
+            }
+        );
     };
+
     const handleBulkAdmission = async () => {
         // get selectedIds, ask confirm, then send to backend: move to “admission” table
         try {
@@ -680,145 +749,184 @@ function Workreport() {
                     </aside>
                     <main className="col-md-9">
                         <div className="card admin-card p-4">
-                            <div className="assigned-students-section">                 <div className="search-wrapper mb-3">
-                                <input
-                                    type="text"
-                                    placeholder="Search..."
-                                    className="form-control"
-                                    value={searchTerm}
-                                    onChange={(e) => {
-                                        setSearchTerm(e.target.value);
-                                        setCurrentPage(1);
-                                    }}
-                                />
-                            </div>
+                            <div className="assigned-students-section">
 
-                                <div className="row mb-3">
-                                    <div className="col-md-4 mb-2">
-                                        <label htmlFor="userDropdown">Select User:</label>
+                                {/* Controls row (search + select user + sort by + sort order) */}
+                                <div className="row g-3 align-items-center mb-3 flex-wrap">
+                                    {/* Search Input */}
+                                    <div className="col-12 col-md-3">
+                                        <div className="search-wrapper">
+                                            <input
+                                                type="text"
+                                                placeholder="Search..."
+                                                className="form-control"
+                                                value={searchTerm}
+                                                onChange={(e) => {
+                                                    setSearchTerm(e.target.value);
+                                                    setCurrentPage(1);
+                                                }}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* Select User Dropdown */}
+                                    <div className="col-12 col-md-3">
                                         {error && <p className="error-text">{error}</p>}
                                         {loadingUsers ? (
                                             <span>Loading users...</span>
                                         ) : (
-                                            <select
-                                                id="userDropdown"
-                                                className="form-select"
-                                                value={selectedUserId}
-                                                onChange={handleUserSelect}
-                                            >
-                                                <option value="">-- Select a user --</option>
-                                                {users.map((u) => (
-                                                    <option key={u._id} value={u._id}>
-                                                        {duplicateUsernames.has(u.username)
-                                                            ? `${u.username} (${u.email})`
-                                                            : u.username}
-                                                    </option>
-                                                ))}
-                                            </select>
+                                            <Dropdown id="userDropdown" className="w-100">
+                                                <Dropdown.Toggle variant="outline-secondary" className="w-100">
+                                                    {users.find(u => u._id === selectedUserId)?.username || "-- Select a user --"}
+                                                </Dropdown.Toggle>
+                                                <Dropdown.Menu className="w-100">
+                                                    {users.map((u) => (
+                                                        <Dropdown.Item
+                                                            key={u._id}
+                                                            onClick={() => handleUserSelect({ target: { value: u._id } })}
+                                                            active={u._id === selectedUserId}
+                                                        >
+                                                            {duplicateUsernames.has(u.username)
+                                                                ? `${u.username} (${u.email})`
+                                                                : u.username}
+                                                        </Dropdown.Item>
+                                                    ))}
+                                                </Dropdown.Menu>
+                                            </Dropdown>
                                         )}
                                     </div>
-                                    <div className="d-flex flex-wrap gap-3">
-                                        {/* Sort By Dropdown */}
-                                        <Dropdown className="w-100 w-md-auto">
-                                            <Dropdown.Toggle variant="outline-secondary" id="dropdown-sort-column">
-                                                Sort by: {sortConfig.key || 'Select'}
+
+                                    {/* Sort By Dropdown */}
+                                    <div className="col-12 col-md-3">
+                                        <Dropdown className="w-100">
+                                            <Dropdown.Toggle variant="outline-secondary" id="dropdown-sort-column" className="w-100">
+                                                Sort by: {sortConfig.key || "Select"}
                                             </Dropdown.Toggle>
-                                            <Dropdown.Menu>
-                                                {['name', 'email', 'phone', 'course', 'place', 'callInfo.callStatus', 'callInfo.callDuration', 'callInfo.interested', 'callInfo.planType', 'assignedAt', 'callInfo.completedAt'].map(col => (
+                                            <Dropdown.Menu className="w-100">
+                                                {[
+                                                    "name",
+                                                    "email",
+                                                    "phone",
+                                                    "course",
+                                                    "place",
+                                                    "callInfo.callStatus",
+                                                    "callInfo.callDuration",
+                                                    "callInfo.interested",
+                                                    "callInfo.planType",
+                                                    "assignedAt",
+                                                    "callInfo.completedAt"
+                                                ].map(col => (
                                                     <Dropdown.Item key={col} onClick={() => requestSort(col)}>
-                                                        {col.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
+                                                        {col.replace(/([A-Z])/g, " $1").replace(/^./, str => str.toUpperCase())}
                                                     </Dropdown.Item>
                                                 ))}
                                             </Dropdown.Menu>
                                         </Dropdown>
+                                    </div>
 
-                                        {/* Direction Dropdown */}
-                                        <Dropdown className="w-100 w-md-auto">
-                                            <Dropdown.Toggle variant="outline-secondary" id="dropdown-sort-order">
-                                                {sortConfig.direction === 'asc' ? 'Ascending' : 'Descending'}
+                                    {/* Sort Order Dropdown */}
+                                    <div className="col-12 col-md-3">
+                                        <Dropdown className="w-100">
+                                            <Dropdown.Toggle variant="outline-secondary" id="dropdown-sort-order" className="w-100">
+                                                {sortConfig.direction === "asc" ? "Ascending" : "Descending"}
                                             </Dropdown.Toggle>
-                                            <Dropdown.Menu>
-                                                <Dropdown.Item onClick={() => setSortConfig({ ...sortConfig, direction: 'asc' })}>Ascending</Dropdown.Item>
-                                                <Dropdown.Item onClick={() => setSortConfig({ ...sortConfig, direction: 'desc' })}>Descending</Dropdown.Item>
+                                            <Dropdown.Menu className="w-100">
+                                                <Dropdown.Item onClick={() => setSortConfig({ ...sortConfig, direction: "asc" })}>
+                                                    Ascending
+                                                </Dropdown.Item>
+                                                <Dropdown.Item onClick={() => setSortConfig({ ...sortConfig, direction: "desc" })}>
+                                                    Descending
+                                                </Dropdown.Item>
                                             </Dropdown.Menu>
                                         </Dropdown>
                                     </div>
                                 </div>
 
+                                {/* … rest of your code: table-container, summary-line, etc. … */}
+
                                 <div className="table-container">
                                     {loadingStudents ? (
-                                        <p>Loading students...</p>
+                                        <p>Loading students…</p>
                                     ) : (
                                         <div className="table-responsive custom-table-wrapper">
-                                            {/* Summary line before the table */}
-                                            <div className="summary-line mb-3">
-                                                {[
-                                                    { label: 'Current Assignee', value: students[0]?.assignedTo?.username || '-' },
-                                                    { label: 'Assignee Email', value: students[0]?.assignedTo?.email || '-' },
-                                                    { label: "Total Contacts", value: summary.totalContacts },
-                                                    { label: "Completed", value: summary.completed },
-                                                    { label: "Pending", value: summary.pending },
-                                                    { label: "Total Call Duration (min)", value: summary.totalCallDuration },
-                                                    {
-                                                        label: "Total Call Duration (sec)",
-                                                        value: (() => {
-                                                            const sec = summary.totalSeconds || 0;
-                                                            const m = Math.floor(sec / 60);
-                                                            const s = sec % 60;
-                                                            return (m > 0 ? `${m} min ` : '') + `${s} sec`;
-                                                        })()
-                                                    },
-                                                    { label: "Total Interest", value: summary.totalInterest },
-                                                    { label: "Missing Interest", value: summary.missingInterest },
-                                                    { label: "Yes", value: summary.countYes },
-                                                    { label: "No", value: summary.countNo },
-                                                    { label: "Inform Later", value: summary.countInformLater },
-                                                    { label: "Missed Calls", value: summary.missedCalls },
-                                                    { label: "Rejected Calls", value: summary.rejectedCalls },
-                                                    { label: "Accepted Calls", value: summary.acceptedCalls },
-                                                    { label: "Starter Plan", value: summary.planCounts.starter },
-                                                    { label: "Gold Plan", value: summary.planCounts.gold },
-                                                    { label: "Master Plan", value: summary.planCounts.master }
-                                                ].map((item, idx, arr) => {
-                                                    let sep;
-                                                    if (idx === 1) {
-                                                        // after "Assignee Email"
-                                                        sep = <br />;
-                                                    } else if ((idx - 2) % 3 === 2 && idx !== arr.length - 1) {
-                                                        // apply line break after every 3 items *after* the first two
-                                                        sep = <br />;
-                                                    } else {
-                                                        sep = ' | ';
-                                                    }
-                                                    return (
-                                                        <span key={idx}>
-                                                            <strong>{item.label}:</strong> {item.value}{sep}
-                                                        </span>
-                                                    );
-                                                })}
-                                            </div>
-                                            {/* Course-wise count summary below the table */}
-                                            <div className="course-summary mt-4">
-                                                <h6>Course-wise Counts:</h6>
-                                                <ul>
-                                                    {Object.entries(courseCounts).map(([course, cnt]) => (
-                                                        <li key={course}>
-                                                            <strong>{course}</strong>: {cnt}
-                                                        </li>
-                                                    ))}
-                                                </ul>
-                                            </div>
-                                            {hasSameDateRows && (
-                                                <div className="text-success text-center mb-3" style={{ fontSize: '1rem', fontWeight: 'bold' }}>
-                                                    ✔ Same Assigned and Completed Dates Found
-                                                </div>
-                                            )}
-                                            {sameDateCount > 0 && (
-                                                <div className="text-success text-center mb-2" style={{ fontSize: '1rem', fontWeight: 'bold' }}>
-                                                    ✔ Same Date Count: {sameDateCount}
-                                                </div>
-                                            )}
-                                            <div className="mb-3 d-flex justify-content-end gap-2">
+                                            <Accordion defaultActiveKey="0" className="mb-3">
+                                                <Accordion.Item eventKey="0">
+                                                    <Accordion.Header>Summary</Accordion.Header>
+                                                    <Accordion.Body>
+                                                        <div className="table-responsive custom-table-wrapper">
+                                                            {/* Summary line before the table */}
+                                                            <div className="summary-line mb-3">
+                                                                {[
+                                                                    { label: 'Current Assignee', value: students[0]?.assignedTo?.username || '-' },
+                                                                    { label: 'Assignee Email', value: students[0]?.assignedTo?.email || '-' },
+                                                                    { label: "Total Contacts", value: summary.totalContacts },
+                                                                    { label: "Completed", value: summary.completed },
+                                                                    { label: "Pending", value: summary.pending },
+                                                                    { label: "Total Call Duration (min)", value: summary.totalCallDuration },
+                                                                    {
+                                                                        label: "Total Call Duration (sec)",
+                                                                        value: (() => {
+                                                                            const sec = summary.totalSeconds || 0;
+                                                                            const m = Math.floor(sec / 60);
+                                                                            const s = sec % 60;
+                                                                            return (m > 0 ? `${m} min ` : '') + `${s} sec`;
+                                                                        })()
+                                                                    },
+                                                                    { label: "Total Interest", value: summary.totalInterest },
+                                                                    { label: "Missing Interest", value: summary.missingInterest },
+                                                                    { label: "Yes", value: summary.countYes },
+                                                                    { label: "No", value: summary.countNo },
+                                                                    { label: "Inform Later", value: summary.countInformLater },
+                                                                    { label: "Missed Calls", value: summary.missedCalls },
+                                                                    { label: "Rejected Calls", value: summary.rejectedCalls },
+                                                                    { label: "Accepted Calls", value: summary.acceptedCalls },
+                                                                    { label: "Starter Plan", value: summary.planCounts.starter },
+                                                                    { label: "Gold Plan", value: summary.planCounts.gold },
+                                                                    { label: "Master Plan", value: summary.planCounts.master }
+                                                                ].map((item, idx, arr) => {
+                                                                    let sep;
+                                                                    if (idx === 1) {
+                                                                        sep = <br />;
+                                                                    } else if ((idx - 2) % 3 === 2 && idx !== arr.length - 1) {
+                                                                        sep = <br />;
+                                                                    } else {
+                                                                        sep = ' | ';
+                                                                    }
+                                                                    return (
+                                                                        <span key={idx}>
+                                                                            <strong>{item.label}:</strong> {item.value}{sep}
+                                                                        </span>
+                                                                    );
+                                                                })}
+                                                            </div>
+
+                                                            {/* Course-wise count summary */}
+                                                            <div className="course-summary mt-4">
+                                                                <h6>Course-wise Counts:</h6>
+                                                                <ul>
+                                                                    {Object.entries(courseCounts).map(([course, cnt]) => (
+                                                                        <li key={course}>
+                                                                            <strong>{course}</strong>: {cnt}
+                                                                        </li>
+                                                                    ))}
+                                                                </ul>
+                                                            </div>
+
+                                                            {hasSameDateRows && (
+                                                                <div className="text-success text-center mb-3" style={{ fontSize: '1rem', fontWeight: 'bold' }}>
+                                                                    ✔ Same Assigned and Completed Dates Found
+                                                                </div>
+                                                            )}
+                                                            {sameDateCount > 0 && (
+                                                                <div className="text-success text-center mb-2" style={{ fontSize: '1rem', fontWeight: 'bold' }}>
+                                                                    ✔ Same Date Count: {sameDateCount}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </Accordion.Body>
+                                                </Accordion.Item>
+                                            </Accordion>
+                                            <div className="mb-3 d-flex justify-content-start gap-2">
                                                 <Button
                                                     variant="primary"
                                                     size="sm"
@@ -886,7 +994,6 @@ function Workreport() {
                                                             const assignedAt = s.assignedAt ? new Date(s.assignedAt) : null;
                                                             const completedAt = ci.completedAt ? new Date(ci.completedAt) : null;
 
-                                                            // Compare only the date, ignoring time
                                                             const isSameDate =
                                                                 assignedAt &&
                                                                 completedAt &&
@@ -894,10 +1001,7 @@ function Workreport() {
                                                             const serialNo = (effectivePage - 1) * rowsPerPage + idx + 1;
 
                                                             return (
-                                                                <tr
-                                                                    key={s._id}
-                                                                    className={s.callMarked === 'marked' ? 'marked-row' : ''}
-                                                                >
+                                                                <tr key={s._id} className={s.callMarked === 'marked' ? 'marked-row' : ''}>
                                                                     <td>
                                                                         <input
                                                                             type="checkbox"
@@ -928,10 +1032,7 @@ function Workreport() {
                                                                                 : 'Inform Later'}
                                                                     </td>
                                                                     <td data-label="Plan Type">{ci.planType ?? '-'}</td>
-                                                                    <td
-                                                                        data-label="Assigned At"
-                                                                        className={isSameDate ? 'highlight-cell' : ''}
-                                                                    >
+                                                                    <td data-label="Assigned At" className={isSameDate ? 'highlight-cell' : ''}>
                                                                         {assignedAt
                                                                             ? assignedAt.toLocaleString('en-GB', {
                                                                                 day: '2-digit',
@@ -944,10 +1045,7 @@ function Workreport() {
                                                                             })
                                                                             : ''}
                                                                     </td>
-                                                                    <td
-                                                                        data-label="Completed At"
-                                                                        className={isSameDate ? 'highlight-cell' : ''}
-                                                                    >
+                                                                    <td data-label="Completed At" className={isSameDate ? 'highlight-cell' : ''}>
                                                                         {completedAt
                                                                             ? completedAt.toLocaleString('en-GB', {
                                                                                 day: '2-digit',
@@ -962,29 +1060,22 @@ function Workreport() {
                                                                     </td>
                                                                     <td data-label="Same Date?">
                                                                         {(() => {
-                                                                            const ci = s.callInfo || {};
                                                                             if (s.assignedAt && ci.completedAt) {
                                                                                 const a = new Date(s.assignedAt);
                                                                                 const c = new Date(ci.completedAt);
                                                                                 if (a.toDateString() === c.toDateString()) {
-                                                                                    return '✔';  // or use an icon component
+                                                                                    return '✔';
                                                                                 }
                                                                             }
                                                                             return '';
                                                                         })()}
                                                                     </td>
                                                                     <td>
-                                                                        <Button
-                                                                            variant="outline-danger"
-                                                                            size="sm"
-                                                                            onClick={() => handleDeleteStudent(s._id)}
-                                                                        >
+                                                                        <Button variant="outline-danger" size="sm" onClick={() => handleDeleteStudent(s._id)}>
                                                                             Delete
                                                                         </Button>
                                                                     </td>
                                                                 </tr>
-
-
                                                             );
                                                         })
                                                     )}
@@ -994,67 +1085,80 @@ function Workreport() {
                                     )}
                                 </div>
 
-                                {/* Rows-per-page dropdown and count */}
-                                <div className="rows-per-page-container mt-3">
-                                    <label htmlFor="rppSelect" className="me-2">Rows per page:</label>
-                                    <select
-                                        id="rppSelect"
-                                        className="form-select d-inline-block w-auto"
-                                        value={rowsPerPage}
-                                        onChange={handleRowsPerPageChange}
-                                    >
-                                        <option value={5}>5</option>
-                                        <option value={10}>10</option>
-                                        <option value={25}>25</option>
-                                        <option value={50}>50</option>
-                                        <option value={100}>100</option>
-                                        <option value={students.length || 0}>All</option>
-                                    </select>
-                                    <span className="ms-3">
+                            </div>
+
+                            <div className="d-flex flex-column flex-md-row justify-content-between align-items-center mt-3 gap-2 flex-wrap">
+
+                                {/* Rows-per-page dropdown */}
+                                <div className="d-flex align-items-center flex-wrap">
+                                    <label className="me-2 mb-0 fw-semibold">Rows/page:</label>
+                                    <Dropdown as={ButtonGroup}>
+                                        <Dropdown.Toggle
+                                            variant="outline-primary"
+                                            size="sm"
+                                            id="dropdown-rows"
+                                        >
+                                            {rowsPerPage === students.length ? "All" : rowsPerPage}
+                                        </Dropdown.Toggle>
+
+                                        <Dropdown.Menu>
+                                            {[2, 5, 10, 25, 50, 100].map((num) => (
+                                                <Dropdown.Item key={num} onClick={() => handleRowsPerPageChange({ target: { value: num } })}>
+                                                    {num}
+                                                </Dropdown.Item>
+                                            ))}
+                                            <Dropdown.Divider />
+                                            <Dropdown.Item onClick={() => handleRowsPerPageChange({ target: { value: students.length || 0 } })}>
+                                                All
+                                            </Dropdown.Item>
+                                        </Dropdown.Menu>
+                                    </Dropdown>
+                                    <span className="ms-3 text-nowrap">
                                         {`Showing ${currentRows.length} of ${totalCount}`}
                                     </span>
                                 </div>
 
                                 {/* Pagination controls */}
                                 {totalPages > 1 && (
-                                    <div className="pagination-controls mt-3 d-flex justify-content-center align-items-center">
+                                    <div className="d-flex align-items-center flex-wrap justify-content-center">
                                         <button
                                             className="btn btn-sm btn-outline-primary me-2"
                                             onClick={() => goToPage(effectivePage - 1)}
                                             disabled={effectivePage === 1}
                                         >
-                                            Previous
+                                            &lsaquo;
                                         </button>
-                                        <span className="mx-2">
+                                        <span className="mx-2 text-nowrap">
                                             Page {effectivePage} of {totalPages}
                                         </span>
                                         <button
-                                            className="btn btn-sm btn-outline-primary ms-2"
+                                            className="btn btn-sm btn-outline-primary"
                                             onClick={() => goToPage(effectivePage + 1)}
                                             disabled={effectivePage === totalPages}
                                         >
-                                            Next
+                                            &rsaquo;
                                         </button>
                                     </div>
                                 )}
-                                <div className="me-2 mt-5">
-                                    <Button
-                                        variant="outline-primary"
-                                        className="icon-only-btn p-0"
-                                        onClick={exportToPDF}
-                                        aria-label="Download PDF"
-                                        title="Download PDF"
-                                    >
-                                        <FaFilePdf size={14} />
-                                    </Button>
-                                </div>
-
+                            </div>
+                            <div className="me-2 mt-5">
+                                <Button
+                                    variant="outline-primary"
+                                    className="icon-only-btn p-0"
+                                    onClick={exportToPDF}
+                                    aria-label="Download PDF"
+                                    title="Download PDF"
+                                >
+                                    <FaFilePdf size={14} />
+                                </Button>
                             </div>
                         </div>
+
                     </main>
                 </div>
             </div>
         </Layout>
+
     );
 }
 

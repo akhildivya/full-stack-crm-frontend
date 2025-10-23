@@ -6,7 +6,7 @@ import axios from 'axios';
 import { useTable, useSortBy, usePagination, useGlobalFilter } from 'react-table';
 import { jsPDF } from 'jspdf';
 import { autoTable } from 'jspdf-autotable';
-
+import { Dropdown } from 'react-bootstrap';
 // Import Recharts components
 import {
   LineChart,
@@ -18,7 +18,8 @@ import {
   Legend,
   ResponsiveContainer
 } from 'recharts';
-
+import { Button } from 'react-bootstrap';
+import { FaFilePdf } from 'react-icons/fa';
 function Summary() {
   const [userSummary, setUserSummary] = useState([]);
   const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -122,18 +123,7 @@ function Summary() {
           </aside>
           <main className="col-md-9">
             <div className="card admin-card p-4">
-              <div>
-                <input
-                  type="text"
-                  value={globalFilter || ''}
-                  onChange={(e) => setGlobalFilter(e.target.value || undefined)}
-                  placeholder="Search..."
-                  className="form-control mb-3"
-                />
-                <button onClick={handleExportPDF} className="btn btn-success mb-3">
-                  Export to PDF
-                </button>
-              </div>
+
 
               {/* Chart section */}
               <div style={{ width: '100%', height: 300, marginBottom: '2rem' }}>
@@ -157,7 +147,18 @@ function Summary() {
                   </LineChart>
                 </ResponsiveContainer>
               </div>
+              <div>
+                <input
+                  type="text"
+                  value={globalFilter || ''}
+                  onChange={(e) => setGlobalFilter(e.target.value || undefined)}
+                  placeholder="Search..."
+                  className="form-control mb-3"
+                />
 
+
+
+              </div>
               {/* Table section */}
               <div className="table-responsive">
                 <table {...getTableProps()} className="table custom-table">
@@ -215,20 +216,36 @@ function Summary() {
                 </div>
 
                 <div className="d-flex align-items-center gap-2">
-                  <select
-                    className="form-select form-select-sm"
-                    value={itemsPerPage}
-                    onChange={(e) => setItemsPerPage(Number(e.target.value))}
-                  >
-                    {[2, 5, 10, 15, 20, 25, 30, 35, 40, 50, 100].map((size) => (
-                      <option key={size} value={size}>
-                        {size}
-                      </option>
-                    ))}
-                  </select>
+                  <Dropdown className="d-flex align-items-center gap-2">
+                    <Dropdown.Toggle variant="outline-secondary" size="sm">
+                      {itemsPerPage}
+                    </Dropdown.Toggle>
+
+                    <Dropdown.Menu>
+                      {[2, 5, 10, 15, 20, 25, 30, 35, 40, 50, 100].map((size) => (
+                        <Dropdown.Item
+                          key={size}
+                          active={size === itemsPerPage}
+                          onClick={() => setItemsPerPage(size)}
+                        >
+                          {size}
+                        </Dropdown.Item>
+                      ))}
+                    </Dropdown.Menu>
+                  </Dropdown>
                 </div>
               </div>
-
+              <div className='me-2 mt-2'>
+                <Button
+                  variant="outline-primary"
+                  className="icon-only-btn p-0"
+                  onClick={handleExportPDF}
+                  aria-label="Download PDF"
+                  title="Download PDF"
+                >
+                  <FaFilePdf size={14} />
+                </Button>
+              </div>
             </div>
           </main>
         </div>
