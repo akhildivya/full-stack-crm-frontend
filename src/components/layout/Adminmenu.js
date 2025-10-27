@@ -87,7 +87,7 @@ function Adminmenu() {
               <span>Follow up</span>
             </NavLink>
 
-            <NavLink to="/admin-dashboard/about" className={linkClass}>
+            {/*<NavLink to="/admin-dashboard/about" className={linkClass}>
               <i className="bi bi-info-circle-fill me-2" aria-hidden="true"></i>
               <span>About</span>
             </NavLink>
@@ -95,7 +95,7 @@ function Adminmenu() {
             <NavLink to="/admin-dashboard/contact" className={linkClass}>
               <i className="bi bi-telephone-fill me-2" aria-hidden="true"></i>
               <span>Contact</span>
-            </NavLink>
+            </NavLink>*/}
 
 
           </div>

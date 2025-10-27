@@ -16,7 +16,7 @@ function DutyList() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-
+  const [isExpanded, setIsExpanded] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortKey, setSortKey] = useState('name');
   const [sortOrder, setSortOrder] = useState('asc');
@@ -243,30 +243,59 @@ function DutyList() {
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
 
-    // Compute summary details
-    const totalAssigned = students.length;
-    const marked = updatedStudents.length;
-    const notMarked = totalAssigned - marked;
+    // ✅ 1. Apply search and sort filters same as your table
+    let filtered = [...students];
 
-    let latestAssignedDate = null;
-    let newCount = 0;
-    if (students.length > 0) {
-      const unmarked = students.filter(
-        s => s.assignedAt && !updatedStudents.includes(s._id)
+    // Apply search filter (example: assuming you have a `searchTerm` state)
+    if (searchTerm?.trim()) {
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter(s =>
+        [s.name, s.email, s.phone, s.course, s.place]
+          .some(v => v?.toLowerCase().includes(term))
       );
-      if (unmarked.length > 0) {
-        const times = unmarked.map(s => new Date(s.assignedAt).getTime());
-        const maxTime = Math.max(...times);
-        latestAssignedDate = new Date(maxTime);
-        newCount = unmarked.filter(
-          s => new Date(s.assignedAt).getTime() === maxTime
-        ).length;
-      }
     }
 
-    // Build summary line
+    // Apply sorting
+    if (sortKey) {
+      filtered.sort((a, b) => {
+        let valA = a[sortKey] ?? '';
+        let valB = b[sortKey] ?? '';
+        if (sortKey === 'assignedAt') {
+          valA = new Date(valA);
+          valB = new Date(valB);
+        }
+        if (typeof valA === 'string') valA = valA.toLowerCase();
+        if (typeof valB === 'string') valB = valB.toLowerCase();
+
+        if (valA < valB) return sortOrder === 'asc' ? -1 : 1;
+        if (valA > valB) return sortOrder === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
+
+    // ✅ Use filtered/sorted data for PDF export
+    const totalAssigned = filtered.length;
+    const marked = filtered.filter(s => updatedStudents.includes(s._id)).length;
+    const notMarked = totalAssigned - marked;
+
+    // Latest assigned
+    let latestAssignedDate = null;
+    let newCount = 0;
+    const unmarked = filtered.filter(
+      s => s.assignedAt && !updatedStudents.includes(s._id)
+    );
+    if (unmarked.length > 0) {
+      const times = unmarked.map(s => new Date(s.assignedAt).getTime());
+      const maxTime = Math.max(...times);
+      latestAssignedDate = new Date(maxTime);
+      newCount = unmarked.filter(
+        s => new Date(s.assignedAt).getTime() === maxTime
+      ).length;
+    }
+
+    // ✅ Summary line
     const summaryLine = [
-      `Total Assigned: ${totalAssigned}`,
+      `Total: ${totalAssigned}`,
       `Completed: ${marked}`,
       `Pending: ${notMarked}`,
       `New: ${newCount}`,
@@ -275,7 +304,7 @@ function DutyList() {
           day: '2-digit',
           month: 'short',
           year: 'numeric',
-          hour: 'numeric',
+          hour: '2-digit',
           minute: '2-digit',
           second: '2-digit',
           hour12: true,
@@ -284,26 +313,21 @@ function DutyList() {
       }`,
     ].join(' | ');
 
-    // First, draw heading + summary
+    // ✅ Header
     doc.setFontSize(14);
-    doc.setTextColor(40);
-    const headingY = margin.top - 20;
-    doc.text('CRM - Daily Routine', pageWidth / 2, headingY, { align: 'center' });
+    doc.text('CRM - Daily Routine', pageWidth / 2, margin.top - 20, { align: 'center' });
 
     doc.setFontSize(10);
-    doc.setTextColor(60);
-    const summaryY = headingY + 20;
-    doc.text(summaryLine, margin.left, summaryY);
+    doc.text(summaryLine, margin.left, margin.top);
 
-    // Then draw the table, starting a bit lower so it doesn’t overlap summary
-    const tableStartY = summaryY + 15;
-
-    // Prepare table data
-    const tableData = students.map((student, index) => {
-      const statusText = updatedStudents.includes(student._id) ? 'Marked' : 'Not Marked';
+    // ✅ Table data
+    const tableData = filtered.map((student, i) => {
+      const isUpdated = updatedStudents.includes(student._id);
+      const statusText = isUpdated ? 'Marked' : 'Not Marked';
       return [
-        index + 1,
+        i + 1,
         student.name || '',
+        statusText,
         student.email || '',
         student.phone || '',
         student.course || '',
@@ -319,50 +343,35 @@ function DutyList() {
             hour12: true,
           })
           : '-',
-        statusText,
       ];
     });
 
-    const head = [
-      ['#', 'Name', 'Email', 'Phone', 'Course', 'Place', 'Assigned At', 'Status'],
-    ];
+    const head = [['#', 'Name', 'Status', 'Email', 'Phone', 'Course', 'Place', 'Assigned At']];
 
     autoTable(doc, {
-      startY: tableStartY,
-      margin: margin,
-      head: head,
+      startY: margin.top + 20,
+      margin,
+      head,
       body: tableData,
       theme: 'striped',
-      headStyles: {
-        fillColor: [0, 123, 255],
-        textColor: [255, 255, 255],
-        halign: 'center',
-      },
-      styles: {
-        fontSize: 10,
-        cellPadding: 4,
-        overflow: 'linebreak',
-      },
-      bodyStyles: {
-        fillColor: [245, 247, 250],
-      },
+      headStyles: { fillColor: [0, 123, 255], textColor: 255, halign: 'center' },
+      styles: { fontSize: 9, cellPadding: 3, overflow: 'linebreak' },
+      bodyStyles: { fillColor: [245, 247, 250] },
       didDrawPage: (data) => {
-        // Page numbering in footer
         const pageCount = doc.internal.getNumberOfPages();
-        doc.setFontSize(10);
+        doc.setFontSize(9);
         doc.text(
           `Page ${doc.internal.getCurrentPageInfo().pageNumber} of ${pageCount}`,
           pageWidth - margin.right,
           pageHeight - margin.bottom + 10,
-          null,
-          null,
-          'right'
+          { align: 'right' }
         );
       },
     });
 
     doc.save('CRM_Daily_Routine_Report.pdf');
   };
+
 
 
 
@@ -496,45 +505,56 @@ function DutyList() {
                   <div>No students match your search / no students assigned.</div>
                 ) : (
                   <div className="table-responsive">
+                    <div className="d-flex justify-content-between align-items-center mb-2">
+                      <div className="d-flex gap-2">
+                        <Button
+                          variant={isExpanded ? "secondary" : "primary"}
+                          size="sm"
+                          onClick={() => setIsExpanded(prev => !prev)}
+                        >
+                          {isExpanded ? "Shrink View" : "Expand View"}
+                        </Button>
+                      </div>
+                    </div>
                     <Table className="custom-table table-hover align-middle">
                       <thead>
                         <tr>
                           {[
-                            { key: '#', sortKey: null },
-                            { key: 'Name', sortKey: 'name' },
-                            { key: 'Status', sortKey: 'status' },
-                            { key: 'Email', sortKey: 'email' },
-                            { key: 'Phone', sortKey: 'phone' },
-                            { key: 'Course', sortKey: 'course' },
-                            { key: 'Place', sortKey: 'place' },
-                            { key: 'Assigned At', sortKey: 'assignedAt' },
-                            { key: 'Actions', sortKey: null },
-                          ].map((col, idx) => (
-                            <th
-                              key={idx}
-                              style={{ cursor: col.sortKey ? 'pointer' : 'default' }}
-                              onClick={() => {
-                                if (!col.sortKey) return;
-                                if (sortKey === col.sortKey) setSortOrder(prev => (prev === 'asc' ? 'desc' : 'asc'));
-                                else {
-                                  setSortKey(col.sortKey);
-                                  setSortOrder('asc');
-                                }
-                              }}
-                            >
-                              {col.key}{' '}
-                              {col.sortKey === sortKey && (
-                                <span>
-                                  {sortOrder === 'asc' ? '▲' : '▼'}
-                                </span>
-                              )}
-                            </th>
-                          ))}
+                            { key: '#', show: true },
+                            { key: 'Name', show: true },
+                            { key: 'Status', show: true },
+                            { key: 'Email', show: isExpanded },
+                            { key: 'Phone', show: true },
+                            { key: 'Course', show: isExpanded },
+                            { key: 'Place', show: isExpanded },
+                            { key: 'Assigned At', show: isExpanded },
+                            { key: 'Actions', show: true },
+                          ]
+                            .filter(col => col.show)
+                            .map((col, idx) => (
+                              <th
+                                key={idx}
+                                style={{ cursor: col.sortKey ? 'pointer' : 'default' }}
+                                onClick={() => {
+                                  if (!col.sortKey) return;
+                                  if (sortKey === col.sortKey) setSortOrder(prev => (prev === 'asc' ? 'desc' : 'asc'));
+                                  else {
+                                    setSortKey(col.sortKey);
+                                    setSortOrder('asc');
+                                  }
+                                }}
+                              >
+                                {col.key}{' '}
+                                {col.sortKey === sortKey && (
+                                  <span>{sortOrder === 'asc' ? '▲' : '▼'}</span>
+                                )}
+                              </th>
+                            ))}
                         </tr>
                       </thead>
+
                       <tbody>
                         {(() => {
-                          // Find the latest assignedAt date among students that are NOT yet updated
                           const latestAssignedTime = Math.max(
                             ...students
                               .filter(s => s.assignedAt && !updatedStudents.includes(s._id))
@@ -546,7 +566,7 @@ function DutyList() {
                             const isLatest =
                               s.assignedAt &&
                               new Date(s.assignedAt).getTime() === latestAssignedTime &&
-                              !isUpdated; // Only show NEW if not updated
+                              !isUpdated;
 
                             return (
                               <tr key={s._id || idx}>
@@ -554,40 +574,43 @@ function DutyList() {
                                 <td style={{ color: isUpdated ? 'red' : 'inherit' }}>
                                   {s.name}{' '}
                                   {isLatest && (
-                                    <sup
-                                      style={{
-                                        color: 'green',
-                                        fontWeight: 'bold',
-                                        fontSize: '0.75rem',
-                                        marginLeft: '4px',
-                                      }}
-                                    >
+                                    <sup style={{ color: 'green', fontWeight: 'bold', fontSize: '0.75rem', marginLeft: '4px' }}>
                                       NEW
                                     </sup>
                                   )}
                                 </td>
-                                <td >{isUpdated ? <span className="badge bg-success">Marked</span> : <span className="badge bg-secondary">Not Marked</span>}</td>
-                                <td>{s.email}</td>
+                                <td>
+                                  {isUpdated ? (
+                                    <span className="badge bg-success">Marked</span>
+                                  ) : (
+                                    <span className="badge bg-secondary">Not Marked</span>
+                                  )}
+                                </td>
+                                {isExpanded && <td>{s.email}</td>}
                                 <td>
                                   <a href={`tel:${s.phone}`} style={{ textDecoration: 'none', color: 'blue' }}>
                                     {s.phone}
                                   </a>
                                 </td>
-                                <td>{s.course}</td>
-                                <td>{s.place}</td>
-                                <td>
-                                  {s.assignedAt
-                                    ? new Date(s.assignedAt).toLocaleString('en-IN', {
-                                      day: '2-digit',
-                                      month: 'short',
-                                      year: 'numeric',
-                                      hour: '2-digit',
-                                      minute: '2-digit',
-                                      second: '2-digit',
-                                      hour12: true,
-                                    })
-                                    : '-'}
-                                </td>
+                                {isExpanded && (
+                                  <>
+                                    <td>{s.course}</td>
+                                    <td>{s.place}</td>
+                                    <td>
+                                      {s.assignedAt
+                                        ? new Date(s.assignedAt).toLocaleString('en-IN', {
+                                          day: '2-digit',
+                                          month: 'short',
+                                          year: 'numeric',
+                                          hour: '2-digit',
+                                          minute: '2-digit',
+                                          second: '2-digit',
+                                          hour12: true,
+                                        })
+                                        : '-'}
+                                    </td>
+                                  </>
+                                )}
                                 <td>
                                   <Button
                                     variant={isUpdated ? 'outline-success' : 'outline-primary'}
@@ -611,7 +634,6 @@ function DutyList() {
                                     {isUpdated ? 'Edit' : 'Add'}
                                   </Button>
                                 </td>
-
                               </tr>
                             );
                           });

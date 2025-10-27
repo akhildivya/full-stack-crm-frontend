@@ -25,7 +25,7 @@ function Workreport() {
     const [bsummary, setSummary] = useState({});
     const [selectedIds, setSelectedIds] = useState([]);
 
-
+    const [isExpanded, setIsExpanded] = useState(false);
     useEffect(() => {
         const fetchUsers = async () => {
             try {
@@ -970,6 +970,15 @@ function Workreport() {
                                                 </Button>
                                             </div>
 
+                                            <div className="d-flex justify-content-start mb-2">
+                                                <Button
+                                                    variant={isExpanded ? "secondary" : "primary"}
+                                                    size="sm"
+                                                    onClick={() => setIsExpanded(prev => !prev)}
+                                                >
+                                                    {isExpanded ? "Shrink View" : "Expand View"}
+                                                </Button>
+                                            </div>
                                             <table className="table custom-table table-hover align-middle">
                                                 <thead className="table-header">
                                                     <tr>
@@ -982,20 +991,26 @@ function Workreport() {
                                                         </th>
                                                         <th>#</th>
                                                         {renderHeader('Name', 'name')}
-                                                        {renderHeader('Email', 'email')}
-                                                        {renderHeader('Phone', 'phone')}
-                                                        {renderHeader('Course', 'course')}
-                                                        {renderHeader('Place', 'place')}
                                                         {renderHeader('Call Status', 'callInfo.callStatus')}
                                                         {renderHeader('Call Duration', 'callInfo.callDuration')}
                                                         {renderHeader('Interested', 'callInfo.interested')}
                                                         {renderHeader('Plan Type', 'callInfo.planType')}
-                                                        {renderHeader('Assigned At', 'assignedAt')}
-                                                        {renderHeader('Completed At', 'callInfo.completedAt')}
-                                                        {renderHeader('Same Date?', 'sameDateMatch')}
-                                                        <th>Action</th>
+
+                                                        {isExpanded && (
+                                                            <>
+                                                                {renderHeader('Email', 'email')}
+                                                                {renderHeader('Phone', 'phone')}
+                                                                {renderHeader('Course', 'course')}
+                                                                {renderHeader('Place', 'place')}
+                                                                {renderHeader('Assigned At', 'assignedAt')}
+                                                                {renderHeader('Completed At', 'callInfo.completedAt')}
+                                                                {renderHeader('Same Date?', 'sameDateMatch')}
+                                                                <th>Action</th>
+                                                            </>
+                                                        )}
                                                     </tr>
                                                 </thead>
+
                                                 <tbody>
                                                     {currentRows.length === 0 ? (
                                                         <tr>
@@ -1024,75 +1039,40 @@ function Workreport() {
                                                                             onChange={() => handleSelectStudent(s._id)}
                                                                         />
                                                                     </td>
-                                                                    <td data-label="#">{serialNo}</td>
-                                                                    <td data-label="Name">{s.name}</td>
-                                                                    <td data-label="Email">{s.email}</td>
-                                                                    <td data-label="Phone">{s.phone}</td>
-                                                                    <td data-label="Course">{s.course}</td>
-                                                                    <td data-label="Place">{s.place}</td>
-                                                                    <td data-label="Call Status">{ci.callStatus ?? '-'}</td>
-                                                                    <td data-label="Call Duration">
-                                                                        {ci.callDuration != null && !isNaN(ci.callDuration) ? (() => {
-                                                                            const totalSec = Math.round(ci.callDuration * 60);
-                                                                            const m = Math.floor(totalSec / 60);
-                                                                            const s = totalSec % 60;
-                                                                            return (m > 0 ? `${m} min ` : '') + `${s} sec`;
-                                                                        })() : '-'}
-                                                                    </td>
-                                                                    <td data-label="Interested">
-                                                                        {ci.interested === 'Yes'
-                                                                            ? 'Yes'
-                                                                            : ci.interested === 'No'
-                                                                                ? 'No'
-                                                                                : ci.interested === 'Inform Later'
-                                                                                    ? 'Inform Later'
-                                                                                    : '-'}
-                                                                    </td>
-                                                                    <td data-label="Plan Type">{ci.planType ?? '-'}</td>
-                                                                    <td data-label="Assigned At" className={isSameDate ? 'highlight-cell' : ''}>
-                                                                        {assignedAt
-                                                                            ? assignedAt.toLocaleString('en-GB', {
-                                                                                day: '2-digit',
-                                                                                month: 'short',
-                                                                                year: 'numeric',
-                                                                                hour: 'numeric',
-                                                                                minute: '2-digit',
-                                                                                second: '2-digit',
-                                                                                hour12: true
-                                                                            })
-                                                                            : ''}
-                                                                    </td>
-                                                                    <td data-label="Completed At" className={isSameDate ? 'highlight-cell' : ''}>
-                                                                        {completedAt
-                                                                            ? completedAt.toLocaleString('en-GB', {
-                                                                                day: '2-digit',
-                                                                                month: 'short',
-                                                                                year: 'numeric',
-                                                                                hour: 'numeric',
-                                                                                minute: '2-digit',
-                                                                                second: '2-digit',
-                                                                                hour12: true
-                                                                            })
-                                                                            : ''}
-                                                                    </td>
-                                                                    <td data-label="Same Date?">
-                                                                        {(() => {
-                                                                            if (s.assignedAt && ci.completedAt) {
-                                                                                const a = new Date(s.assignedAt);
-                                                                                const c = new Date(ci.completedAt);
-                                                                                if (a.toDateString() === c.toDateString()) {
-                                                                                    return '✔';
-                                                                                }
-                                                                            }
-                                                                            return '';
-                                                                        })()}
-                                                                    </td>
+                                                                    <td>{serialNo}</td>
+                                                                    <td>{s.name}</td>
+                                                                    <td>{ci.callStatus ?? '-'}</td>
                                                                     <td>
-                                                                        <Button variant="outline-danger" size="sm" onClick={() => handleDeleteStudent(s._id)}>
-                                                                            Delete
-                                                                        </Button>
+                                                                        {ci.callDuration != null && !isNaN(ci.callDuration)
+                                                                            ? (() => {
+                                                                                const totalSec = Math.round(ci.callDuration * 60);
+                                                                                const m = Math.floor(totalSec / 60);
+                                                                                const s = totalSec % 60;
+                                                                                return (m > 0 ? `${m} min ` : '') + `${s} sec`;
+                                                                            })()
+                                                                            : '-'}
                                                                     </td>
+                                                                    <td>{ci.interested ?? '-'}</td>
+                                                                    <td>{ci.planType ?? '-'}</td>
+
+                                                                    {isExpanded && (
+                                                                        <>
+                                                                            <td>{s.email}</td>
+                                                                            <td>{s.phone}</td>
+                                                                            <td>{s.course}</td>
+                                                                            <td>{s.place}</td>
+                                                                            <td>{assignedAt ? assignedAt.toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true }) : ''}</td>
+                                                                            <td>{completedAt ? completedAt.toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true }) : ''}</td>
+                                                                            <td>{isSameDate ? '✔' : ''}</td>
+                                                                            <td>
+                                                                                <Button variant="outline-danger" size="sm" onClick={() => handleDeleteStudent(s._id)}>
+                                                                                    Delete
+                                                                                </Button>
+                                                                            </td>
+                                                                        </>
+                                                                    )}
                                                                 </tr>
+
                                                             );
                                                         })
                                                     )}

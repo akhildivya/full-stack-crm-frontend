@@ -33,7 +33,7 @@ function Login() {
         }));
 
     }
-    console.log(inputs);
+   {/* console.log(inputs);*/}
     const handleBlur = (e) => {
         // Optional: re-run validation on blur for fields that haven’t been touched
         handleChange(e);

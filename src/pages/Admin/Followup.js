@@ -7,9 +7,9 @@ import { autoTable } from 'jspdf-autotable';
 import { BASEURL } from '../../service/baseUrl';
 import '../../css/followup.css'
 import { Dropdown, Button } from 'react-bootstrap';
-import { FaTrash } from 'react-icons/fa';
-import { FaFilePdf } from 'react-icons/fa'
+import { FaTrash, FaFilePdf, FaFileExcel } from 'react-icons/fa';
 import { toast } from 'react-toastify';
+import * as XLSX from 'xlsx';
 const ROWS_PER_PAGE_OPTIONS = [5, 10, 25, 50];
 
 function Followup() {
@@ -46,18 +46,111 @@ function Followup() {
 
     const handleExportPDF = () => {
         const doc = new jsPDF();
-        const head = [['Name', 'Email', 'Phone', 'Course', 'Place', 'Moved At']];
-        const body = rows.map(r => [
+
+        // Determine title based on mode
+        const title =
+            mode === 'admission'
+                ? 'Admission Report'
+                : 'Contact Later Report';
+
+        // Center the title text
+        const pageWidth = doc.internal.pageSize.getWidth();
+        doc.setFontSize(16);
+        doc.setFont('helvetica', 'bold');
+        const textWidth =
+            (doc.getStringUnitWidth(title) * doc.internal.getFontSize()) /
+            doc.internal.scaleFactor;
+        const textX = (pageWidth - textWidth) / 2;
+        doc.text(title, textX, 20);
+
+        // Define table headers
+        const head = [['Sl. No', 'Name', 'Email', 'Phone', 'Course', 'Place', 'Moved At']];
+
+        // Prepare table body
+        const body = rows.map((r, index) => [
+            index + 1,
             r.name,
             r.email,
             r.phone,
             r.course,
             r.place,
-            new Date(r.movedAt).toLocaleString()
+            new Date(r.movedAt).toLocaleString('en-GB', {
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: true,
+            }),
         ]);
-        autoTable(doc, { head, body });
-        doc.save(`${mode === 'admission' ? 'Admission' : 'ContactLater'}Report.pdf`);
+
+        // Add table with footer callback for page numbers
+        autoTable(doc, {
+            startY: 30,
+            head,
+            body,
+            styles: { fontSize: 10, cellPadding: 3 },
+            headStyles: { fillColor: [52, 58, 64], textColor: 255 },
+            didDrawPage: (data) => {
+                const pageCount = doc.internal.getNumberOfPages();
+                const currentPage = doc.internal.getCurrentPageInfo().pageNumber;
+                const pageHeight = doc.internal.pageSize.getHeight();
+
+                // Add footer text (page numbers)
+                doc.setFontSize(10);
+                doc.setFont('helvetica', 'normal');
+                doc.text(
+                    `Page ${currentPage} of ${pageCount}`,
+                    pageWidth - 40,
+                    pageHeight - 10
+                );
+            },
+        });
+
+        // Save with descriptive filename
+        const fileName =
+            mode === 'admission'
+                ? 'CRM-Admission-Followup-Report.pdf'
+                : 'CRM-ContactLater-Followup-Report.pdf';
+
+        doc.save(fileName);
     };
+
+const handleExportExcel = () => {
+        if (rows.length === 0) {
+            toast.info("No data available to export");
+            return;
+        }
+
+        const data = rows.map((r, index) => ({
+            "Sl. No": index + 1,
+            "Name": r.name,
+            "Email": r.email,
+            "Phone": r.phone,
+            "Course": r.course,
+            "Place": r.place,
+            "Moved At": new Date(r.movedAt).toLocaleString('en-GB', {
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: true,
+            }),
+        }));
+
+        const worksheet = XLSX.utils.json_to_sheet(data);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'Followup Data');
+
+        const fileName = mode === 'admission'
+            ? 'CRM-Admission-Followup-Report.xlsx'
+            : 'CRM-ContactLater-Followup-Report.xlsx';
+        XLSX.writeFile(workbook, fileName);
+    };
+
 
     // derived paginated rows
     const totalPages = Math.ceil(totalCount / rowsPerPage);
@@ -147,7 +240,6 @@ function Followup() {
                     <main className="col-md-9">
                         <div className="card admin-card p-4">
                             {/* Controls Toolbar */}
-
                             <div className="mb-3">
                                 <div className="d-flex flex-wrap gap-2">
                                     {/* Search Input */}
@@ -167,9 +259,13 @@ function Followup() {
 
                                     {/* Select Table Dropdown */}
                                     <div style={{ flex: '1 1 200px', minWidth: '200px' }}>
-                                        <Dropdown onSelect={value => { setMode(value); setPage(1); }}>
+                                        <Dropdown onSelect={(value) => { setMode(value); setPage(1); }}>
                                             <Dropdown.Toggle variant="secondary" className="w-100">
-                                                {mode || "Select Table"}
+                                                {mode === 'admission'
+                                                    ? 'Admission'
+                                                    : mode === 'contactLater'
+                                                        ? 'Contact Later'
+                                                        : 'Select Table'}
                                             </Dropdown.Toggle>
                                             <Dropdown.Menu>
                                                 <Dropdown.Item eventKey="admission">Admission</Dropdown.Item>
@@ -180,9 +276,17 @@ function Followup() {
 
                                     {/* Sort By Dropdown */}
                                     <div style={{ flex: '1 1 200px', minWidth: '200px' }}>
-                                        <Dropdown onSelect={value => setSortKey(value)}>
+                                        <Dropdown onSelect={(value) => setSortKey(value)}>
                                             <Dropdown.Toggle variant="secondary" className="w-100">
-                                                {sortKey || "Sort By"}
+                                                {sortKey === 'name'
+                                                    ? 'Name'
+                                                    : sortKey === 'email'
+                                                        ? 'Email'
+                                                        : sortKey === 'course'
+                                                            ? 'Course'
+                                                            : sortKey === 'movedAt'
+                                                                ? 'Moved At'
+                                                                : 'Sort By'}
                                             </Dropdown.Toggle>
                                             <Dropdown.Menu>
                                                 <Dropdown.Item eventKey="name">Name</Dropdown.Item>
@@ -195,9 +299,13 @@ function Followup() {
 
                                     {/* Sort Order Dropdown */}
                                     <div style={{ flex: '1 1 200px', minWidth: '200px' }}>
-                                        <Dropdown onSelect={value => setSortDir(value)}>
+                                        <Dropdown onSelect={(value) => setSortDir(value)}>
                                             <Dropdown.Toggle variant="secondary" className="w-100">
-                                                {sortDir || "Order"}
+                                                {sortDir === 'asc'
+                                                    ? 'Ascending'
+                                                    : sortDir === 'desc'
+                                                        ? 'Descending'
+                                                        : 'Order'}
                                             </Dropdown.Toggle>
                                             <Dropdown.Menu>
                                                 <Dropdown.Item eventKey="asc">Ascending</Dropdown.Item>
@@ -205,13 +313,13 @@ function Followup() {
                                             </Dropdown.Menu>
                                         </Dropdown>
                                     </div>
-
-
                                 </div>
                             </div>
+
                             <h5 className="mb-3 text-center">
                                 {mode === 'admission' ? 'Admission Table' : 'Contact Later Table'}
                             </h5>
+
                             {/* Table */}
                             <div className="table-responsive">
                                 <table className="table custom-table table-hover">
@@ -229,7 +337,9 @@ function Followup() {
                                     </thead>
                                     <tbody>
                                         {rows.length === 0 ? (
-                                            <tr><td colSpan="7" className="no-data-cell">No data found.</td></tr>
+                                            <tr>
+                                                <td colSpan="8" className="no-data-cell">No data found.</td>
+                                            </tr>
                                         ) : (
                                             rows.map((r, i) => (
                                                 <tr key={r._id}>
@@ -241,7 +351,7 @@ function Followup() {
                                                     <td>{r.place}</td>
                                                     <td>{new Date(r.movedAt).toLocaleString('en-GB', {
                                                         day: '2-digit',
-                                                        month: 'short',     // "Oct"
+                                                        month: 'short',
                                                         year: 'numeric',
                                                         hour: 'numeric',
                                                         minute: '2-digit',
@@ -264,7 +374,7 @@ function Followup() {
                                 </table>
                             </div>
 
-                            {/* Pagination & Rows Per Page */}
+                            {/* Pagination */}
                             <div className="d-flex justify-content-between align-items-center mt-3">
                                 <div>
                                     <button
@@ -282,12 +392,12 @@ function Followup() {
                                         &rsaquo;
                                     </button>
                                 </div>
+
                                 <div>
                                     <Dropdown>
                                         <Dropdown.Toggle variant="outline-secondary" size="sm">
                                             {rowsPerPage === totalCount ? 'All' : rowsPerPage}
                                         </Dropdown.Toggle>
-
                                         <Dropdown.Menu>
                                             {ROWS_PER_PAGE_OPTIONS.map(opt => (
                                                 <Dropdown.Item
@@ -295,7 +405,7 @@ function Followup() {
                                                     active={opt === rowsPerPage}
                                                     onClick={() => {
                                                         setRowsPerPage(opt);
-                                                        setPage(1); // Reset to first page when changing rows per page
+                                                        setPage(1);
                                                     }}
                                                 >
                                                     {opt}
@@ -315,8 +425,9 @@ function Followup() {
                                     </Dropdown>
                                 </div>
                             </div>
+
                             {/* Export Button */}
-                            <div className='me-2 mt-2' style={{ flex: '0 0 auto' }}>
+                            <div className="me-2 mt-2 d-flex gap-2" style={{ flex: '0 0 auto' }}>
                                 <Button
                                     variant="outline-primary"
                                     className="icon-only-btn p-2"
@@ -326,12 +437,23 @@ function Followup() {
                                 >
                                     <FaFilePdf size={16} />
                                 </Button>
+
+                                 <Button
+                                    variant="outline-success"
+                                    className="icon-only-btn p-2"
+                                    onClick={handleExportExcel}
+                                    aria-label="Download Excel"
+                                    title="Download Excel"
+                                >
+                                    <FaFileExcel size={16} />
+                                </Button>
                             </div>
                         </div>
                     </main>
                 </div>
             </div>
         </Layout>
+
 
 
     );
