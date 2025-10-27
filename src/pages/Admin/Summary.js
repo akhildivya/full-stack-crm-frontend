@@ -37,9 +37,11 @@ function Summary() {
       { Header: 'Name', accessor: 'name' },
       { Header: 'Email', accessor: 'email' },
       { Header: 'Phone', accessor: 'phone' },
-      { Header: 'Total Contacts Assigned', accessor: 'totalContacts' },
+      { Header: 'Assigned', accessor: 'totalContacts' },
       { Header: 'Completed', accessor: 'completed' },
       { Header: 'Total Call Duration', accessor: 'totalDuration' },
+      { Header: 'Assigned At', accessor: 'assignedAt' },
+      { Header: 'Completed At', accessor: 'completedAt' },
     ],
     []
   );
@@ -79,30 +81,71 @@ function Summary() {
     gotoPage(0);
   }, [itemsPerPage, setPageSize, gotoPage]);
 
-  const handleExportPDF = () => {
-    const doc = new jsPDF();
-    autoTable(doc, {
-      head: [
-        [
-          'Name',
-          'Email',
-          'Phone',
-          'Total Contacts Assigned',
-          'Completed',
-          'Total Call Duration',
-        ],
-      ],
-      body: userSummary.map((user) => [
-        user.name,
-        user.email,
-        user.phone,
-        user.totalContacts,
-        user.completed,
-        user.totalDuration,
-      ]),
-    });
-    doc.save('user_summary.pdf');
-  };
+const handleExportPDF = () => {
+  const doc = new jsPDF();
+
+  // Add a title to the PDF
+  doc.setFontSize(16);
+  doc.setFont('helvetica', 'bold');
+  doc.text('User Summary Report', 14, 20);
+
+  // Define column widths
+  const columnWidths = [30, 40, 20, 10, 10, 20, 30, 30]; // Adjusted widths for better fit
+
+  // Define table headers
+  const headers = [
+    'Name',
+    'Email',
+    'Phone',
+    'Assigned',
+    'Completed',
+    'Total Call Duration',
+    'Assigned At',
+    'Completed At'
+  ];
+
+  // Prepare table data
+  const tableData = userSummary.map((user) => [
+    user.name,
+    user.email,
+    user.phone,
+    user.totalContacts,
+    user.completed,
+    user.totalDuration.toFixed(4), // Format to 4 decimal places
+    user.assignedAt ,
+    user.completedAt 
+  ]);
+
+  // Add the table to the PDF
+  autoTable(doc, {
+    head: [headers],
+    body: tableData,
+    startY: 30, // Start the table below the title
+    columnStyles: {
+      0: { cellWidth: columnWidths[0], overflow: 'linebreak' },
+      1: { cellWidth: columnWidths[1], overflow: 'linebreak' },
+      2: { cellWidth: columnWidths[2], overflow: 'linebreak' },
+      3: { cellWidth: columnWidths[3], overflow: 'linebreak' },
+      4: { cellWidth: columnWidths[4], overflow: 'linebreak' },
+      5: { cellWidth: columnWidths[5], overflow: 'linebreak' },
+      6: { cellWidth: columnWidths[6], overflow: 'linebreak' },
+      7: { cellWidth: columnWidths[7], overflow: 'linebreak' }
+    },
+    headStyles: { fillColor: [41, 128, 185], textColor: [255, 255, 255] },
+    styles: { fontSize: 10, cellPadding: 2, overflow: 'linebreak' },
+    tableWidth: 'auto', // Adjust table width to fit content
+    margin: { left: 10, right: 10 }
+  });
+
+  // Save the PDF
+  doc.save('user_summary.pdf');
+};
+
+
+
+
+
+
 
   // Prepare data for the chart: for example map each user to an object
   // Could also sort/group by name etc

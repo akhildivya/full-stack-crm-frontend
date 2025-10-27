@@ -16,6 +16,7 @@ function DutyList() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+
   const [searchTerm, setSearchTerm] = useState('');
   const [sortKey, setSortKey] = useState('name');
   const [sortOrder, setSortOrder] = useState('asc');
@@ -41,12 +42,7 @@ function DutyList() {
       setFormData({
         callStatus: selectedStudent.callInfo?.callStatus || '',
         callDuration: selectedStudent.callInfo?.callDuration || '',
-        interested:
-          selectedStudent.callInfo?.interested === true
-            ? 'yes'
-            : selectedStudent.callInfo?.interested === false
-              ? 'no'
-              : 'yes',
+        interested: selectedStudent.callInfo?.interested || '',
         planType: selectedStudent.callInfo?.planType || '',
       });
     }
@@ -175,83 +171,68 @@ function DutyList() {
     const { name, value } = e.target;
     setFormData(prev => {
       if (name === 'interested') {
-        if (value === 'no') return { ...prev, interested: 'no', planType: '' };
-        if (value === 'yes') return { ...prev, interested: 'yes', planType: prev.planType || 'starter' };
+        if (value === 'No' || value === 'Inform Later') {
+          return { ...prev, interested: value, planType: '' };
+        }
+        if (value === 'Yes') {
+          return { ...prev, interested: 'Yes', planType: prev.planType || 'Starter' };
+        }
       }
+
       return { ...prev, [name]: value };
     });
   };
 
   const handleSave = async () => {
     if (!selectedStudent) return;
-     // Convert minutes + seconds to decimal minutes
-  const minutes = parseInt(formData.callDurationMinutes || 0, 10);
-  const seconds = parseInt(formData.callDurationSeconds || 0, 10);
-  const totalDurationInMinutes = minutes + seconds / 60;
 
-  const payload = {
-    ...formData,
-    callDuration: totalDurationInMinutes || null, // backend expects minutes
-  };
+    // Convert minutes + seconds to decimal minutes
+    const minutes = parseInt(formData.callDurationMinutes || 0, 10);
+    const seconds = parseInt(formData.callDurationSeconds || 0, 10);
+    const totalDurationInMinutes = minutes + seconds / 60;
+
+    const payload = {
+      callStatus: formData.callStatus,
+      callDuration: totalDurationInMinutes || null,
+      interested: formData.interested || null,
+      planType: formData.planType,
+    };
+
     try {
       const response = await axios.put(
-        `${BASEURL}/students/${selectedStudent._id}/status`,payload,
-        { ...formData },
+        `${BASEURL}/students/${selectedStudent._id}/status`,
+        payload,
         { headers: { Authorization: auth.token } }
       );
 
       if (response.data?.success) {
         const updatedStudent = response.data.student;
 
-        // replace the student in local list with backend-returned object
         setStudents(prev =>
           prev.map(stu => (stu._id === updatedStudent._id ? updatedStudent : stu))
         );
 
-        // mark updated
-        setUpdatedStudents(prev => (prev.includes(updatedStudent._id) ? prev : [...prev, updatedStudent._id]));
+        // Add to updated list (or keep if already exists)
+        setUpdatedStudents(prev =>
+          prev.includes(updatedStudent._id)
+            ? prev
+            : [...prev, updatedStudent._id]
+        );
 
-        toast.success('Call status updated successfully!', {
-          position: "top-center",
-          autoClose: 5000,
-          hideProgressBar: false,
-          closeOnClick: false,
-          pauseOnHover: true,
-          draggable: true,
-          progress: undefined,
-          theme: "light",
-
-        });
+        toast.success('Call status saved successfully!', { position: 'top-center' });
         setShowModal(false);
         setSelectedStudent(null);
       } else {
-        toast.error(response.data?.message || 'Failed to update call status', {
-          position: "top-center",
-          autoClose: 5000,
-          hideProgressBar: false,
-          closeOnClick: false,
-          pauseOnHover: true,
-          draggable: true,
-          progress: undefined,
-          theme: "light",
-
+        toast.error(response.data?.message || 'Failed to save call status', {
+          position: 'top-center',
         });
       }
     } catch (err) {
       console.error('Error updating student status:', err);
-      toast.error('Server or network error', {
-        position: "top-center",
-        autoClose: 5000,
-        hideProgressBar: false,
-        closeOnClick: false,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
-        theme: "light",
-
-      });
+      toast.error('Server or network error', { position: 'top-center' });
     }
   };
+
   const exportToPDF = () => {
     const doc = new jsPDF({
       unit: 'pt',
@@ -609,7 +590,7 @@ function DutyList() {
                                 </td>
                                 <td>
                                   <Button
-                                    variant="outline-primary"
+                                    variant={isUpdated ? 'outline-success' : 'outline-primary'}
                                     size="sm"
                                     onClick={() => {
                                       setSelectedStudent(s);
@@ -618,17 +599,16 @@ function DutyList() {
                                         callDuration: s.callInfo?.callDuration || '',
                                         interested:
                                           s.callInfo?.interested === true
-                                            ? 'yes'
+                                            ? 'Yes'
                                             : s.callInfo?.interested === false
-                                              ? 'no'
+                                              ? 'No'
                                               : '',
                                         planType: s.callInfo?.planType || '',
                                       });
                                       setShowModal(true);
                                     }}
-                                    disabled={isUpdated}
                                   >
-                                    Update
+                                    {isUpdated ? 'Edit' : 'Add'}
                                   </Button>
                                 </td>
 
@@ -692,113 +672,113 @@ function DutyList() {
           </main>
         </div>
 
-       
+
         <Modal show={showModal} onHide={() => setShowModal(false)}>
-  <Modal.Header closeButton>
-    <Modal.Title>Update Call Status</Modal.Title>
-  </Modal.Header>
-  <Modal.Body>
-    <Form>
-      {/* Call Status */}
-      <Form.Group controlId="callStatus" className="mb-3">
-        <Form.Label>Call Status</Form.Label>
-        <Form.Control
-          as="select"
-          value={formData.callStatus || ''}
-          onChange={handleInputChange}
-          name="callStatus"
-        >
-          <option value="">-- Select --</option>
-          <option value="Missed">Missed</option>
-          <option value="Rejected">Rejected</option>
-          <option value="Accepted">Accepted</option>
-        </Form.Control>
-      </Form.Group>
+          <Modal.Header closeButton>
+            <Modal.Title>Update Call Status</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <Form>
+              {/* Call Status */}
+              <Form.Group controlId="callStatus" className="mb-3">
+                <Form.Label>Call Status</Form.Label>
+                <Form.Control
+                  as="select"
+                  value={formData.callStatus || ''}
+                  onChange={handleInputChange}
+                  name="callStatus"
+                >
+                  <option value="">-- Select --</option>
+                  <option value="Missed">Missed</option>
+                  <option value="Rejected">Rejected</option>
+                  <option value="Accepted">Accepted</option>
+                </Form.Control>
+              </Form.Group>
 
-      {/* Call Duration: visible for Missed, Rejected, Accepted */}
-      {(formData.callStatus === 'Missed' ||
-        formData.callStatus === 'Rejected' ||
-        formData.callStatus === 'Accepted') && (
-        <Form.Group controlId="callDuration" className="mb-3">
-          <Form.Label>Call Duration</Form.Label>
-          <div className="d-flex align-items-center gap-2">
-            {/* Minutes Dropdown */}
-            <Form.Control
-              as="select"
-              name="callDurationMinutes"
-              value={formData.callDurationMinutes || ''}
-              onChange={handleInputChange}
-              style={{ width: '50%' }}
-            >
-              <option value="">Minutes</option>
-              {[...Array(60)].map((_, i) => (
-                <option key={i} value={i}>{i} min</option>
-              ))}
-            </Form.Control>
+              {/* Call Duration: visible for Missed, Rejected, Accepted */}
+              {(formData.callStatus === 'Missed' ||
+                formData.callStatus === 'Rejected' ||
+                formData.callStatus === 'Accepted') && (
+                  <Form.Group controlId="callDuration" className="mb-3">
+                    <Form.Label>Call Duration</Form.Label>
+                    <div className="d-flex align-items-center gap-2">
+                      {/* Minutes Dropdown */}
+                      <Form.Control
+                        as="select"
+                        name="callDurationMinutes"
+                        value={formData.callDurationMinutes || ''}
+                        onChange={handleInputChange}
+                        style={{ width: '50%' }}
+                      >
+                        <option value="">Minutes</option>
+                        {[...Array(60)].map((_, i) => (
+                          <option key={i} value={i}>{i} min</option>
+                        ))}
+                      </Form.Control>
 
-            {/* Seconds Dropdown */}
-            <Form.Control
-              as="select"
-              name="callDurationSeconds"
-              value={formData.callDurationSeconds || ''}
-              onChange={handleInputChange}
-              style={{ width: '50%' }}
-            >
-              <option value="">Seconds</option>
-              {[...Array(60)].map((_, i) => (
-                <option key={i} value={i}>{i} sec</option>
-              ))}
-            </Form.Control>
-          </div>
-        </Form.Group>
-      )}
+                      {/* Seconds Dropdown */}
+                      <Form.Control
+                        as="select"
+                        name="callDurationSeconds"
+                        value={formData.callDurationSeconds || ''}
+                        onChange={handleInputChange}
+                        style={{ width: '50%' }}
+                      >
+                        <option value="">Seconds</option>
+                        {[...Array(60)].map((_, i) => (
+                          <option key={i} value={i}>{i} sec</option>
+                        ))}
+                      </Form.Control>
+                    </div>
+                  </Form.Group>
+                )}
 
-      {/* Interested: only for Accepted */}
-      {formData.callStatus === 'Accepted' && (
-        <Form.Group controlId="interested" className="mb-3">
-          <Form.Label>Interested</Form.Label>
-          <Form.Control
-            as="select"
-            value={formData.interested || ''}
-            onChange={handleInputChange}
-            name="interested"
-          >
-            <option value="">-- Select --</option>
-            <option value="Yes">Yes</option>
-            <option value="No">No</option>
-            <option value="Inform Later">Inform Later</option>
-          </Form.Control>
-        </Form.Group>
-      )}
+              {/* Interested: only for Accepted */}
+              {formData.callStatus === 'Accepted' && (
+                <Form.Group controlId="interested" className="mb-3">
+                  <Form.Label>Interested</Form.Label>
+                  <Form.Control
+                    as="select"
+                    value={formData.interested || ''}
+                    onChange={handleInputChange}
+                    name="interested"
+                  >
+                    <option value="">-- Select --</option>
+                    <option value="Yes">Yes</option>
+                    <option value="No">No</option>
+                    <option value="Inform Later">Inform Later</option>
+                  </Form.Control>
+                </Form.Group>
+              )}
 
-      {/* Plan Type: only if interested === 'Yes' */}
-      {formData.interested === 'Yes' && (
-        <Form.Group controlId="planType" className="mb-3">
-          <Form.Label>Plan Type</Form.Label>
-          <Form.Control
-            as="select"
-            value={formData.planType || ''}
-            onChange={handleInputChange}
-            name="planType"
-          >
-            <option value="">-- Select Plan --</option>
-            <option value="Starter">Starter</option>
-            <option value="Gold">Gold</option>
-            <option value="Master">Master</option>
-          </Form.Control>
-        </Form.Group>
-      )}
-    </Form>
-  </Modal.Body>
-  <Modal.Footer>
-    <Button variant="secondary" onClick={() => setShowModal(false)}>
-      Close
-    </Button>
-    <Button variant="primary" onClick={handleSave}>
-      Save Changes
-    </Button>
-  </Modal.Footer>
-</Modal>
+              {/* Plan Type: only if interested === 'Yes' */}
+              {formData.interested === 'Yes' && (
+                <Form.Group controlId="planType" className="mb-3">
+                  <Form.Label>Plan Type</Form.Label>
+                  <Form.Control
+                    as="select"
+                    value={formData.planType || ''}
+                    onChange={handleInputChange}
+                    name="planType"
+                  >
+                    <option value="">-- Select Plan --</option>
+                    <option value="Starter">Starter</option>
+                    <option value="Gold">Gold</option>
+                    <option value="Master">Master</option>
+                  </Form.Control>
+                </Form.Group>
+              )}
+            </Form>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" onClick={() => setShowModal(false)}>
+              Close
+            </Button>
+            <Button variant="primary" onClick={handleSave}>
+              Save Changes
+            </Button>
+          </Modal.Footer>
+        </Modal>
 
 
       </div>

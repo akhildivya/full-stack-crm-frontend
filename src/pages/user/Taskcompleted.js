@@ -66,7 +66,7 @@ function Taskcompleted() {
 
       const callStatus = s.callInfo?.callStatus || '';
       const callDuration = s.callInfo?.callDuration ?? '';
-      const interested = s.callInfo?.interested === true ? 'Yes' : s.callInfo?.interested === false ? 'No' : 'Inform Later';
+      const interested = s.callInfo?.interested || 'Inform Later';
       const planType = s.callInfo?.planType || '';
       const assignedAt = s.assignedAt ? new Date(s.assignedAt).toLocaleString('en-GB', {
         day: '2-digit',
@@ -115,8 +115,8 @@ function Taskcompleted() {
         aVal = a.callInfo?.callDuration ?? '';
         bVal = b.callInfo?.callDuration ?? '';
       } else if (sortKey === 'interested') {
-        aVal = a.callInfo?.interested === true ? 'Yes' : a.callInfo?.interested === false ? 'No' : 'Inform Later';
-        bVal = b.callInfo?.interested === true ? 'Yes' : b.callInfo?.interested === false ? 'No' : 'Inform Later';
+        aVal = a.callInfo?.interested || 'Inform Later';
+        bVal = b.callInfo?.interested || 'Inform Later';
       } else if (sortKey === 'planType') {
         aVal = a.callInfo?.planType ?? '';
         bVal = b.callInfo?.planType ?? '';
@@ -326,8 +326,14 @@ function Taskcompleted() {
                   </div>
                 </div>
                 <div className="col-md-4 mb-2">
-                  <div className="summary-card bg-secondary text-dark p-3 rounded shadow-sm">
+                  <div className="summary-card bg-success text-dark p-3 rounded shadow-sm">
                     <h6>Inform Later</h6>
+                    <h3>{summary.informLaterCount || 0}</h3>
+                  </div>
+                </div>
+                <div className="col-md-4 mb-2">
+                  <div className="summary-card bg-info text-dark p-3 rounded shadow-sm">
+                    <h6>Missing Interests</h6>
                     <h3>{summary.missingInterest || 0}</h3>
                   </div>
                 </div>
@@ -451,7 +457,7 @@ function Taskcompleted() {
                             ? `${Math.round(s.callInfo.callDuration * 60)} sec`
                             : '-'}
                         </td>
-                        <td>{s.callInfo?.interested === true ? 'Yes' : s.callInfo?.interested === false ? 'No' : 'Inform Later'}</td>
+                        <td>{s.callInfo?.interested || '---'}</td>
                         <td>{s.callInfo?.planType || '-'}</td>
                         <td>{s.assignedAt ? new Date(s.assignedAt).toLocaleString('en-GB', {
                           day: '2-digit',

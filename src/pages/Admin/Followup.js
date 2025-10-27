@@ -209,7 +209,9 @@ function Followup() {
 
                                 </div>
                             </div>
-
+                            <h5 className="mb-3 text-center">
+                                {mode === 'admission' ? 'Admission Table' : 'Contact Later Table'}
+                            </h5>
                             {/* Table */}
                             <div className="table-responsive">
                                 <table className="table custom-table table-hover">

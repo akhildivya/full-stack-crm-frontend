@@ -93,6 +93,7 @@ function Workreport() {
         let pending = 0;
         let totalCallDuration = 0;
         let countYes = 0, countNo = 0, countInformLater = 0;
+        let missingInterest = 0;
         const planCounts = { starter: 0, gold: 0, master: 0 };
         let missedCalls = 0, rejectedCalls = 0, acceptedCalls = 0;
 
@@ -110,12 +111,14 @@ function Workreport() {
                 totalCallDuration += Number(ci.callDuration);
             }
 
-            if (ci.interested === true) {
+            if (ci.interested === 'Yes') {
                 countYes += 1;
-            } else if (ci.interested === false) {
+            } else if (ci.interested === 'No') {
                 countNo += 1;
-            } else {
+            } else if (ci.interested === 'Inform Later') {
                 countInformLater += 1;
+            } else {
+                missingInterest += 1;
             }
 
             if (ci.planType) {
@@ -132,7 +135,6 @@ function Workreport() {
         });
 
         const totalInterest = countYes + countNo + countInformLater;
-        const missingInterest = countNo + countInformLater;
         const totalSeconds = Math.round(totalCallDuration * 60);
         return {
             totalContacts,
@@ -188,12 +190,7 @@ function Workreport() {
 
                 const assignedAtFormatted = formatForSearch(s.assignedAt);
                 const completedAtFormatted = formatForSearch(ci.completedAt);
-                const interestedText =
-                    ci.interested === true
-                        ? 'yes'
-                        : ci.interested === false
-                            ? 'no'
-                            : 'inform later';
+                const interestedText = ci.interested?.toLowerCase() || '';
 
                 return (
                     s.name?.toLowerCase().includes(term) ||
@@ -218,10 +215,10 @@ function Workreport() {
                     aVal = (a.callInfo && a.callInfo[innerKey]) ?? '';
                     bVal = (b.callInfo && b.callInfo[innerKey]) ?? '';
                     if (innerKey === 'interested') {
-                        const normalize = v =>
-                            v === true ? 'yes' : v === false ? 'no' : 'inform later';
-                        aVal = normalize(aVal);
-                        bVal = normalize(bVal);
+                        const map = { 'yes': 1, 'no': 2, 'inform later': 3, null: 4, '': 4 };
+                        aVal = aVal?.toLowerCase() || '';
+                        bVal = bVal?.toLowerCase() || '';
+                        return (map[aVal] - map[bVal]) * (sortConfig.direction === 'asc' ? -1 : 1);
                     }
                 } else {
                     aVal = a[key];
@@ -405,7 +402,6 @@ function Workreport() {
             doc.text(line2, 40, y);
 
             y += 16;
-            // Format total call duration
             const sec = summary.totalSeconds || 0;
             const m = Math.floor(sec / 60);
             const s = sec % 60;
@@ -441,21 +437,23 @@ function Workreport() {
             });
 
             // Table header
-            const head = [[
-                '#',
-                'Name',
-                'Email',
-                'Phone',
-                'Course',
-                'Place',
-                'Call Status',
-                'Call Duration',
-                'Interested',
-                'Plan Type',
-                'Assigned At',
-                'Completed At',
-                'Same Date?'
-            ]];
+            const head = [
+                [
+                    '#',
+                    'Name',
+                    'Email',
+                    'Phone',
+                    'Course',
+                    'Place',
+                    'Call Status',
+                    'Call Duration',
+                    'Interested',
+                    'Plan Type',
+                    'Assigned At',
+                    'Completed At',
+                    'Same Date?'
+                ]
+            ];
 
             // Table body
             const body = processedStudents.rows.map((s, index) => {
@@ -469,7 +467,6 @@ function Workreport() {
                     }
                 }
 
-                // Format each row’s call duration into “min sec”
                 let rowDurStr = '-';
                 if (ci.callDuration != null && !isNaN(ci.callDuration)) {
                     const rowSec = Math.round(ci.callDuration * 60);
@@ -487,7 +484,7 @@ function Workreport() {
                     s.place || '',
                     ci.callStatus ?? '-',
                     rowDurStr,
-                    ci.interested != null ? (ci.interested ? 'Yes' : 'No') : 'Inform Later',
+                    ci.interested != null ? (ci.interested === 'Yes' ? 'Yes' : ci.interested === 'No' ? 'No' : ci.interested === 'Inform Later' ? 'Inform Later' : '---') : '---',
                     ci.planType ?? '-',
                     formatDisplayDate(s.assignedAt),
                     formatDisplayDate(ci.completedAt),
@@ -524,10 +521,8 @@ function Workreport() {
         } catch (err) {
             console.error('Error exporting PDF:', err);
         }
-
-
-
     };
+
     const handleSelectStudent = (id) => {
         setSelectedIds((prev) =>
             prev.includes(id) ? prev.filter((sid) => sid !== id) : [...prev, id]
@@ -740,6 +735,7 @@ function Workreport() {
             toast.error("Failed to move to Contact Later",);
         }
     };
+
     return (
         <Layout title={"CRM - Work Report"}>
             <div className="container-fluid m-3 p-3 admin-root">
@@ -800,29 +796,48 @@ function Workreport() {
                                     <div className="col-12 col-md-3">
                                         <Dropdown className="w-100">
                                             <Dropdown.Toggle variant="outline-secondary" id="dropdown-sort-column" className="w-100">
-                                                Sort by: {sortConfig.key || "Select"}
+                                                Sort by: {
+                                                    [
+                                                        { label: "Name", value: "name" },
+                                                        { label: "Email", value: "email" },
+                                                        { label: "Phone", value: "phone" },
+                                                        { label: "Course", value: "course" },
+                                                        { label: "Place", value: "place" },
+                                                        { label: "Call Status", value: "callInfo.callStatus" },
+                                                        { label: "Call Duration", value: "callInfo.callDuration" },
+                                                        { label: "Interested", value: "callInfo.interested" },
+                                                        { label: "Plan Type", value: "callInfo.planType" },
+                                                        { label: "Assigned At", value: "assignedAt" },
+                                                        { label: "Completed At", value: "callInfo.completedAt" }
+                                                    ].find(item => item.value === sortConfig.key)?.label || "Select"
+                                                }
                                             </Dropdown.Toggle>
                                             <Dropdown.Menu className="w-100">
                                                 {[
-                                                    "name",
-                                                    "email",
-                                                    "phone",
-                                                    "course",
-                                                    "place",
-                                                    "callInfo.callStatus",
-                                                    "callInfo.callDuration",
-                                                    "callInfo.interested",
-                                                    "callInfo.planType",
-                                                    "assignedAt",
-                                                    "callInfo.completedAt"
-                                                ].map(col => (
-                                                    <Dropdown.Item key={col} onClick={() => requestSort(col)}>
-                                                        {col.replace(/([A-Z])/g, " $1").replace(/^./, str => str.toUpperCase())}
+                                                    { label: "Name", value: "name" },
+                                                    { label: "Email", value: "email" },
+                                                    { label: "Phone", value: "phone" },
+                                                    { label: "Course", value: "course" },
+                                                    { label: "Place", value: "place" },
+                                                    { label: "Call Status", value: "callInfo.callStatus" },
+                                                    { label: "Call Duration", value: "callInfo.callDuration" },
+                                                    { label: "Interested", value: "callInfo.interested" },
+                                                    { label: "Plan Type", value: "callInfo.planType" },
+                                                    { label: "Assigned At", value: "assignedAt" },
+                                                    { label: "Completed At", value: "callInfo.completedAt" }
+                                                ].map(({ label, value }) => (
+                                                    <Dropdown.Item
+                                                        key={value}
+                                                        onClick={() => requestSort(value)}
+                                                        active={sortConfig.key === value}
+                                                    >
+                                                        {label}
                                                     </Dropdown.Item>
                                                 ))}
                                             </Dropdown.Menu>
                                         </Dropdown>
                                     </div>
+
 
                                     {/* Sort Order Dropdown */}
                                     <div className="col-12 col-md-3">
@@ -1025,11 +1040,13 @@ function Workreport() {
                                                                         })() : '-'}
                                                                     </td>
                                                                     <td data-label="Interested">
-                                                                        {ci.interested === true
+                                                                        {ci.interested === 'Yes'
                                                                             ? 'Yes'
-                                                                            : ci.interested === false
+                                                                            : ci.interested === 'No'
                                                                                 ? 'No'
-                                                                                : 'Inform Later'}
+                                                                                : ci.interested === 'Inform Later'
+                                                                                    ? 'Inform Later'
+                                                                                    : '-'}
                                                                     </td>
                                                                     <td data-label="Plan Type">{ci.planType ?? '-'}</td>
                                                                     <td data-label="Assigned At" className={isSameDate ? 'highlight-cell' : ''}>
