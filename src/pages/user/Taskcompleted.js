@@ -17,6 +17,7 @@ function Taskcompleted() {
   const [sortOrder, setSortOrder] = useState('desc');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [isExpanded, setIsExpanded] = useState(false);
   const columns = [
     { label: 'Name', key: 'name' },
     { label: 'Phone', key: 'phone' },
@@ -160,8 +161,8 @@ function Taskcompleted() {
       `Completed: ${marked}`,
       `Pending: ${notMarked}`,
       `Total Call Duration: ${summary.totalCallDuration} sec`,
-      `Total Interested: ${summary.totalInterested}`,
-      `Missing Interest: ${summary.missingInterest}`,
+      `Total Interested (yes): ${summary.totalInterested}`,
+      `Missing Interest(--): ${summary.missingInterest}`,
     ].join(' | ');
 
     // Plan counts & course-wise
@@ -198,7 +199,6 @@ function Taskcompleted() {
 
     // Course-wise counts block
     let courseX = margin.left;
-    const spaceX = 100;
     Object.entries(courseCounts).forEach(([course, cnt]) => {
       const label = `${course}: ${cnt}`;
       const labelWidth = doc.getTextWidth(label);
@@ -213,39 +213,87 @@ function Taskcompleted() {
     // Then draw table starting below that
     const startTableY = yCursor + 20;
 
-    // Prepare table data
-    const tableColumns = [
-      '#', 'Name', 'Phone', 'Course', 'Call Status', 'Call Duration',
-      'Interested', 'Plan Type', 'Assigned At', 'Completed At'
+    // Define columns based on current collapsed/expanded state (uses isExpanded from component scope)
+    const fullColumns = [
+      { label: '#', key: null },
+      { label: 'Name', key: 'name' },
+      { label: 'Phone', key: 'phone' },
+      { label: 'Course', key: 'course' },
+      { label: 'Call Status', key: 'callStatus' },
+      { label: 'Call Duration', key: 'callDuration' },
+      { label: 'Interested', key: 'interested' },
+      { label: 'Plan Type', key: 'planType' },
+      { label: 'Assigned At', key: 'assignedAt' },
+      { label: 'Completed At', key: 'completedAt' },
     ];
-    const tableRows = currentItems.map((s, idx) => [
-      idx + 1 + (currentPage - 1) * itemsPerPage,
-      s.name,
-      s.phone,
-      s.course,
-      s.callInfo?.callStatus || 'Pending',
-      s.callInfo?.callDuration ?? '-',
-      s.callInfo?.interested === true ? 'Yes' : s.callInfo?.interested === false ? 'No' : '-',
-      s.callInfo?.planType || '-',
-      s.assignedAt ? new Date(s.assignedAt).toLocaleString('en-GB', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: true,
-      }) : '-',
-      s.callInfo?.completedAt ? new Date(s.callInfo.completedAt).toLocaleString('en-GB', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: true,
-      }) : '-',
-    ]);
+
+    const collapsedColumns = [
+        { label: '#', key: null },
+      { label: 'Name', key: 'name' },
+      { label: 'Phone', key: 'phone' },
+      { label: 'Call Status', key: 'callStatus' },
+      { label: 'Call Duration', key: 'callDuration' },
+      { label: 'Interested', key: 'interested' },
+      { label: 'Plan Type', key: 'planType' },
+    ];
+
+    const visibleColumns = isExpanded ? fullColumns : collapsedColumns;
+
+    // Prepare table data using visibleColumns so PDF matches the UI state
+    const tableColumns = visibleColumns.map(c => c.label);
+
+    const tableRows = currentItems.map((s, idx) => {
+      return visibleColumns.map(col => {
+        if (col.key === null) {
+          // index column
+          return idx + 1 + (currentPage - 1) * itemsPerPage;
+        }
+
+        switch (col.key) {
+          case 'name':
+            return s.name ?? '-';
+          case 'phone':
+            return s.phone ?? '-';
+          case 'course':
+            return s.course ?? '-';
+          case 'callStatus':
+            return s.callInfo?.callStatus ?? 'Pending';
+          case 'callDuration':
+            // keep same display logic as UI: multiply by 60 and show seconds if present
+            if (s.callInfo?.callDuration !== null && s.callInfo?.callDuration !== undefined) {
+              return `${Math.round(s.callInfo.callDuration * 60)} sec`;
+            }
+            return '-';
+          case 'interested':
+            // backend now stores interested as String enum: 'Yes' | 'No' | 'Inform Later' or null
+            return s.callInfo?.interested ?? '-';
+          case 'planType':
+            return s.callInfo?.planType ?? '-';
+          case 'assignedAt':
+            return s.assignedAt ? new Date(s.assignedAt).toLocaleString('en-GB', {
+              day: '2-digit',
+              month: 'short',
+              year: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit',
+              second: '2-digit',
+              hour12: true,
+            }) : '-';
+          case 'completedAt':
+            return s.callInfo?.completedAt ? new Date(s.callInfo.completedAt).toLocaleString('en-GB', {
+              day: '2-digit',
+              month: 'short',
+              year: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit',
+              second: '2-digit',
+              hour12: true,
+            }) : '-';
+          default:
+            return s[col.key] ?? '-';
+        }
+      });
+    });
 
     autoTable(doc, {
       head: [tableColumns],
@@ -265,10 +313,15 @@ function Taskcompleted() {
           { align: 'right' }
         );
       },
+      // small column width tweaks so 'Interested' and date columns fit better
+      willDrawCell: (data) => {
+        // noop for now — kept for future tweaks if needed
+      },
     });
 
-    doc.save('CRM_Work_Report.pdf');
+    doc.save('CRM-Users-Work-Report.pdf');
   };
+
 
 
   if (loading)
@@ -410,23 +463,49 @@ function Taskcompleted() {
                 </Dropdown>
               </div>
 
+
+              <div className="mb-2 d-flex justify-content-between align-items-center">
+                <div>
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-outline-secondary"
+                    onClick={() => setIsExpanded(prev => !prev)}
+                  >
+                    {isExpanded ? 'Shrink' : 'Expand'}
+                  </button>
+                </div>
+                <div className="text-muted small">{isExpanded ? 'Expanded view' : 'Compact view'}</div>
+              </div>
               {/* Table */}
               <div className="table-responsive">
                 <Table className="custom-table table-hover align-middle">
                   <thead className="table-dark">
                     <tr>
-                      {[
-                        { label: '#', key: null },
-                        { label: 'Name', key: 'name' },
-                        { label: 'Phone', key: 'phone' },
-                        { label: 'Course', key: 'course' },
-                        { label: 'Call Status', key: 'callStatus' },
-                        { label: 'Call Duration', key: 'callDuration' },
-                        { label: 'Interested', key: 'interested' },
-                        { label: 'Plan Type', key: 'planType' },
-                        { label: 'Assigned At', key: 'assignedAt' },
-                        { label: 'Completed At', key: 'completedAt' },
-                      ].map((col, idx) => (
+                      {(
+                        // when expanded show full set (including '#'), when collapsed also include '#' (SL) as first column
+                        isExpanded
+                          ? [
+                            { label: '#', key: null },
+                            { label: 'Name', key: 'name' },
+                            { label: 'Phone', key: 'phone' },
+                            { label: 'Course', key: 'course' },
+                            { label: 'Call Status', key: 'callStatus' },
+                            { label: 'Call Duration', key: 'callDuration' },
+                            { label: 'Interested', key: 'interested' },
+                            { label: 'Plan Type', key: 'planType' },
+                            { label: 'Assigned At', key: 'assignedAt' },
+                            { label: 'Completed At', key: 'completedAt' },
+                          ]
+                          : [
+                            { label: '#', key: null }, // SL column added for collapsed view
+                            { label: 'Name', key: 'name' },
+                            { label: 'Phone', key: 'phone' },
+                            { label: 'Call Status', key: 'callStatus' },
+                            { label: 'Call Duration', key: 'callDuration' },
+                            { label: 'Interested', key: 'interested' },
+                            { label: 'Plan Type', key: 'planType' },
+                          ]
+                      ).map((col, idx) => (
                         <th
                           key={idx}
                           style={{ cursor: col.key ? 'pointer' : 'default' }}
@@ -447,45 +526,67 @@ function Taskcompleted() {
                   <tbody>
                     {currentItems.map((s, idx) => (
                       <tr key={s._id}>
-                        <td>{idx + 1 + (currentPage - 1) * itemsPerPage}</td>
-                        <td>{s.name}</td>
-                        <td>{s.phone}</td>
-                        <td>{s.course}</td>
-                        <td>{s.callInfo?.callStatus || 'Pending'}</td>
-                        <td>
-                          {s.callInfo?.callDuration !== null && s.callInfo?.callDuration !== undefined
-                            ? `${Math.round(s.callInfo.callDuration * 60)} sec`
-                            : '-'}
-                        </td>
-                        <td>{s.callInfo?.interested || '---'}</td>
-                        <td>{s.callInfo?.planType || '-'}</td>
-                        <td>{s.assignedAt ? new Date(s.assignedAt).toLocaleString('en-GB', {
-                          day: '2-digit',
-                          month: 'short',
-                          year: 'numeric',
-                          hour: 'numeric',
-                          minute: '2-digit',
-                          second: '2-digit',
-                          hour12: true
-                        }) : '-'}</td>
-                        <td>
-                          {s.callInfo?.completedAt
-                            ? new Date(s.callInfo.completedAt).toLocaleString('en-GB', {
-                              day: '2-digit',
-                              month: 'short',
-                              year: 'numeric',
-                              hour: 'numeric',
-                              minute: '2-digit',
-                              second: '2-digit',
-                              hour12: true
-                            })
-                            : '-'}
-                        </td>
+                        {isExpanded ? (
+                          <>
+                            <td>{idx + 1 + (currentPage - 1) * itemsPerPage}</td>
+                            <td>{s.name}</td>
+                            <td>{s.phone}</td>
+                            <td>{s.course}</td>
+                            <td>{s.callInfo?.callStatus || 'Pending'}</td>
+                            <td>
+                              {s.callInfo?.callDuration !== null && s.callInfo?.callDuration !== undefined
+                                ? `${Math.round(s.callInfo.callDuration * 60)} sec`
+                                : '-'}
+                            </td>
+                            <td>{s.callInfo?.interested || '---'}</td>
+                            <td>{s.callInfo?.planType || '-'}</td>
+                            <td>
+                              {s.assignedAt
+                                ? new Date(s.assignedAt).toLocaleString('en-GB', {
+                                  day: '2-digit',
+                                  month: 'short',
+                                  year: 'numeric',
+                                  hour: 'numeric',
+                                  minute: '2-digit',
+                                  second: '2-digit',
+                                  hour12: true,
+                                })
+                                : '-'}
+                            </td>
+                            <td>
+                              {s.callInfo?.completedAt
+                                ? new Date(s.callInfo.completedAt).toLocaleString('en-GB', {
+                                  day: '2-digit',
+                                  month: 'short',
+                                  year: 'numeric',
+                                  hour: 'numeric',
+                                  minute: '2-digit',
+                                  second: '2-digit',
+                                  hour12: true,
+                                })
+                                : '-'}
+                            </td>
+                          </>
+                        ) : (
+                          <>
+                            {/* SL column for collapsed view */}
+                            <td>{idx + 1 + (currentPage - 1) * itemsPerPage}</td>
+                            <td>{s.name}</td>
+                            <td>{s.phone}</td>
+                            <td>{s.callInfo?.callStatus || 'Pending'}</td>
+                            <td>
+                              {s.callInfo?.callDuration !== null && s.callInfo?.callDuration !== undefined
+                                ? `${Math.round(s.callInfo.callDuration * 60)} sec`
+                                : '-'}
+                            </td>
+                            <td>{s.callInfo?.interested || '---'}</td>
+                            <td>{s.callInfo?.planType || '-'}</td>
+                          </>
+                        )}
                       </tr>
                     ))}
                   </tbody>
                 </Table>
-
                 {/* Pagination */}
                 <div className="d-flex justify-content-between align-items-center mt-3">
                   <div>
@@ -493,9 +594,30 @@ function Taskcompleted() {
                     <button className="btn btn-outline-primary" onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))} disabled={currentPage === totalPages}>&raquo;</button>
                   </div>
                   <div>
-                    <select className="form-select form-select-sm" value={itemsPerPage} onChange={e => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}>
-                      {[5, 10, 15, 20, 25, 30, 35, 40, 50, 100].map(size => <option key={size} value={size}>{size}</option>)}
-                    </select>
+                    <Dropdown>
+                      <Dropdown.Toggle
+                        variant="outline-secondary"
+                        size="sm"
+                        id="dropdown-items-per-page"
+                      >
+                        Show: {itemsPerPage}
+                      </Dropdown.Toggle>
+
+                      <Dropdown.Menu>
+                        {[5, 10, 15, 20, 25, 30, 35, 40, 50, 100].map(size => (
+                          <Dropdown.Item
+                            key={size}
+                            active={itemsPerPage === size}
+                            onClick={() => {
+                              setItemsPerPage(size);
+                              setCurrentPage(1);
+                            }}
+                          >
+                            {size}
+                          </Dropdown.Item>
+                        ))}
+                      </Dropdown.Menu>
+                    </Dropdown>
                   </div>
                 </div>
                 <div className="me-2 mt-2">

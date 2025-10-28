@@ -660,20 +660,26 @@ function DutyList() {
                       </div>
 
                       <div className="d-flex align-items-center gap-2">
-                        <select
-                          className="form-select form-select-sm"
-                          value={itemsPerPage}
-                          onChange={e => {
-                            setCurrentPage(1);
-                            setItemsPerPage(Number(e.target.value));
-                          }}
-                        >
-                          {[2, 5, 10, 15, 20, 25, 30, 35, 40, 50, 100].map(size => (
-                            <option key={size} value={size}>
-                              {size}
-                            </option>
-                          ))}
-                        </select>
+                        <Dropdown>
+                          <Dropdown.Toggle variant="outline-secondary" size="sm" id="dropdown-items-per-page">
+                            Show: {itemsPerPage}
+                          </Dropdown.Toggle>
+
+                          <Dropdown.Menu>
+                            {[2, 5, 10, 15, 20, 25, 30, 35, 40, 50, 100].map(size => (
+                              <Dropdown.Item
+                                key={size}
+                                active={itemsPerPage === size}
+                                onClick={() => {
+                                  setCurrentPage(1);
+                                  setItemsPerPage(size);
+                                }}
+                              >
+                                {size}
+                              </Dropdown.Item>
+                            ))}
+                          </Dropdown.Menu>
+                        </Dropdown>
                       </div>
                     </div>
                     <div className="me-2 mt-2">
