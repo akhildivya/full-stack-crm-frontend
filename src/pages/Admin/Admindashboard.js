@@ -182,63 +182,63 @@ function AdminDashboard() {
                 <p className="no-unverified">No pending verifications at this time.</p>
               )}
               {/* Completion events card / list */}
-<div className="completion-card mt-4">
-  <h5 className="completion-title">Recent Task Completions</h5>
-  <ul className="completion-list">
-    {completionEvents.map(u => (
-      <li key={u._id} className="completion-item">
-        <span className="completion-icon">✔</span>
-        <div className="completion-content">
-  <span className="completion-message">
-  {u.username} : Task assigned on:{" "}
-  <span className="assigned-date">
-    {u.assignedDate
-      ? new Date(u.assignedDate).toLocaleString([], {
-          year: 'numeric',
-          month: 'short',
-          day: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit',
-          hour12: true,
-        })
-      : 'N/A'}
-  </span>
-  , Total contacts:{" "}
-  <span className="total-contacts">{u.totalContacts}</span>, Completed at:{" "}
-  <span className="completed-at">
-    {u.completedAt
-      ? new Date(u.completedAt).toLocaleString([], {
-          year: 'numeric',
-          month: 'short',
-          day: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit',
-          hour12: true,
-        })
-      : 'N/A'}
-  </span>
-</span>
+              <div className="completion-card mt-4">
+                <h5 className="completion-title">Recent Task Completions</h5>
+                <ul className="completion-list">
+                  {completionEvents.map(u => (
+                    <li key={u._id} className="completion-item">
+                      <span className="completion-icon">✔</span>
+                      <div className="completion-content">
+                        <span className="completion-message">
+                          {u.username} : Task assigned on:{" "}
+                          <span className="assigned-date">
+                            {u.assignedDate
+                              ? new Date(u.assignedDate).toLocaleString([], {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                                hour12: true,
+                              })
+                              : 'N/A'}
+                          </span>
+                          , Total contacts:{" "}
+                          <span className="total-contacts">{u.totalContacts}</span>, Completed at:{" "}
+                          <span className="completed-at">
+                            {u.completedAt
+                              ? new Date(u.completedAt).toLocaleString([], {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                                hour12: true,
+                              })
+                              : 'N/A'}
+                          </span>
+                        </span>
 
 
-        </div>
-        <button
-          className="completion-dismiss-btn"
-          onClick={async () => {
-            try {
-              await axios.delete(`${BASEURL}/admin/user-completion/${u._id}`);
-              setCompletionEvents(events => events.filter(ev => ev._id !== u._id));
-            } catch (err) {
-              console.error("Failed to dismiss notification:", err);
-            }
-          }}
-          title="Dismiss"
-        >
-          &times;
-        </button>
-      </li>
-    ))}
-  </ul>
-</div>
+                      </div>
+                      <button
+                        className="completion-dismiss-btn"
+                        onClick={async () => {
+                          try {
+                            await axios.delete(`${BASEURL}/admin/user-completion/${u._id}`);
+                            setCompletionEvents(events => events.filter(ev => ev._id !== u._id));
+                          } catch (err) {
+                            console.error("Failed to dismiss notification:", err);
+                          }
+                        }}
+                        title="Dismiss"
+                      >
+                        &times;
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
 
               {/* User Metrics Row */}
               <div className="row mt-4 gx-3 gy-3">

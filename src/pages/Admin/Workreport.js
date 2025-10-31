@@ -10,8 +10,10 @@ import { Button } from 'react-bootstrap';
 import { toast } from 'react-toastify';
 import { Dropdown, ButtonGroup } from 'react-bootstrap';
 import { Accordion } from 'react-bootstrap';
-
+import { useAuth } from '../../context/auth';
+import { FaCheckCircle } from 'react-icons/fa';
 function Workreport() {
+    const [auth] = useAuth();
     const [users, setUsers] = useState([]);
     const [selectedUserId, setSelectedUserId] = useState('');
     const [students, setStudents] = useState([]);
@@ -43,6 +45,7 @@ function Workreport() {
     }, []);
 
     useEffect(() => {
+        let intervalId;
         const fetchStudents = async () => {
             if (!selectedUserId) {
                 setStudents([]);
@@ -63,8 +66,15 @@ function Workreport() {
             }
         };
         fetchStudents();
+        intervalId = setInterval(() => {
+            fetchStudents();
+        }, 30000);
         // reset page when user changes
         setCurrentPage(1);
+        return () => {
+            // cleanup the interval when component unmounts or selectedUserId changes
+            clearInterval(intervalId);
+        };
     }, [selectedUserId]);
 
     const handleUserSelect = (e) => {
@@ -95,7 +105,7 @@ function Workreport() {
         let countYes = 0, countNo = 0, countInformLater = 0;
         let missingInterest = 0;
         const planCounts = { starter: 0, gold: 0, master: 0 };
-        let missedCalls = 0, rejectedCalls = 0, acceptedCalls = 0;
+        let missedCalls = 0, rejectedCalls = 0, acceptedCalls = 0, switchedOffCalls = 0;;
 
         students.forEach(s => {
             totalContacts += 1;
@@ -132,6 +142,9 @@ function Workreport() {
             if (status === 'missed') missedCalls += 1;
             else if (status === 'rejected') rejectedCalls += 1;
             else if (status === 'accepted' || status === 'answered') acceptedCalls += 1;
+            else if (status === 'switched off') {
+                switchedOffCalls += 1;  // ← count here
+            }
         });
 
         const totalInterest = countYes + countNo + countInformLater;
@@ -146,7 +159,7 @@ function Workreport() {
             missedCalls,
             rejectedCalls,
             acceptedCalls,
-
+            switchedOffCalls,
             countYes,
             countNo,
             countInformLater,
@@ -411,7 +424,7 @@ function Workreport() {
             doc.text(line3, 40, y);
 
             y += 16;
-            const line4 = `Missed Calls: ${summary.missedCalls || 0}  |  Rejected Calls: ${summary.rejectedCalls || 0}  |  Accepted Calls: ${summary.acceptedCalls || 0}`;
+            const line4 = `Missed Calls: ${summary.missedCalls || 0}  |  Rejected Calls: ${summary.rejectedCalls || 0}  |  Accepted Calls: ${summary.acceptedCalls || 0} | Switched Off Calls: ${summary.switchedOffCalls || 0}`;
             doc.text(line4, 40, y);
 
             y += 16;
@@ -735,6 +748,60 @@ function Workreport() {
             toast.error("Failed to move to Contact Later",);
         }
     };
+    const handleBulkVerify = async () => {
+        if (selectedIds.length === 0) return;
+        try {
+            const resp = await axios.put(
+                `${BASEURL}/admin/students-call/bulk-verify`,
+                { ids: selectedIds },
+                { headers: { Authorization: auth.token } }
+            );
+            if (resp.data.success) {
+                toast.success(resp.data.message, { position: 'top-center' });
+
+                // Update local state: set verified flag for students
+                setStudents(prev =>
+                    prev.map(s =>
+                        selectedIds.includes(s._id)
+                            ? { ...s, callInfo: { ...s.callInfo, verified: true } }
+                            : s
+                    )
+                );
+                setSelectedIds([]);
+            } else {
+                toast.error(resp.data.message || 'Bulk verify failed', { position: 'top-center' });
+            }
+        } catch (err) {
+            console.error('Error bulk verifying:', err);
+            toast.error('Server or network error', { position: 'top-center' });
+        }
+    };
+    const handleSingleVerify = async (studentId) => {
+        try {
+            const resp = await axios.put(
+                `${BASEURL}/admin/students-call/${studentId}/verify`,
+                {},
+                { headers: { Authorization: auth.token } }
+            );
+            if (resp.data.success) {
+                toast.success(resp.data.message, { position: 'top-center' });
+                // update state
+                setStudents(prev =>
+                    prev.map(s =>
+                        s._id === studentId
+                            ? { ...s, callInfo: { ...s.callInfo, verified: true } }
+                            : s
+                    )
+                );
+            } else {
+                toast.error(resp.data.message || 'Verify failed', { position: 'top-center' });
+            }
+        } catch (err) {
+            console.error('Error verifying:', err);
+            toast.error('Server or network error', { position: 'top-center' });
+        }
+    };
+
 
     return (
         <Layout title={"CRM - Work Report"}>
@@ -895,6 +962,7 @@ function Workreport() {
                                                                     { label: "Missed Calls", value: summary.missedCalls },
                                                                     { label: "Rejected Calls", value: summary.rejectedCalls },
                                                                     { label: "Accepted Calls", value: summary.acceptedCalls },
+                                                                    { label: "Switched Off Calls", value: summary.switchedOffCalls },
                                                                     { label: "Starter Plan", value: summary.planCounts.starter },
                                                                     { label: "Gold Plan", value: summary.planCounts.gold },
                                                                     { label: "Master Plan", value: summary.planCounts.master }
@@ -942,6 +1010,14 @@ function Workreport() {
                                                 </Accordion.Item>
                                             </Accordion>
                                             <div className="mb-3 d-flex justify-content-start gap-2">
+                                                <Button
+                                                    variant="success"
+                                                    size="sm"
+                                                    disabled={selectedIds.length === 0}
+                                                    onClick={handleBulkVerify}
+                                                >
+                                                    Verify Selected ({selectedIds.length})
+                                                </Button>
                                                 <Button
                                                     variant="primary"
                                                     size="sm"
@@ -1005,9 +1081,10 @@ function Workreport() {
                                                                 {renderHeader('Assigned At', 'assignedAt')}
                                                                 {renderHeader('Completed At', 'callInfo.completedAt')}
                                                                 {renderHeader('Same Date?', 'sameDateMatch')}
-                                                                <th>Action</th>
+
                                                             </>
                                                         )}
+                                                        <th>Action</th>
                                                     </tr>
                                                 </thead>
 
@@ -1040,7 +1117,9 @@ function Workreport() {
                                                                         />
                                                                     </td>
                                                                     <td>{serialNo}</td>
-                                                                    <td>{s.name}</td>
+                                                                    <td>{s.name}  {ci.verified && (
+                                                                        <FaCheckCircle style={{ marginLeft: '5px', color: 'green' }} />
+                                                                    )}</td>
                                                                     <td>{ci.callStatus ?? '-'}</td>
                                                                     <td>
                                                                         {ci.callDuration != null && !isNaN(ci.callDuration)
@@ -1064,13 +1143,18 @@ function Workreport() {
                                                                             <td>{assignedAt ? assignedAt.toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true }) : ''}</td>
                                                                             <td>{completedAt ? completedAt.toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true }) : ''}</td>
                                                                             <td>{isSameDate ? '✔' : ''}</td>
-                                                                            <td>
-                                                                                <Button variant="outline-danger" size="sm" onClick={() => handleDeleteStudent(s._id)}>
-                                                                                    Delete
-                                                                                </Button>
-                                                                            </td>
+
                                                                         </>
                                                                     )}
+                                                                    <td>
+                                                                        <Button variant="outline-danger" size="sm" className="me-2" onClick={() => handleDeleteStudent(s._id)}>
+                                                                            Delete
+                                                                        </Button>
+
+                                                                        <Button variant="outline-success" size="sm" onClick={() => handleSingleVerify(s._id)}>
+                                                                            Verify
+                                                                        </Button>
+                                                                    </td>
                                                                 </tr>
 
                                                             );

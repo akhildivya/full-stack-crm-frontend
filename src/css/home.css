@@ -330,3 +330,129 @@
     margin-top: 2rem;
   }
 }
+
+/* Container Section */
+.video-info-section {
+  background: linear-gradient(135deg, #0a0a0a, #1c1c1c);
+  color: #fff;
+  padding: 60px 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Inner Layout */
+.video-info-inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  max-width: 1200px;
+  gap: 40px;
+}
+
+/* Video Wrapper */
+.video-wrapper {
+  flex: 1 1 500px;
+  background: #000;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.video-wrapper:hover {
+  transform: scale(1.03);
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.8);
+}
+
+/* Video Element */
+.video-crm {
+  width: 100%;
+  height: auto;
+  display: block;
+  object-fit: cover;
+  border-radius: 16px;
+  background-color: #111;
+}
+
+/* Info Text */
+.info-text {
+  flex: 1 1 400px;
+  max-width: 600px;
+  color: #e0e0e0;
+  line-height: 1.6;
+}
+
+.info-text h2 {
+  font-size: 2.2rem;
+  font-weight: 700;
+  margin-bottom: 20px;
+  background: linear-gradient(90deg, #00bcd4, #4caf50);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.info-text p {
+  font-size: 1.1rem;
+  margin-bottom: 20px;
+}
+
+.info-list {
+  list-style: none;
+  padding: 0;
+}
+
+.info-list li {
+  font-size: 1rem;
+  margin-bottom: 10px;
+  position: relative;
+  padding-left: 25px;
+}
+
+.info-list li::before {
+  content: "✔";
+  color: #4caf50;
+  position: absolute;
+  left: 0;
+  font-size: 1.1rem;
+}
+
+/* 🌐 Responsive Design */
+@media (max-width: 992px) {
+  .video-info-inner {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .info-text {
+    max-width: 90%;
+  }
+
+  .info-text h2 {
+    font-size: 1.8rem;
+  }
+
+  .info-text p {
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .video-wrapper {
+    flex: 1 1 100%;
+  }
+
+  .video-crm {
+    width: 100%;
+    height: auto;
+  }
+
+  .info-text h2 {
+    font-size: 1.6rem;
+  }
+
+  .info-list li {
+    font-size: 0.95rem;
+  }
+}

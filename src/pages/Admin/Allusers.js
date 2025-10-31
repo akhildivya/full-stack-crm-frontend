@@ -6,6 +6,8 @@ import { Table, Dropdown, Button } from "react-bootstrap";
 import Layout from '../../components/layout/Layout';
 import Adminmenu from '../../components/layout/Adminmenu';
 import { BASEURL } from '../../service/baseUrl'
+import { useAuth } from "../../context/auth";
+import { toast } from 'react-toastify';
 function Allusers() {
   const [searchTerm, setSearchTerm] = useState("");
   const [users, setUsers] = useState([]);
@@ -21,7 +23,7 @@ function Allusers() {
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
   const pollingInterval = 1000;
-
+  const [auth] = useAuth();
   useEffect(() => {
     document.title = "CRM - Verify Users"
     const fetchUsers = async () => {
@@ -50,7 +52,25 @@ function Allusers() {
         console.error("Error verifying user:", err);
       });
   };
-
+  const handleDeleteUser = async (userId) => {
+    try {
+      const resp = await axios.delete(`${BASEURL}/admin-delete-user/${userId}`, {
+        headers: {
+          Authorization: auth.token  // if you have auth token or header
+        }
+      });
+      if (resp.data.success) {
+        // Remove from state
+        setUsers(prev => prev.filter(u => u._id !== userId));
+        toast.success("User deleted successfully", { position: 'top-center' });
+      } else {
+        toast.error(resp.data.message || "Failed to delete user", { position: 'top-center' });
+      }
+    } catch (err) {
+      console.error("Error deleting user:", err);
+      toast.error("Server error deleting user", { position: 'top-center' });
+    }
+  };
   const handleSearchChange = (e) => {
     setSearchTerm(e.target.value);
     setCurrentPage(1);
@@ -249,11 +269,49 @@ function Allusers() {
                               {!user.verified && (
                                 <button
                                   onClick={() => handleVerify(user._id)}
-                                  className="btn btn-sm btn-danger"
+                                  className="btn btn-sm btn-danger me-2"
                                 >
                                   Verify
                                 </button>
                               )}
+                              <button
+                                onClick={() => {
+                                  // Remove window.confirm. Instead show a toast with embedded buttons
+                                  toast.warning(
+                                    <div>
+                                      <p>Are you sure you want to delete this user?</p>
+                                      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                                        <button
+                                          onClick={() => {
+                                            toast.dismiss();
+                                            handleDeleteUser(user._id);
+                                          }}
+                                          className="btn btn-sm btn-danger"
+                                        >
+                                          Yes
+                                        </button>
+                                        <button
+                                          onClick={() => {
+                                            toast.dismiss();
+                                          }}
+                                          className="btn btn-sm btn-secondary"
+                                        >
+                                          Cancel
+                                        </button>
+                                      </div>
+                                    </div>,
+                                    {
+                                      position: 'top-center',
+                                      autoClose: false,
+                                      closeOnClick: false,
+                                      closeButton: false
+                                    }
+                                  );
+                                }}
+                                className="btn btn-sm btn-outline-danger"
+                              >
+                                Delete
+                              </button>
                             </td>
                           </tr>
                         );
@@ -298,7 +356,7 @@ function Allusers() {
                       {rowsPerPage}
                     </Dropdown.Toggle>
                     <Dropdown.Menu>
-                      {[ 5, 10, 15, 20, 50, 100].map(num => (
+                      {[5, 10, 15, 20, 50, 100].map(num => (
                         <Dropdown.Item key={num} active={rowsPerPage === num} onClick={() => { setRowsPerPage(num); setCurrentPage(1); }}>
                           {num}
                         </Dropdown.Item>

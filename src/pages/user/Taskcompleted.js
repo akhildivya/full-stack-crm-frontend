@@ -2,12 +2,13 @@ import Layout from '../../components/layout/Layout';
 import Usermenu from '../../components/layout/Usermenu';
 import React, { useEffect, useState, useMemo } from 'react';
 import axios from 'axios';
-import { Table, Form, Dropdown, Spinner, Button } from 'react-bootstrap';
+import { Table, Form, Dropdown, Spinner, Button, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { BASEURL } from '../../service/baseUrl';
 import '../../css/taskcompleted.css';
 import { jsPDF } from 'jspdf';
 import { autoTable } from 'jspdf-autotable';
-import { FaFilePdf } from 'react-icons/fa';
+import { FaFilePdf, FaCheckCircle } from 'react-icons/fa';
+import { Alert } from 'react-bootstrap';
 function Taskcompleted() {
   const [students, setStudents] = useState([]);
   const [summary, setSummary] = useState({});
@@ -18,6 +19,7 @@ function Taskcompleted() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [showInfo, setShowInfo] = useState(true);
   const columns = [
     { label: 'Name', key: 'name' },
     { label: 'Phone', key: 'phone' },
@@ -228,7 +230,7 @@ function Taskcompleted() {
     ];
 
     const collapsedColumns = [
-        { label: '#', key: null },
+      { label: '#', key: null },
       { label: 'Name', key: 'name' },
       { label: 'Phone', key: 'phone' },
       { label: 'Call Status', key: 'callStatus' },
@@ -477,12 +479,18 @@ function Taskcompleted() {
                 <div className="text-muted small">{isExpanded ? 'Expanded view' : 'Compact view'}</div>
               </div>
               {/* Table */}
+              {showInfo && (
+                <Alert variant="info" dismissible onClose={() => setShowInfo(false)}>
+                  📄 Download the PDF for future reference. <br />
+                  ⚠️ If admin deletes your record, the table content will be removed.
+                </Alert>
+              )}
+
               <div className="table-responsive">
                 <Table className="custom-table table-hover align-middle">
                   <thead className="table-dark">
                     <tr>
                       {(
-                        // when expanded show full set (including '#'), when collapsed also include '#' (SL) as first column
                         isExpanded
                           ? [
                             { label: '#', key: null },
@@ -497,7 +505,7 @@ function Taskcompleted() {
                             { label: 'Completed At', key: 'completedAt' },
                           ]
                           : [
-                            { label: '#', key: null }, // SL column added for collapsed view
+                            { label: '#', key: null },
                             { label: 'Name', key: 'name' },
                             { label: 'Phone', key: 'phone' },
                             { label: 'Call Status', key: 'callStatus' },
@@ -523,18 +531,38 @@ function Taskcompleted() {
                       ))}
                     </tr>
                   </thead>
+
                   <tbody>
                     {currentItems.map((s, idx) => (
                       <tr key={s._id}>
+                        <td>{idx + 1 + (currentPage - 1) * itemsPerPage}</td>
+
+                        {/* Name with tick and tooltip */}
+                        <td>
+                          <OverlayTrigger
+                            placement="top"
+                            overlay={
+                              s.callInfo?.verified
+                                ? (<Tooltip id={`tooltip-verified-${s._id}`}>Call info verified by admin</Tooltip>)
+                                : <></>
+                            }
+                          >
+                            <span className="d-inline-flex align-items-center">
+                              {s.name}
+                              {s.callInfo?.verified && (
+                                <FaCheckCircle style={{ marginLeft: 5, color: 'green' }} />
+                              )}
+                            </span>
+                          </OverlayTrigger>
+                        </td>
+
                         {isExpanded ? (
                           <>
-                            <td>{idx + 1 + (currentPage - 1) * itemsPerPage}</td>
-                            <td>{s.name}</td>
                             <td>{s.phone}</td>
                             <td>{s.course}</td>
                             <td>{s.callInfo?.callStatus || 'Pending'}</td>
                             <td>
-                              {s.callInfo?.callDuration !== null && s.callInfo?.callDuration !== undefined
+                              {s.callInfo?.callDuration != null
                                 ? `${Math.round(s.callInfo.callDuration * 60)} sec`
                                 : '-'}
                             </td>
@@ -542,40 +570,21 @@ function Taskcompleted() {
                             <td>{s.callInfo?.planType || '-'}</td>
                             <td>
                               {s.assignedAt
-                                ? new Date(s.assignedAt).toLocaleString('en-GB', {
-                                  day: '2-digit',
-                                  month: 'short',
-                                  year: 'numeric',
-                                  hour: 'numeric',
-                                  minute: '2-digit',
-                                  second: '2-digit',
-                                  hour12: true,
-                                })
+                                ? new Date(s.assignedAt).toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true })
                                 : '-'}
                             </td>
                             <td>
                               {s.callInfo?.completedAt
-                                ? new Date(s.callInfo.completedAt).toLocaleString('en-GB', {
-                                  day: '2-digit',
-                                  month: 'short',
-                                  year: 'numeric',
-                                  hour: 'numeric',
-                                  minute: '2-digit',
-                                  second: '2-digit',
-                                  hour12: true,
-                                })
+                                ? new Date(s.callInfo.completedAt).toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true })
                                 : '-'}
                             </td>
                           </>
                         ) : (
                           <>
-                            {/* SL column for collapsed view */}
-                            <td>{idx + 1 + (currentPage - 1) * itemsPerPage}</td>
-                            <td>{s.name}</td>
                             <td>{s.phone}</td>
                             <td>{s.callInfo?.callStatus || 'Pending'}</td>
                             <td>
-                              {s.callInfo?.callDuration !== null && s.callInfo?.callDuration !== undefined
+                              {s.callInfo?.callDuration != null
                                 ? `${Math.round(s.callInfo.callDuration * 60)} sec`
                                 : '-'}
                             </td>

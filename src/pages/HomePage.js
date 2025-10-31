@@ -17,7 +17,10 @@ function HomePage() {
                                 <p>Build stronger customer relationships, make more sales, and save time effortlessly.</p>
                                 <div className="hero-cta">
                                     <Link to='/register'><button className="btn-primary">Get Started</button></Link>
-                                    <button className="btn-secondary">Learn More</button>
+                                    <button className="btn-secondary" onClick={() => {
+                                        const section = document.getElementById("crm-info");
+                                        section?.scrollIntoView({ behavior: "smooth" });
+                                    }}>Learn More</button>
                                 </div>
                             </div>
                         </div>
@@ -37,7 +40,7 @@ function HomePage() {
 
                 {/* Features Section */}
                 <section className="features-section">
-                    <h2>Why Superhhero CRM?</h2>
+                    <h2>Our Unique Edge</h2>
                     <div className="features-grid">
                         <div className="feature-card">
                             <i className="bi bi-people-fill feature-icon"></i>
@@ -58,27 +61,41 @@ function HomePage() {
                 </section>
 
 
-               {/* <section className="video-info-section">
+                <section id="crm-info" className="video-info-section">
                     <div className="video-info-inner">
-                        
-                        <div className="video-wrapper">
+
+                        <div className="video-wrapper" style={{
+                            backgroundColor: "#000000",
+                            display: "flex",
+                            justifyContent: "center",
+                            alignItems: "center",
+                            padding: "20px",
+                        }}>
                             <video
-                                src="/videos/crm-intro.mkv"
-                                controls
+                                src="/video/crm-intro.mkv"
+                              
                                 autoPlay
                                 loop
                                 muted
-                                 playsInline     
-                                className="video-crm"
+                                playsInline
+                                disablePictureInPicture
+                                controlsList="nodownload nofullscreen noremoteplayback noplaybackrate"
+                                className="video-crm" style={{
+                                    width: "800px",
+                                    height: "500px",
+                                    borderRadius: "12px",
+                                    objectFit: "cover",
+                                    backgroundColor: "#111",
+                                }}
                             />
-                             <source src="/videos/crm-intro.mp4" type="video/mp4" />
+                            <source src="/video/crm-intro.mkv" type="video/mkv" />
                         </div>
 
-                       
+
                         <div className="info-text">
-                            <h2>Why Choose Our CRM?</h2>
+                            <h2>What Sets Our CRM Apart</h2>
                             <p>
-                                The <strong>Superhero CRM</strong> empowers your team to work smarter —
+                                The <strong>Superhhero CRM</strong> empowers your team to work smarter —
                                 centralise customer data, automate tasks, monitor sales pipelines,
                                 and nurture relationships all in one platform.
                             </p>
@@ -87,10 +104,10 @@ function HomePage() {
                                 <li><strong>Automated Workflows</strong> – Spend less time on repetitive tasks.</li>
                                 <li><strong>Actionable Insights</strong> – Get real-time sales analytics and drive growth.</li>
                             </ul>
-                            
+
                         </div>
                     </div>
-                </section>*/}
+                </section>
             </div>
         </Layout>
 

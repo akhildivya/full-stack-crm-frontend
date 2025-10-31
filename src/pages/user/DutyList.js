@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useMemo } from 'react';
-import { Table, Dropdown, Spinner, Modal, Button, Form } from 'react-bootstrap';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
+import { Table, Dropdown, Spinner, Modal, Button, Form, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import Usermenu from '../../components/layout/Usermenu';
 import Layout from '../../components/layout/Layout';
 import { BASEURL } from '../../service/baseUrl';
@@ -11,6 +11,8 @@ import { jsPDF } from 'jspdf';
 import { autoTable } from 'jspdf-autotable';
 
 import { FaFilePdf } from 'react-icons/fa';
+
+
 function DutyList() {
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -193,9 +195,12 @@ function DutyList() {
 
     const payload = {
       callStatus: formData.callStatus,
-      callDuration: totalDurationInMinutes || null,
-      interested: formData.interested || null,
-      planType: formData.planType,
+      callDuration:
+        formData.callStatus === 'Switched Off' ? null : totalDurationInMinutes || null,
+      interested:
+        formData.callStatus === 'Accepted' ? formData.interested || null : null,
+      planType:
+        formData.interested === 'Yes' ? formData.planType || null : null,
     };
 
     try {
@@ -612,28 +617,45 @@ function DutyList() {
                                   </>
                                 )}
                                 <td>
-                                  <Button
-                                    variant={isUpdated ? 'outline-success' : 'outline-primary'}
-                                    size="sm"
-                                    onClick={() => {
-                                      setSelectedStudent(s);
-                                      setFormData({
-                                        callStatus: s.callInfo?.callStatus || '',
-                                        callDuration: s.callInfo?.callDuration || '',
-                                        interested:
-                                          s.callInfo?.interested === true
-                                            ? 'Yes'
-                                            : s.callInfo?.interested === false
-                                              ? 'No'
-                                              : '',
-                                        planType: s.callInfo?.planType || '',
-                                      });
-                                      setShowModal(true);
-                                    }}
-                                  >
-                                    {isUpdated ? 'Edit' : 'Add'}
-                                  </Button>
-                                </td>
+  <OverlayTrigger
+    placement="top"
+    overlay={
+      s.callInfo?.verified
+        ? <Tooltip id={`tooltip-verified-${s._id}`}>
+            Editing disabled: this record has been verified by admin.
+          </Tooltip>
+        : <></>
+    }
+  >
+    <span className="d-inline-block">
+      <Button
+        variant={isUpdated ? 'outline-success' : 'outline-primary'}
+        size="sm"
+        disabled={s.callInfo?.verified === true}
+        onClick={() => {
+          if (s.callInfo?.verified) {
+            // No toast here — tooltip is shown on hover automatically
+            return;
+          }
+          setSelectedStudent(s);
+          setFormData({
+            callStatus: s.callInfo?.callStatus || '',
+            callDuration: s.callInfo?.callDuration || '',
+            interested:
+              s.callInfo?.interested === 'Yes' ? 'Yes' :
+              s.callInfo?.interested === 'No'  ? 'No'  :
+              '',
+            planType: s.callInfo?.planType || '',
+          });
+          setShowModal(true);
+        }}
+        style={s.callInfo?.verified ? { pointerEvents: 'none' } : {}}
+      >
+        {isUpdated ? 'Edit' : 'Add'}
+      </Button>
+    </span>
+  </OverlayTrigger>
+</td>
                               </tr>
                             );
                           });
@@ -720,46 +742,44 @@ function DutyList() {
                   <option value="Missed">Missed</option>
                   <option value="Rejected">Rejected</option>
                   <option value="Accepted">Accepted</option>
+                  <option value="Switched Off">Switched Off</option>
                 </Form.Control>
               </Form.Group>
 
               {/* Call Duration: visible for Missed, Rejected, Accepted */}
-              {(formData.callStatus === 'Missed' ||
-                formData.callStatus === 'Rejected' ||
-                formData.callStatus === 'Accepted') && (
-                  <Form.Group controlId="callDuration" className="mb-3">
-                    <Form.Label>Call Duration</Form.Label>
-                    <div className="d-flex align-items-center gap-2">
-                      {/* Minutes Dropdown */}
-                      <Form.Control
-                        as="select"
-                        name="callDurationMinutes"
-                        value={formData.callDurationMinutes || ''}
-                        onChange={handleInputChange}
-                        style={{ width: '50%' }}
-                      >
-                        <option value="">Minutes</option>
-                        {[...Array(60)].map((_, i) => (
-                          <option key={i} value={i}>{i} min</option>
-                        ))}
-                      </Form.Control>
+              {['Missed', 'Rejected', 'Accepted'].includes(formData.callStatus) && (
+                <Form.Group controlId="callDuration" className="mb-3">
+                  <Form.Label>Call Duration</Form.Label>
+                  <div className="d-flex align-items-center gap-2">
+                    <Form.Control
+                      as="select"
+                      name="callDurationMinutes"
+                      value={formData.callDurationMinutes || ''}
+                      onChange={handleInputChange}
+                      style={{ width: '50%' }}
+                    >
+                      <option value="">Minutes</option>
+                      {[...Array(60)].map((_, i) => (
+                        <option key={i} value={i}>{i} min</option>
+                      ))}
+                    </Form.Control>
 
-                      {/* Seconds Dropdown */}
-                      <Form.Control
-                        as="select"
-                        name="callDurationSeconds"
-                        value={formData.callDurationSeconds || ''}
-                        onChange={handleInputChange}
-                        style={{ width: '50%' }}
-                      >
-                        <option value="">Seconds</option>
-                        {[...Array(60)].map((_, i) => (
-                          <option key={i} value={i}>{i} sec</option>
-                        ))}
-                      </Form.Control>
-                    </div>
-                  </Form.Group>
-                )}
+                    <Form.Control
+                      as="select"
+                      name="callDurationSeconds"
+                      value={formData.callDurationSeconds || ''}
+                      onChange={handleInputChange}
+                      style={{ width: '50%' }}
+                    >
+                      <option value="">Seconds</option>
+                      {[...Array(60)].map((_, i) => (
+                        <option key={i} value={i}>{i} sec</option>
+                      ))}
+                    </Form.Control>
+                  </div>
+                </Form.Group>
+              )}
+
 
               {/* Interested: only for Accepted */}
               {formData.callStatus === 'Accepted' && (
@@ -778,6 +798,7 @@ function DutyList() {
                   </Form.Control>
                 </Form.Group>
               )}
+
 
               {/* Plan Type: only if interested === 'Yes' */}
               {formData.interested === 'Yes' && (
