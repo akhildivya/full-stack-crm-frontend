@@ -18,6 +18,8 @@ function DutyList() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+
+
   const [isExpanded, setIsExpanded] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortKey, setSortKey] = useState('name');
@@ -49,6 +51,9 @@ function DutyList() {
       });
     }
   }, [selectedStudent]);
+
+
+
 
   // fetch once when component mounts / auth changes
   useEffect(() => {

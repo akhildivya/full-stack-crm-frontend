@@ -2,7 +2,7 @@ import Layout from '../../components/layout/Layout';
 import Usermenu from '../../components/layout/Usermenu';
 import React, { useEffect, useState, useMemo } from 'react';
 import axios from 'axios';
-import { Table, Form, Dropdown, Spinner, Button, OverlayTrigger, Tooltip } from 'react-bootstrap';
+import { Table, Form, Dropdown, Spinner, Button, OverlayTrigger, Tooltip, Accordion } from 'react-bootstrap';
 import { BASEURL } from '../../service/baseUrl';
 import '../../css/taskcompleted.css';
 import { jsPDF } from 'jspdf';
@@ -343,98 +343,120 @@ function Taskcompleted() {
           </aside>
           <main className="col-md-9">
             <div className="card admin-card p-4">
-              <div className="row mb-3 g-3">
-                <div className="col-md-4 mb-2">
-                  <div className="summary-card bg-primary text-white p-3 rounded shadow-sm">
-                    <h6>Total Assigned</h6>
-                    <h3>{summary.totalAssigned}</h3>
-                  </div>
-                </div>
-                <div className="col-md-4 mb-2">
-                  <div className="summary-card bg-success text-white p-3 rounded shadow-sm">
-                    <h6>Completed</h6>
-                    <h3>{summary.completed}</h3>
-                  </div>
-                </div>
-                <div className="col-md-4 mb-2">
-                  <div className="summary-card bg-warning text-dark p-3 rounded shadow-sm">
-                    <h6>Pending</h6>
-                    <h3>{summary.pending}</h3>
-                  </div>
-                </div>
-                <div className="col-md-4 mb-2">
-                  <div className="summary-card bg-info text-white p-3 rounded shadow-sm">
-                    <h6>Total Call Duration (sec)</h6>
-                    <h3>{summary.totalCallDuration}</h3>
-                  </div>
-                </div>
-                <div className="col-md-4 mb-2">
-                  <div className="summary-card bg-danger text-white p-3 rounded shadow-sm">
-                    <h6>Interested (Yes)</h6>
-                    <h3>{summary.totalInterested}</h3>
-                  </div>
-                </div>
-                <div className="col-md-4 mb-2">
-                  <div className="summary-card bg-secondary text-white p-3 rounded shadow-sm">
-                    <h6>Not Interested (No)</h6>
-                    <h3>{summary.totalNotInterested}</h3>
-                  </div>
-                </div>
-                <div className="col-md-4 mb-2">
-                  <div className="summary-card bg-success text-dark p-3 rounded shadow-sm">
-                    <h6>Inform Later</h6>
-                    <h3>{summary.informLaterCount || 0}</h3>
-                  </div>
-                </div>
-                <div className="col-md-4 mb-2">
-                  <div className="summary-card bg-info text-dark p-3 rounded shadow-sm">
-                    <h6>Missing Interests</h6>
-                    <h3>{summary.missingInterest || 0}</h3>
-                  </div>
-                </div>
+             <div className="accordion" id="summaryAccordion">
+  <div className="accordion-item">
+    <h2 className="accordion-header" id="headingSummary">
+      <button className="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSummary" aria-expanded="true" aria-controls="collapseSummary">
+        Summary
+      </button>
+    </h2>
+    <div id="collapseSummary" className="accordion-collapse collapse show" aria-labelledby="headingSummary" data-bs-parent="#summaryAccordion">
+      <div className="accordion-body">
+        <div className="row mb-3 g-3">
+          <div className="col-md-4 mb-2">
+            <div className="summary-card bg-primary text-white p-3 rounded shadow-sm">
+              <h6>Total Assigned</h6>
+              <h3>{summary.totalAssigned}</h3>
+            </div>
+          </div>
+          <div className="col-md-4 mb-2">
+            <div className="summary-card bg-success text-white p-3 rounded shadow-sm">
+              <h6>Completed</h6>
+              <h3>{summary.completed}</h3>
+            </div>
+          </div>
+          <div className="col-md-4 mb-2">
+            <div className="summary-card bg-warning text-dark p-3 rounded shadow-sm">
+              <h6>Pending</h6>
+              <h3>{summary.pending}</h3>
+            </div>
+          </div>
+          <div className="col-md-4 mb-2">
+            <div className="summary-card bg-info text-white p-3 rounded shadow-sm">
+              <h6>Total Call Duration (sec)</h6>
+              <h3>{summary.totalCallDuration}</h3>
+            </div>
+          </div>
+          <div className="col-md-4 mb-2">
+            <div className="summary-card bg-danger text-white p-3 rounded shadow-sm">
+              <h6>Interested (Yes)</h6>
+              <h3>{summary.totalInterested}</h3>
+            </div>
+          </div>
+          <div className="col-md-4 mb-2">
+            <div className="summary-card bg-secondary text-white p-3 rounded shadow-sm">
+              <h6>Not Interested (No)</h6>
+              <h3>{summary.totalNotInterested}</h3>
+            </div>
+          </div>
+          <div className="col-md-4 mb-2">
+            <div className="summary-card bg-success text-dark p-3 rounded shadow-sm">
+              <h6>Inform Later</h6>
+              <h3>{summary.informLaterCount || 0}</h3>
+            </div>
+          </div>
+          <div className="col-md-4 mb-2">
+            <div className="summary-card bg-info text-dark p-3 rounded shadow-sm">
+              <h6>Missing Interests</h6>
+              <h3>{summary.missingInterest || 0}</h3>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div className="accordion-item">
+    <h2 className="accordion-header" id="headingDetails">
+      <button className="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseDetails" aria-expanded="false" aria-controls="collapseDetails">
+        Plan & Course-wise Details
+      </button>
+    </h2>
+    <div id="collapseDetails" className="accordion-collapse collapse" aria-labelledby="headingDetails" data-bs-parent="#summaryAccordion">
+      <div className="accordion-body">
+        {/* Plan Counts */}
+        <div className="row mb-3">
+          {['starter', 'gold', 'master'].map(plan => (
+            <div className="col-md-4 mb-2" key={plan}>
+              <div className={`summary-card plan-${plan} text-white p-3 rounded shadow-sm`}>
+                <h6>{plan.charAt(0).toUpperCase() + plan.slice(1)} Plan</h6>
+                <h3>{summary.planCounts?.[plan] || 0}</h3>
               </div>
+            </div>
+          ))}
+        </div>
 
-              {/* Plan Counts */}
-              <div className="row mb-3">
-                {['starter', 'gold', 'master'].map(plan => (
-                  <div className="col-md-4 mb-2" key={plan}>
-                    <div className={`summary-card plan-${plan} text-white p-3 rounded shadow-sm`}>
-                      <h6>{plan.charAt(0).toUpperCase() + plan.slice(1)} Plan</h6>
-                      <h3>{summary.planCounts?.[plan] || 0}</h3>
-                    </div>
-                  </div>
-                ))}
-              </div>
+        {/* Course-wise Counts */}
+        <div className="mb-3">
+          <h6>Course-wise count:</h6>
+          <div className="d-flex flex-wrap gap-2">
+            {summary.courseCounts && (() => {
+              const normalizedCourseCounts = {};
+              Object.entries(summary.courseCounts).forEach(([course, count]) => {
+                const normalizedCourse = course.toLowerCase();
+                let displayCourse = course;
 
-              {/* Course-wise Counts */}
-              <div className="mb-3">
-                <h6>Course-wise-count:</h6>
-                <div className="d-flex flex-wrap gap-2">
-                  {summary.courseCounts && (() => {
-                    // Normalize course names to consistent values
-                    const normalizedCourseCounts = {};
-                    Object.entries(summary.courseCounts).forEach(([course, count]) => {
-                      const normalizedCourse = course.toLowerCase();
-                      let displayCourse = course;
+                if (normalizedCourse.includes('btech')) displayCourse = 'BTech';
+                else if (normalizedCourse.includes('plus one')) displayCourse = 'Plus One';
+                else if (normalizedCourse.includes('plus two')) displayCourse = 'Plus Two';
 
-                      if (normalizedCourse.includes('btech')) displayCourse = 'BTech';
-                      else if (normalizedCourse.includes('plus one')) displayCourse = 'Plus One';
-                      else if (normalizedCourse.includes('plus two')) displayCourse = 'Plus Two';
+                normalizedCourseCounts[displayCourse] = (normalizedCourseCounts[displayCourse] || 0) + count;
+              });
 
-                      normalizedCourseCounts[displayCourse] = (normalizedCourseCounts[displayCourse] || 0) + count;
-                    });
-
-                    // Render normalized badges
-                    return Object.entries(normalizedCourseCounts).map(([course, count]) => (
-                      <span key={course} className="badge bg-secondary p-2">
-                        {course}: {count}
-                      </span>
-                    ));
-                  })()}
-                </div>
-              </div>
+              return Object.entries(normalizedCourseCounts).map(([course, count]) => (
+                <span key={course} className="badge bg-secondary p-2">
+                  {course}: {count}
+                </span>
+              ));
+            })()}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
               {/* Search & Sort */}
-              <div className="d-flex flex-wrap align-items-center mb-3 gap-2">
+              <div className="d-flex flex-wrap align-items-center mt-3 mb-3 gap-2">
                 <Form.Control
                   type="text"
                   placeholder="Search students..."
