@@ -28,12 +28,21 @@ function Workreport() {
     const [selectedIds, setSelectedIds] = useState([]);
 
     const [isExpanded, setIsExpanded] = useState(false);
+
+
+    const formatSeconds = (sec) => {
+        if (!sec) return '0 sec';
+        const min = Math.floor(sec / 60);
+        const rem = sec % 60;
+        return min > 0 ? `${min} min ${rem} sec` : `${rem} sec`;
+    };
     useEffect(() => {
         const fetchUsers = async () => {
             try {
                 setLoadingUsers(true);
                 const res = await axios.get(`${BASEURL}/admin/get-users`);
                 setUsers(res.data);
+
             } catch (err) {
                 console.error('Error fetching users:', err);
                 setError('Failed to fetch users');
@@ -77,6 +86,7 @@ function Workreport() {
         };
     }, [selectedUserId]);
 
+
     const handleUserSelect = (e) => {
         setSelectedUserId(e.target.value);
         setSearchTerm('');
@@ -97,90 +107,91 @@ function Workreport() {
     }, [users]);
 
     // Summary metrics (for the selected user’s students list)
-   const summary = useMemo(() => {
-    let totalContacts = 0;
-    let completed = 0;
-    let pending = 0;
-    let totalCallDuration = 0;
-    let countYes = 0, countNo = 0, countInformLater = 0;
-    let missingInterest = 0;
-    const planCounts = { starter: 0, gold: 0, master: 0 };
-    let missedCalls = 0, rejectedCalls = 0, acceptedCalls = 0, switchedOffCalls = 0;
 
-    // ✅ NEW: to accumulate timer durations (from callSessionDurationSeconds)
-    let totalTimerDurationSeconds = 0;
+    const summary = useMemo(() => {
+        let totalContacts = 0;
+        let completed = 0;
+        let pending = 0;
+        let totalCallDuration = 0;
+        let countYes = 0, countNo = 0, countInformLater = 0;
+        let missingInterest = 0;
+        const planCounts = { starter: 0, gold: 0, master: 0 };
+        let missedCalls = 0, rejectedCalls = 0, acceptedCalls = 0, switchedOffCalls = 0;
 
-    students.forEach(s => {
-        totalContacts += 1;
-        const ci = s.callInfo || {};
+        // ✅ NEW: to accumulate timer durations (from callSessionDurationSeconds)
+        let totalTimerDurationSeconds = 0;
 
-        if (ci.completedAt) {
-            completed += 1;
-        } else {
-            pending += 1;
-        }
+        students.forEach(s => {
+            totalContacts += 1;
+            const ci = s.callInfo || {};
 
-        if (ci.callDuration != null && !isNaN(ci.callDuration)) {
-            totalCallDuration += Number(ci.callDuration);
-        }
+            if (ci.completedAt) {
+                completed += 1;
+            } else {
+                pending += 1;
+            }
 
-        if (ci.interested === 'Yes') {
-            countYes += 1;
-        } else if (ci.interested === 'No') {
-            countNo += 1;
-        } else if (ci.interested === 'Inform Later') {
-            countInformLater += 1;
-        } else {
-            missingInterest += 1;
-        }
+            if (ci.callDuration != null && !isNaN(ci.callDuration)) {
+                totalCallDuration += Number(ci.callDuration);
+            }
 
-        if (ci.planType) {
-            const pt = ci.planType.toLowerCase();
-            if (pt.includes('starter')) planCounts.starter += 1;
-            else if (pt.includes('gold')) planCounts.gold += 1;
-            else if (pt.includes('master')) planCounts.master += 1;
-        }
+            if (ci.interested === 'Yes') {
+                countYes += 1;
+            } else if (ci.interested === 'No') {
+                countNo += 1;
+            } else if (ci.interested === 'Inform Later') {
+                countInformLater += 1;
+            } else {
+                missingInterest += 1;
+            }
 
-        const status = ci.callStatus?.toLowerCase();
-        if (status === 'missed') missedCalls += 1;
-        else if (status === 'rejected') rejectedCalls += 1;
-        else if (status === 'accepted' || status === 'answered') acceptedCalls += 1;
-        else if (status === 'switched off') {
-            switchedOffCalls += 1;
-        }
+            if (ci.planType) {
+                const pt = ci.planType.toLowerCase();
+                if (pt.includes('starter')) planCounts.starter += 1;
+                else if (pt.includes('gold')) planCounts.gold += 1;
+                else if (pt.includes('master')) planCounts.master += 1;
+            }
 
-        // ✅ NEW: accumulate total callSession timer duration from backend-injected field
-        if (s.callSessionDurationSeconds && !isNaN(s.callSessionDurationSeconds)) {
-            totalTimerDurationSeconds += Number(s.callSessionDurationSeconds);
-        }
-    });
+            const status = ci.callStatus?.toLowerCase();
+            if (status === 'missed') missedCalls += 1;
+            else if (status === 'rejected') rejectedCalls += 1;
+            else if (status === 'accepted' || status === 'answered') acceptedCalls += 1;
+            else if (status === 'switched off') {
+                switchedOffCalls += 1;
+            }
 
-    const totalInterest = countYes + countNo + countInformLater;
-    const totalSeconds = Math.round(totalCallDuration * 60);
+            // ✅ NEW: accumulate total callSession timer duration from backend-injected field
+            if (s.callSessionDurationSeconds && !isNaN(s.callSessionDurationSeconds)) {
+                totalTimerDurationSeconds += Number(s.callSessionDurationSeconds);
+            }
+        });
 
-    return {
-        totalContacts,
-        completed,
-        pending,
-        totalCallDuration,
-        totalSeconds,
-        planCounts,
-        missedCalls,
-        rejectedCalls,
-        acceptedCalls,
-        switchedOffCalls,
-        countYes,
-        countNo,
-        countInformLater,
-        totalInterest,
-        missingInterest,
+        const totalInterest = countYes + countNo + countInformLater;
+        const totalSeconds = Math.round(totalCallDuration * 60);
 
-        // ✅ NEW: include total timer duration seconds
-        totalTimerDurationSeconds
-    };
-}, [students]);
+        return {
+            totalContacts,
+            completed,
+            pending,
+            totalCallDuration,
+            totalSeconds,
+            planCounts,
+            missedCalls,
+            rejectedCalls,
+            acceptedCalls,
+            switchedOffCalls,
+            countYes,
+            countNo,
+            countInformLater,
+            totalInterest,
+            missingInterest,
 
-    
+            // ✅ NEW: include total timer duration seconds
+            totalTimerDurationSeconds
+        };
+    }, [students]);
+
+
 
     const processedStudents = useMemo(() => {
         const formatForSearch = (dateStrOrVal) => {
@@ -188,7 +199,7 @@ function Workreport() {
             const d = new Date(dateStrOrVal);
             if (isNaN(d)) return '';
 
-            
+
             let s = d.toLocaleString('en-GB', {
                 day: '2-digit',
                 month: 'short',     // "Oct"
@@ -197,13 +208,13 @@ function Workreport() {
                 minute: '2-digit',
                 second: '2-digit',
                 hour12: true
-            }); 
+            });
             s = s.replace(',', '').trim();
-           
-            s = typeof s.replaceAll === 'function' ? s.replaceAll(':', '.') : s.replace(/:/g, '.');
-            s = s.toLowerCase(); 
 
-            
+            s = typeof s.replaceAll === 'function' ? s.replaceAll(':', '.') : s.replace(/:/g, '.');
+            s = s.toLowerCase();
+
+
             return s.replace(/\s+/g, ' ');
         };
         let filtered = [...students];
@@ -443,7 +454,6 @@ function Workreport() {
             doc.text(line5, 40, y);
 
             y += 16;
-            doc.setFontSize(11);
             doc.text(`Same Date Count: ${sameDateCount}`, 40, y);
 
             // Add Yes/No/Inform Later counts
@@ -452,7 +462,6 @@ function Workreport() {
 
             // Course-wise summary
             y += 20;
-            doc.setFontSize(11);
             doc.text('Course-wise Counts:', 40, y);
             y += 14;
             Object.entries(courseCounts).forEach(([course, cnt]) => {
@@ -460,7 +469,11 @@ function Workreport() {
                 y += 14;
             });
 
-            // Table header
+            // =========================
+            // MAIN TABLE
+            // =========================
+
+            // NEW: Add "Timer Duration" column
             const head = [
                 [
                     '#',
@@ -471,6 +484,7 @@ function Workreport() {
                     'Place',
                     'Call Status',
                     'Call Duration',
+                    'Timer Duration (sec)', // NEW
                     'Interested',
                     'Plan Type',
                     'Assigned At',
@@ -479,9 +493,9 @@ function Workreport() {
                 ]
             ];
 
-            // Table body
             const body = processedStudents.rows.map((s, index) => {
                 const ci = s.callInfo || {};
+                const totalSec = s.callSessionDurationSeconds != null ? s.callSessionDurationSeconds : null; // NEW
                 let sameDateTick = '';
                 if (s.assignedAt && ci.completedAt) {
                     const a = new Date(s.assignedAt);
@@ -508,7 +522,8 @@ function Workreport() {
                     s.place || '',
                     ci.callStatus ?? '-',
                     rowDurStr,
-                    ci.interested != null ? (ci.interested === 'Yes' ? 'Yes' : ci.interested === 'No' ? 'No' : ci.interested === 'Inform Later' ? 'Inform Later' : '---') : '---',
+                    totalSec != null ? `${totalSec} sec` : '-', // NEW
+                    ci.interested ?? '-',
                     ci.planType ?? '-',
                     formatDisplayDate(s.assignedAt),
                     formatDisplayDate(ci.completedAt),
@@ -516,36 +531,80 @@ function Workreport() {
                 ];
             });
 
-            // Render table
             autoTable(doc, {
                 head,
                 body,
                 startY: y + 10,
                 styles: { fontSize: 9, cellPadding: 4, overflow: 'linebreak' },
                 headStyles: { fillColor: [41, 128, 185] },
-                columnStyles: {
-                    0: { cellWidth: 25 },
-                    1: { cellWidth: 100 },
-                    2: { cellWidth: 130 },
-                    3: { cellWidth: 80 },
-                    10: { cellWidth: 90 },
-                    11: { cellWidth: 90 }
-                },
                 margin: { top: 36, left: 20, right: 20, bottom: 30 },
                 didDrawPage: function () {
-                    const pageCount = doc.internal.getNumberOfPages();
-                    const pageHeight = doc.internal.pageSize.height;
-                    const footerText = `Page ${doc.internal.getCurrentPageInfo().pageNumber} / ${pageCount}`;
+                    const pageSize = doc.internal.pageSize;
+
+                    const pageWidth = pageSize.getWidth();
+                    const pageHeight = pageSize.getHeight();
+                    const pageNumber = doc.internal.getCurrentPageInfo().pageNumber;
+                    const footer = `Page ${pageNumber} of {total_pages_count_string}`;
                     doc.setFontSize(9);
-                    doc.text(footerText, doc.internal.pageSize.getWidth() - 40, pageHeight - 10, { align: 'right' });
+                    doc.text(footer, pageWidth - 40, pageHeight - 10, { align: 'right' });
                 }
             });
 
+            // =========================
+            // NEW: Add summary footer as conclusion
+            // =========================
+            const finalY = doc.lastAutoTable.finalY + 30;
+            doc.setFontSize(13);
+            doc.setTextColor(13, 110, 253);
+            doc.text('Summary by Call Type', doc.internal.pageSize.getWidth() / 2, finalY, { align: 'center' });
+
+            let yFooter = finalY + 20;
+            doc.setFontSize(10);
+            doc.setTextColor(33, 37, 41);
+
+            const footerHead = ['Call Type', 'Total Count', 'Total Timer Duration', 'Total Call Duration'];
+            const footerBody = Object.entries(tableSummary).map(([type, val]) => [
+                type,
+                val.count,
+                `${val.totalTimerSec} sec`,
+                `${val.totalCallSec} sec`
+            ]);
+
+            footerBody.push([
+                'Total',
+                Object.values(tableSummary).reduce((a, b) => a + b.count, 0),
+                `${Object.values(tableSummary).reduce((a, b) => a + b.totalTimerSec, 0)} sec`,
+                `${Object.values(tableSummary).reduce((a, b) => a + b.totalCallSec, 0)} sec`
+            ]);
+
+            autoTable(doc, {
+                head: [footerHead],
+                body: footerBody,
+                startY: yFooter,
+                styles: { fontSize: 9, halign: 'center' },
+                headStyles: { fillColor: [13, 110, 253], textColor: 255 },
+                margin: { left: 150, right: 150 },
+                 didDrawPage: function () {                                                    // added
+    const pageSize = doc.internal.pageSize;
+    const pageWidth = pageSize.getWidth();
+    const pageHeight = pageSize.getHeight();
+    const pageNumber = doc.internal.getCurrentPageInfo().pageNumber;
+    const footer = `Page ${pageNumber} of {total_pages_count_string}`;
+    doc.setFontSize(9);
+    doc.text(footer, pageWidth - 40, pageHeight - 10, { align: 'right' });
+  }
+            });
+            // =========================
+            if (typeof doc.putTotalPages === 'function') {
+                doc.putTotalPages('{total_pages_count_string}');
+            }
             doc.save(filename);
         } catch (err) {
             console.error('Error exporting PDF:', err);
         }
     };
+
+
 
     const handleSelectStudent = (id) => {
         setSelectedIds((prev) =>
@@ -812,7 +871,28 @@ function Workreport() {
             toast.error('Server or network error', { position: 'top-center' });
         }
     };
+    const tableSummary = useMemo(() => {
+        if (!currentRows || currentRows.length === 0) return {};
 
+        const summary = {};
+
+        currentRows.forEach(s => {
+            const ci = s.callInfo || {};
+            const status = ci.callStatus || 'Unknown';
+            const timerSec = s.callSessionDurationSeconds || 0;
+            const callSec = ci.callDuration ? Math.round(ci.callDuration * 60) : 0;
+
+            if (!summary[status]) {
+                summary[status] = { count: 0, totalTimerSec: 0, totalCallSec: 0 };
+            }
+
+            summary[status].count += 1;
+            summary[status].totalTimerSec += timerSec;
+            summary[status].totalCallSec += callSec;
+        });
+
+        return summary;
+    }, [currentRows]);
 
     return (
         <Layout title={"CRM - Work Report"}>
@@ -1015,7 +1095,8 @@ function Workreport() {
                                                                     ))}
                                                                 </ul>
                                                             </div>
-                                                            
+
+
 
 
 
@@ -1198,6 +1279,50 @@ function Workreport() {
                                                         })
                                                     )}
                                                 </tbody>
+
+                                                <tfoot className="custom-summary-footer">
+                                                    {/* Section Title */}
+                                                    <tr>
+                                                        <th colSpan={isExpanded ? 15 : 8} className="text-center summary-title">
+                                                            Summary by Call Type
+                                                        </th>
+                                                    </tr>
+
+                                                    {/* Header Row */}
+                                                    <tr className="summary-header">
+                                                        <th colSpan="2"></th>
+                                                        <th colSpan={isExpanded ? 5 : 3}>Call Type</th>
+                                                        <th>Total Count</th>
+                                                        <th>Total Timer Duration</th>
+                                                        <th>Total Call Duration</th>
+                                                    </tr>
+
+                                                    {/* Data Rows */}
+                                                    {Object.entries(tableSummary).map(([type, val]) => (
+                                                        <tr key={type} className="summary-row">
+                                                            <td colSpan="2"></td>
+                                                            <td colSpan={isExpanded ? 5 : 3}>{type}</td>
+                                                            <td>{val.count}</td>
+                                                            <td>{val.totalTimerSec} sec</td>
+                                                            <td>{val.totalCallSec} sec</td>
+                                                        </tr>
+                                                    ))}
+
+                                                    {/* Grand Total */}
+                                                    <tr className="summary-total">
+                                                        <td colSpan="2"></td>
+                                                        <td colSpan={isExpanded ? 5 : 3}>Total</td>
+                                                        <td>
+                                                            {Object.values(tableSummary).reduce((a, b) => a + b.count, 0)}
+                                                        </td>
+                                                        <td>
+                                                            {Object.values(tableSummary).reduce((a, b) => a + b.totalTimerSec, 0)} sec
+                                                        </td>
+                                                        <td>
+                                                            {Object.values(tableSummary).reduce((a, b) => a + b.totalCallSec, 0)} sec
+                                                        </td>
+                                                    </tr>
+                                                </tfoot>
                                             </table>
 
                                         </div>
