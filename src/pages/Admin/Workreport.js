@@ -97,77 +97,90 @@ function Workreport() {
     }, [users]);
 
     // Summary metrics (for the selected user’s students list)
-    const summary = useMemo(() => {
-        let totalContacts = 0;
-        let completed = 0;
-        let pending = 0;
-        let totalCallDuration = 0;
-        let countYes = 0, countNo = 0, countInformLater = 0;
-        let missingInterest = 0;
-        const planCounts = { starter: 0, gold: 0, master: 0 };
-        let missedCalls = 0, rejectedCalls = 0, acceptedCalls = 0, switchedOffCalls = 0;;
+   const summary = useMemo(() => {
+    let totalContacts = 0;
+    let completed = 0;
+    let pending = 0;
+    let totalCallDuration = 0;
+    let countYes = 0, countNo = 0, countInformLater = 0;
+    let missingInterest = 0;
+    const planCounts = { starter: 0, gold: 0, master: 0 };
+    let missedCalls = 0, rejectedCalls = 0, acceptedCalls = 0, switchedOffCalls = 0;
 
-        students.forEach(s => {
-            totalContacts += 1;
-            const ci = s.callInfo || {};
+    // ✅ NEW: to accumulate timer durations (from callSessionDurationSeconds)
+    let totalTimerDurationSeconds = 0;
 
-            if (ci.completedAt) {
-                completed += 1;
-            } else {
-                pending += 1;
-            }
+    students.forEach(s => {
+        totalContacts += 1;
+        const ci = s.callInfo || {};
 
-            if (ci.callDuration != null && !isNaN(ci.callDuration)) {
-                totalCallDuration += Number(ci.callDuration);
-            }
+        if (ci.completedAt) {
+            completed += 1;
+        } else {
+            pending += 1;
+        }
 
-            if (ci.interested === 'Yes') {
-                countYes += 1;
-            } else if (ci.interested === 'No') {
-                countNo += 1;
-            } else if (ci.interested === 'Inform Later') {
-                countInformLater += 1;
-            } else {
-                missingInterest += 1;
-            }
+        if (ci.callDuration != null && !isNaN(ci.callDuration)) {
+            totalCallDuration += Number(ci.callDuration);
+        }
 
-            if (ci.planType) {
-                const pt = ci.planType.toLowerCase();
-                if (pt.includes('starter')) planCounts.starter += 1;
-                else if (pt.includes('gold')) planCounts.gold += 1;
-                else if (pt.includes('master')) planCounts.master += 1;
-            }
+        if (ci.interested === 'Yes') {
+            countYes += 1;
+        } else if (ci.interested === 'No') {
+            countNo += 1;
+        } else if (ci.interested === 'Inform Later') {
+            countInformLater += 1;
+        } else {
+            missingInterest += 1;
+        }
 
-            const status = ci.callStatus?.toLowerCase();
-            if (status === 'missed') missedCalls += 1;
-            else if (status === 'rejected') rejectedCalls += 1;
-            else if (status === 'accepted' || status === 'answered') acceptedCalls += 1;
-            else if (status === 'switched off') {
-                switchedOffCalls += 1;  // ← count here
-            }
-        });
+        if (ci.planType) {
+            const pt = ci.planType.toLowerCase();
+            if (pt.includes('starter')) planCounts.starter += 1;
+            else if (pt.includes('gold')) planCounts.gold += 1;
+            else if (pt.includes('master')) planCounts.master += 1;
+        }
 
-        const totalInterest = countYes + countNo + countInformLater;
-        const totalSeconds = Math.round(totalCallDuration * 60);
-        return {
-            totalContacts,
-            completed,
-            pending,
-            totalCallDuration,
-            totalSeconds,
-            planCounts,
-            missedCalls,
-            rejectedCalls,
-            acceptedCalls,
-            switchedOffCalls,
-            countYes,
-            countNo,
-            countInformLater,
+        const status = ci.callStatus?.toLowerCase();
+        if (status === 'missed') missedCalls += 1;
+        else if (status === 'rejected') rejectedCalls += 1;
+        else if (status === 'accepted' || status === 'answered') acceptedCalls += 1;
+        else if (status === 'switched off') {
+            switchedOffCalls += 1;
+        }
 
-            totalInterest,
-            missingInterest
-        };
-    }, [students]);
+        // ✅ NEW: accumulate total callSession timer duration from backend-injected field
+        if (s.callSessionDurationSeconds && !isNaN(s.callSessionDurationSeconds)) {
+            totalTimerDurationSeconds += Number(s.callSessionDurationSeconds);
+        }
+    });
+
+    const totalInterest = countYes + countNo + countInformLater;
+    const totalSeconds = Math.round(totalCallDuration * 60);
+
+    return {
+        totalContacts,
+        completed,
+        pending,
+        totalCallDuration,
+        totalSeconds,
+        planCounts,
+        missedCalls,
+        rejectedCalls,
+        acceptedCalls,
+        switchedOffCalls,
+        countYes,
+        countNo,
+        countInformLater,
+        totalInterest,
+        missingInterest,
+
+        // ✅ NEW: include total timer duration seconds
+        totalTimerDurationSeconds
+    };
+}, [students]);
+
+    
 
     const processedStudents = useMemo(() => {
         const formatForSearch = (dateStrOrVal) => {
@@ -175,7 +188,7 @@ function Workreport() {
             const d = new Date(dateStrOrVal);
             if (isNaN(d)) return '';
 
-            // create consistent locale string, then transform to "10-Oct-2025 10.30.47 pm"
+            
             let s = d.toLocaleString('en-GB', {
                 day: '2-digit',
                 month: 'short',     // "Oct"
@@ -184,15 +197,13 @@ function Workreport() {
                 minute: '2-digit',
                 second: '2-digit',
                 hour12: true
-            }); // e.g. "10 Oct 2025, 10:30:47 PM" or "10 Oct 2025, 10:30:47 pm"
-
-            // normalize: remove comma, replace ":" with ".", ensure am/pm lowercase
+            }); 
             s = s.replace(',', '').trim();
-            // replace all colons with dots (use replaceAll if present, otherwise regex)
+           
             s = typeof s.replaceAll === 'function' ? s.replaceAll(':', '.') : s.replace(/:/g, '.');
-            s = s.toLowerCase(); // make 'pm' lowercase for matching: "10 oct 2025 10.30.47 pm"
+            s = s.toLowerCase(); 
 
-            // remove extra spaces that might appear between tokens and collapse them
+            
             return s.replace(/\s+/g, ' ');
         };
         let filtered = [...students];
@@ -954,6 +965,16 @@ function Workreport() {
                                                                             return (m > 0 ? `${m} min ` : '') + `${s} sec`;
                                                                         })()
                                                                     },
+
+                                                                    {
+                                                                        label: "Timer Total Duration (sec)",
+                                                                        value: (() => {
+                                                                            const sec = summary.totalTimerDurationSeconds || 0;
+                                                                            const m = Math.floor(sec / 60);
+                                                                            const s = sec % 60;
+                                                                            return (m > 0 ? `${m} min ` : '') + `${s} sec`;
+                                                                        })()
+                                                                    },
                                                                     { label: "Total Interest", value: summary.totalInterest },
                                                                     { label: "Missing Interest", value: summary.missingInterest },
                                                                     { label: "Yes", value: summary.countYes },
@@ -994,6 +1015,9 @@ function Workreport() {
                                                                     ))}
                                                                 </ul>
                                                             </div>
+                                                            
+
+
 
                                                             {hasSameDateRows && (
                                                                 <div className="text-success text-center mb-3" style={{ fontSize: '1rem', fontWeight: 'bold' }}>
@@ -1069,9 +1093,9 @@ function Workreport() {
                                                         {renderHeader('Name', 'name')}
                                                         {renderHeader('Call Status', 'callInfo.callStatus')}
                                                         {renderHeader('Call Duration', 'callInfo.callDuration')}
+                                                        {renderHeader('Timer Duration (sec)', 'callSessionDurationSeconds')}  {/* NEW */}
                                                         {renderHeader('Interested', 'callInfo.interested')}
                                                         {renderHeader('Plan Type', 'callInfo.planType')}
-
                                                         {isExpanded && (
                                                             <>
                                                                 {renderHeader('Email', 'email')}
@@ -1081,13 +1105,11 @@ function Workreport() {
                                                                 {renderHeader('Assigned At', 'assignedAt')}
                                                                 {renderHeader('Completed At', 'callInfo.completedAt')}
                                                                 {renderHeader('Same Date?', 'sameDateMatch')}
-
                                                             </>
                                                         )}
                                                         <th>Action</th>
                                                     </tr>
                                                 </thead>
-
                                                 <tbody>
                                                     {currentRows.length === 0 ? (
                                                         <tr>
@@ -1098,6 +1120,7 @@ function Workreport() {
                                                     ) : (
                                                         currentRows.map((s, idx) => {
                                                             const ci = s.callInfo || {};
+                                                            const totalSec = s.callSessionDurationSeconds != null ? s.callSessionDurationSeconds : null;  // NEW
                                                             const assignedAt = s.assignedAt ? new Date(s.assignedAt) : null;
                                                             const completedAt = ci.completedAt ? new Date(ci.completedAt) : null;
 
@@ -1117,19 +1140,24 @@ function Workreport() {
                                                                         />
                                                                     </td>
                                                                     <td>{serialNo}</td>
-                                                                    <td>{s.name}  {ci.verified && (
-                                                                        <FaCheckCircle style={{ marginLeft: '5px', color: 'green' }} />
-                                                                    )}</td>
+                                                                    <td>
+                                                                        {s.name} {ci.verified && (
+                                                                            <FaCheckCircle style={{ marginLeft: '5px', color: 'green' }} />
+                                                                        )}
+                                                                    </td>
                                                                     <td>{ci.callStatus ?? '-'}</td>
                                                                     <td>
-                                                                        {ci.callDuration != null && !isNaN(ci.callDuration)
-                                                                            ? (() => {
-                                                                                const totalSec = Math.round(ci.callDuration * 60);
-                                                                                const m = Math.floor(totalSec / 60);
-                                                                                const s = totalSec % 60;
-                                                                                return (m > 0 ? `${m} min ` : '') + `${s} sec`;
-                                                                            })()
-                                                                            : '-'}
+                                                                        {ci.callDuration != null && !isNaN(ci.callDuration) ?
+                                                                            (() => {
+                                                                                const totalSecFromMinutes = Math.round(ci.callDuration * 60);
+                                                                                const m = Math.floor(totalSecFromMinutes / 60);
+                                                                                const sSec = totalSecFromMinutes % 60;
+                                                                                return (m > 0 ? `${m} min ` : '') + `${sSec} sec`;
+                                                                            })() : '-'}
+                                                                    </td>
+                                                                    <td>
+                                                                        {/* NEW: show the timer duration in seconds */}
+                                                                        {totalSec != null ? `${totalSec} sec` : '-'}
                                                                     </td>
                                                                     <td>{ci.interested ?? '-'}</td>
                                                                     <td>{ci.planType ?? '-'}</td>
@@ -1140,28 +1168,38 @@ function Workreport() {
                                                                             <td>{s.phone}</td>
                                                                             <td>{s.course}</td>
                                                                             <td>{s.place}</td>
-                                                                            <td>{assignedAt ? assignedAt.toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true }) : ''}</td>
-                                                                            <td>{completedAt ? completedAt.toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true }) : ''}</td>
+                                                                            <td>
+                                                                                {assignedAt ? assignedAt.toLocaleString('en-GB', {
+                                                                                    day: '2-digit', month: 'short', year: 'numeric',
+                                                                                    hour: 'numeric', minute: '2-digit', second: '2-digit',
+                                                                                    hour12: true
+                                                                                }) : ''}
+                                                                            </td>
+                                                                            <td>
+                                                                                {completedAt ? completedAt.toLocaleString('en-GB', {
+                                                                                    day: '2-digit', month: 'short', year: 'numeric',
+                                                                                    hour: 'numeric', minute: '2-digit', second: '2-digit',
+                                                                                    hour12: true
+                                                                                }) : ''}
+                                                                            </td>
                                                                             <td>{isSameDate ? '✔' : ''}</td>
-
                                                                         </>
                                                                     )}
                                                                     <td>
                                                                         <Button variant="outline-danger" size="sm" className="me-2" onClick={() => handleDeleteStudent(s._id)}>
                                                                             Delete
                                                                         </Button>
-
                                                                         <Button variant="outline-success" size="sm" onClick={() => handleSingleVerify(s._id)}>
                                                                             Verify
                                                                         </Button>
                                                                     </td>
                                                                 </tr>
-
                                                             );
                                                         })
                                                     )}
                                                 </tbody>
                                             </table>
+
                                         </div>
                                     )}
                                 </div>

@@ -39,6 +39,44 @@ function DutyList() {
   });
   const [auth] = useAuth();
 
+  const [callSessionId, setCallSessionId] = useState(null); // NEW
+  const [callStartTime, setCallStartTime] = useState(null);     // NEW
+
+
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && callSessionId && callStartTime) {
+        const endTime = Date.now();
+        const durationSeconds = Math.round((endTime - callStartTime) / 1000);
+
+        // call backend stop endpoint
+        axios.post(`${BASEURL}/stop`, {
+          sessionId: callSessionId,
+          // include other fields if needed, e.g., callStatus, interested, planType
+        }, {
+          headers: { Authorization: auth.token }
+        }).then(res => {
+          toast.success(`Timer ended. Duration: ${durationSeconds} seconds.`, {
+            position: 'top-center'
+          }); // NEW
+        }).catch(err => {
+          console.error('Error stopping call session', err);
+          toast.error('Error stopping call session', {
+            position: 'top-center'
+          }); // NEW
+        });
+
+        setCallSessionId(null);  // NEW
+        setCallStartTime(null);  // NEW
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [callSessionId, callStartTime, auth.token]); // NEW
+
   // populate form when modal opens
   useEffect(() => {
     document.title = 'CRM - Daily Routine';
@@ -598,7 +636,32 @@ function DutyList() {
                                 </td>
                                 {isExpanded && <td>{s.email}</td>}
                                 <td>
-                                  <a href={`tel:${s.phone}`} style={{ textDecoration: 'none', color: 'blue' }}>
+                                  <a
+                                    href={`tel:${s.phone}`}
+                                    onClick={e => {
+                                      e.preventDefault(); // NEW
+                                      // call start endpoint
+                                      axios.post(`${BASEURL}/start`, {
+                                        studentId: s._id
+                                      }, {
+                                        headers: { Authorization: auth.token }
+                                      }).then(res => {
+                                        setCallSessionId(res.data.sessionId); // NEW
+                                        setCallStartTime(Date.now());         // NEW
+                                        toast.info('Timer started', {
+                                          position: 'top-center'
+                                        });           // NEW
+                                      }).catch(err => {
+                                        console.error('Error starting call session', err);
+                                        toast.error('Error starting timer session', {
+                                          position: 'top-center'
+                                        }); // NEW
+                                      });
+
+                                      window.location.href = `tel:${s.phone}`; // existing link behavior
+                                    }}
+                                    style={{ textDecoration: 'none', color: 'blue' }}
+                                  >
                                     {s.phone}
                                   </a>
                                 </td>
@@ -622,45 +685,45 @@ function DutyList() {
                                   </>
                                 )}
                                 <td>
-  <OverlayTrigger
-    placement="top"
-    overlay={
-      s.callInfo?.verified
-        ? <Tooltip id={`tooltip-verified-${s._id}`}>
-            Editing disabled: this record has been verified by admin.
-          </Tooltip>
-        : <></>
-    }
-  >
-    <span className="d-inline-block">
-      <Button
-        variant={isUpdated ? 'outline-success' : 'outline-primary'}
-        size="sm"
-        disabled={s.callInfo?.verified === true}
-        onClick={() => {
-          if (s.callInfo?.verified) {
-            // No toast here — tooltip is shown on hover automatically
-            return;
-          }
-          setSelectedStudent(s);
-          setFormData({
-            callStatus: s.callInfo?.callStatus || '',
-            callDuration: s.callInfo?.callDuration || '',
-            interested:
-              s.callInfo?.interested === 'Yes' ? 'Yes' :
-              s.callInfo?.interested === 'No'  ? 'No'  :
-              '',
-            planType: s.callInfo?.planType || '',
-          });
-          setShowModal(true);
-        }}
-        style={s.callInfo?.verified ? { pointerEvents: 'none' } : {}}
-      >
-        {isUpdated ? 'Edit' : 'Add'}
-      </Button>
-    </span>
-  </OverlayTrigger>
-</td>
+                                  <OverlayTrigger
+                                    placement="top"
+                                    overlay={
+                                      s.callInfo?.verified
+                                        ? <Tooltip id={`tooltip-verified-${s._id}`}>
+                                          Editing disabled: this record has been verified by admin.
+                                        </Tooltip>
+                                        : <></>
+                                    }
+                                  >
+                                    <span className="d-inline-block">
+                                      <Button
+                                        variant={isUpdated ? 'outline-success' : 'outline-primary'}
+                                        size="sm"
+                                        disabled={s.callInfo?.verified === true}
+                                        onClick={() => {
+                                          if (s.callInfo?.verified) {
+                                            // No toast here — tooltip is shown on hover automatically
+                                            return;
+                                          }
+                                          setSelectedStudent(s);
+                                          setFormData({
+                                            callStatus: s.callInfo?.callStatus || '',
+                                            callDuration: s.callInfo?.callDuration || '',
+                                            interested:
+                                              s.callInfo?.interested === 'Yes' ? 'Yes' :
+                                                s.callInfo?.interested === 'No' ? 'No' :
+                                                  '',
+                                            planType: s.callInfo?.planType || '',
+                                          });
+                                          setShowModal(true);
+                                        }}
+                                        style={s.callInfo?.verified ? { pointerEvents: 'none' } : {}}
+                                      >
+                                        {isUpdated ? 'Edit' : 'Add'}
+                                      </Button>
+                                    </span>
+                                  </OverlayTrigger>
+                                </td>
                               </tr>
                             );
                           });
