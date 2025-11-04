@@ -430,7 +430,7 @@ const handleExportExcel = () => {
                             <div className="me-2 mt-2 d-flex gap-2" style={{ flex: '0 0 auto' }}>
                                 <Button
                                     variant="outline-primary"
-                                    className="icon-only-btn p-2"
+                                    className="icon-only-btn d-flex align-items-center justify-content-center p-2"
                                     onClick={handleExportPDF}
                                     aria-label="Download PDF"
                                     title="Download PDF"
@@ -440,7 +440,7 @@ const handleExportExcel = () => {
 
                                  <Button
                                     variant="outline-success"
-                                    className="icon-only-btn p-2"
+                                    className="icon-only-btn d-flex align-items-center justify-content-center p-2"
                                     onClick={handleExportExcel}
                                     aria-label="Download Excel"
                                     title="Download Excel"

@@ -63,7 +63,6 @@ function Summary() {
           );
         },
       },
-
       { Header: 'Assigned At', accessor: 'assignedAt' },
       { Header: 'Completed At', accessor: 'completedAt' },
     ],

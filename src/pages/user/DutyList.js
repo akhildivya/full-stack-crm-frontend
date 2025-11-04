@@ -18,8 +18,6 @@ function DutyList() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-
-
   const [isExpanded, setIsExpanded] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortKey, setSortKey] = useState('name');
@@ -43,6 +41,7 @@ function DutyList() {
   const [callStartTime, setCallStartTime] = useState(null);     // NEW
 
 
+
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible' && callSessionId && callStartTime) {
@@ -56,9 +55,16 @@ function DutyList() {
         }, {
           headers: { Authorization: auth.token }
         }).then(res => {
-          toast.success(`Timer ended. Duration: ${durationSeconds} seconds.`, {
-            position: 'top-center'
-          }); // NEW
+          toast.success(
+            <>
+              Timer ended. Duration:{' '}
+              <span style={{ filter: 'blur(5px)', display: 'inline-block' }}>
+                {durationSeconds} seconds
+              </span>
+              .
+            </>,
+            { position: 'top-center' }
+          );
         }).catch(err => {
           console.error('Error stopping call session', err);
           toast.error('Error stopping call session', {
@@ -419,10 +425,6 @@ function DutyList() {
 
     doc.save('CRM_Daily_Routine_Report.pdf');
   };
-
-
-
-
 
   // After students & updatedStudents are known
 
