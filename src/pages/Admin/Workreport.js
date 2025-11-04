@@ -77,7 +77,7 @@ function Workreport() {
         fetchStudents();
         intervalId = setInterval(() => {
             fetchStudents();
-        }, 30000);
+        }, 300000);
         // reset page when user changes
         setCurrentPage(1);
         return () => {
@@ -226,13 +226,14 @@ function Workreport() {
                 const assignedAtFormatted = formatForSearch(s.assignedAt);
                 const completedAtFormatted = formatForSearch(ci.completedAt);
                 const interestedText = ci.interested?.toLowerCase() || '';
-
+                const totalSec = s.callSessionDurationSeconds;
                 return (
                     s.name?.toLowerCase().includes(term) ||
                     s.email?.toLowerCase().includes(term) ||
                     s.course?.toLowerCase().includes(term) ||
                     s.place?.toLowerCase().includes(term) ||
                     (ci.callStatus?.toLowerCase().includes(term) ?? false) ||
+                    (totalSec != null && totalSec.toString().includes(term)) ||
                     (ci.planType?.toLowerCase().includes(term) ?? false) ||
                     interestedText.includes(term) ||
                     assignedAtFormatted.includes(term) ||
@@ -245,7 +246,11 @@ function Workreport() {
             filtered.sort((a, b) => {
                 let aVal, bVal;
                 const key = sortConfig.key;
-                if (key.startsWith('callInfo.')) {
+                if (key === 'callSessionDurationSeconds') {
+                    aVal = a.callSessionDurationSeconds ?? 0;    // added timer duration
+                    bVal = b.callSessionDurationSeconds ?? 0;
+                }
+                else if (key.startsWith('callInfo.')) {
                     const innerKey = key.split('.')[1];
                     aVal = (a.callInfo && a.callInfo[innerKey]) ?? '';
                     bVal = (b.callInfo && b.callInfo[innerKey]) ?? '';
@@ -445,6 +450,14 @@ function Workreport() {
             const line3 = `Total Call Duration: ${durStr}  |  Total Interest: ${summary.totalInterest || 0}  |  Missing Interest: ${summary.missingInterest || 0}`;
             doc.text(line3, 40, y);
 
+
+            y += 16;
+            const timerSec = summary.totalTimerDurationSeconds || 0;
+            const tm = Math.floor(timerSec / 60);
+            const ts = timerSec % 60;
+            const timerDurStr = (tm > 0 ? `${tm} min ` : '') + `${ts} sec`;
+            doc.text(`Timer Total Duration: ${timerDurStr}`, 40, y);
+
             y += 16;
             const line4 = `Missed Calls: ${summary.missedCalls || 0}  |  Rejected Calls: ${summary.rejectedCalls || 0}  |  Accepted Calls: ${summary.acceptedCalls || 0} | Switched Off Calls: ${summary.switchedOffCalls || 0}`;
             doc.text(line4, 40, y);
@@ -472,24 +485,26 @@ function Workreport() {
             // =========================
             // MAIN TABLE
             // =========================
-
+            const expanded = isExpanded;
             // NEW: Add "Timer Duration" column
             const head = [
                 [
                     '#',
                     'Name',
-                    'Email',
-                    'Phone',
-                    'Course',
-                    'Place',
                     'Call Status',
                     'Call Duration',
-                    'Timer Duration (sec)', // NEW
+                    'Timer Duration (sec)',      // always included
                     'Interested',
                     'Plan Type',
-                    'Assigned At',
-                    'Completed At',
-                    'Same Date?'
+                    ...(expanded ? [              // //changed: conditionally include more columns
+                        'Email',
+                        'Phone',
+                        'Course',
+                        'Place',
+                        'Assigned At',
+                        'Completed At',
+                        'Same Date?'
+                    ] : [])
                 ]
             ];
 
@@ -513,23 +528,31 @@ function Workreport() {
                     rowDurStr = (rm > 0 ? `${rm} min ` : '') + `${rs} sec`;
                 }
 
-                return [
+                const baseRow = [
                     index + 1,
                     s.name || '',
-                    s.email || '',
-                    s.phone || '',
-                    s.course || '',
-                    s.place || '',
                     ci.callStatus ?? '-',
                     rowDurStr,
-                    totalSec != null ? `${totalSec} sec` : '-', // NEW
+                    totalSec != null ? `${totalSec} sec` : '-',
                     ci.interested ?? '-',
-                    ci.planType ?? '-',
-                    formatDisplayDate(s.assignedAt),
-                    formatDisplayDate(ci.completedAt),
-                    sameDateTick
+                    ci.planType ?? '-'
                 ];
+
+                if (expanded) {  // //changed: add extra fields only when expanded
+                    baseRow.push(
+                        s.email || '',
+                        s.phone || '',
+                        s.course || '',
+                        s.place || '',
+                        formatDisplayDate(s.assignedAt),
+                        formatDisplayDate(ci.completedAt),
+                        sameDateTick
+                    );
+                }
+
+                return baseRow;
             });
+
 
             autoTable(doc, {
                 head,
@@ -584,15 +607,15 @@ function Workreport() {
                 styles: { fontSize: 9, halign: 'center' },
                 headStyles: { fillColor: [13, 110, 253], textColor: 255 },
                 margin: { left: 150, right: 150 },
-                 didDrawPage: function () {                                                    // added
-    const pageSize = doc.internal.pageSize;
-    const pageWidth = pageSize.getWidth();
-    const pageHeight = pageSize.getHeight();
-    const pageNumber = doc.internal.getCurrentPageInfo().pageNumber;
-    const footer = `Page ${pageNumber} of {total_pages_count_string}`;
-    doc.setFontSize(9);
-    doc.text(footer, pageWidth - 40, pageHeight - 10, { align: 'right' });
-  }
+                didDrawPage: function () {                                                    // added
+                    const pageSize = doc.internal.pageSize;
+                    const pageWidth = pageSize.getWidth();
+                    const pageHeight = pageSize.getHeight();
+                    const pageNumber = doc.internal.getCurrentPageInfo().pageNumber;
+                    const footer = `Page ${pageNumber} of {total_pages_count_string}`;
+                    doc.setFontSize(9);
+                    doc.text(footer, pageWidth - 40, pageHeight - 10, { align: 'right' });
+                }
             });
             // =========================
             if (typeof doc.putTotalPages === 'function') {
@@ -979,6 +1002,7 @@ function Workreport() {
                                                     { label: "Place", value: "place" },
                                                     { label: "Call Status", value: "callInfo.callStatus" },
                                                     { label: "Call Duration", value: "callInfo.callDuration" },
+                                                    { label: "Timer Duration (sec)", value: "callSessionDurationSeconds" },
                                                     { label: "Interested", value: "callInfo.interested" },
                                                     { label: "Plan Type", value: "callInfo.planType" },
                                                     { label: "Assigned At", value: "assignedAt" },

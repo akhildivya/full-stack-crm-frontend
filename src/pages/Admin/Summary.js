@@ -7,6 +7,7 @@ import { useTable, useSortBy, usePagination, useGlobalFilter } from 'react-table
 import { jsPDF } from 'jspdf';
 import { autoTable } from 'jspdf-autotable';
 import { Dropdown } from 'react-bootstrap';
+
 // Import Recharts components
 import {
   LineChart,
@@ -31,6 +32,13 @@ function Summary() {
       .catch((err) => console.error('Error fetching user summary', err));
   }, []);
 
+  function formatMinSecFromSeconds(totalSecs) {
+    const mins = Math.floor(totalSecs / 60);
+    const secs = totalSecs % 60;
+    return `${mins} min ${secs} sec`;
+  }
+
+
   const columns = useMemo(
     () => [
       { Header: '#', accessor: 'slno', Cell: ({ row }) => row.index + 1 },
@@ -39,7 +47,23 @@ function Summary() {
       { Header: 'Phone', accessor: 'phone' },
       { Header: 'Assigned', accessor: 'totalContacts' },
       { Header: 'Completed', accessor: 'completed' },
-      { Header: 'Total Call Duration', accessor: 'totalDuration' },
+      {
+        Header: 'Total Call Duration',
+        accessor: 'totalDuration',
+        Cell: ({ value }) => {
+          // Assuming value is in **minutes**
+          const totalMinutes = value;
+          const totalSecs = Math.floor(totalMinutes * 60);
+          const formattedMinSec = formatMinSecFromSeconds(totalSecs);
+          const tooltipText = `${formattedMinSec} (${totalSecs} sec)`;
+          return (
+            <span title={tooltipText}>
+              {value.toFixed(2)}
+            </span>
+          );
+        },
+      },
+
       { Header: 'Assigned At', accessor: 'assignedAt' },
       { Header: 'Completed At', accessor: 'completedAt' },
     ],
@@ -81,67 +105,131 @@ function Summary() {
     gotoPage(0);
   }, [itemsPerPage, setPageSize, gotoPage]);
 
-const handleExportPDF = () => {
-  const doc = new jsPDF();
+  const handleExportPDF = () => {
+    const doc = new jsPDF('p', 'pt', 'a4'); // points, A4 portrait
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
 
-  // Add a title to the PDF
-  doc.setFontSize(16);
-  doc.setFont('helvetica', 'bold');
-  doc.text('User Summary Report', 14, 20);
+    // Title
+    const title = 'User Summary Report';
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    doc.text(title, pageWidth / 2, 40, { align: 'center' });
 
-  // Define column widths
-  const columnWidths = [30, 40, 20, 10, 10, 20, 30, 30]; // Adjusted widths for better fit
+    // Headers
+    const headers = [
+      'Sl No',
+      'Name',
+      'Email',
+      'Phone',
+      'Assigned',
+      'Completed',
+      'Total Call Duration (min)',                 // numeric (original)
+      'Total Call Duration (min:sec | sec)',      // formatted tooltip-style column
+      'Assigned At',
+      'Completed At'
+    ];
 
-  // Define table headers
-  const headers = [
-    'Name',
-    'Email',
-    'Phone',
-    'Assigned',
-    'Completed',
-    'Total Call Duration',
-    'Assigned At',
-    'Completed At'
-  ];
+    // Build tableData
+    const tableData = userSummary.map((user, idx) => {
+      const totalMinutes = Number(user.totalDuration) || 0; // assume minutes
+      const totalSecs = Math.floor(totalMinutes * 60);
+      const formattedMinSec = formatMinSecFromSeconds(totalSecs);
+      const formattedTooltipLike = `${formattedMinSec} (${totalSecs} sec)`;
 
-  // Prepare table data
-  const tableData = userSummary.map((user) => [
-    user.name,
-    user.email,
-    user.phone,
-    user.totalContacts,
-    user.completed,
-    user.totalDuration.toFixed(4), // Format to 4 decimal places
-    user.assignedAt ,
-    user.completedAt 
-  ]);
+      return [
+        idx + 1,
+        user.name || '',
+        user.email || '',
+        user.phone || '',
+        user.totalContacts ?? '',
+        user.completed ?? '',
+        Number.isFinite(totalMinutes) ? totalMinutes.toFixed(4) : String(user.totalDuration || ''),
+        formattedTooltipLike,
+        user.assignedAt || '',
+        user.completedAt || ''
+      ];
+    });
 
-  // Add the table to the PDF
-  autoTable(doc, {
-    head: [headers],
-    body: tableData,
-    startY: 30, // Start the table below the title
-    columnStyles: {
-      0: { cellWidth: columnWidths[0], overflow: 'linebreak' },
-      1: { cellWidth: columnWidths[1], overflow: 'linebreak' },
-      2: { cellWidth: columnWidths[2], overflow: 'linebreak' },
-      3: { cellWidth: columnWidths[3], overflow: 'linebreak' },
-      4: { cellWidth: columnWidths[4], overflow: 'linebreak' },
-      5: { cellWidth: columnWidths[5], overflow: 'linebreak' },
-      6: { cellWidth: columnWidths[6], overflow: 'linebreak' },
-      7: { cellWidth: columnWidths[7], overflow: 'linebreak' }
-    },
-    headStyles: { fillColor: [41, 128, 185], textColor: [255, 255, 255] },
-    styles: { fontSize: 10, cellPadding: 2, overflow: 'linebreak' },
-    tableWidth: 'auto', // Adjust table width to fit content
-    margin: { left: 10, right: 10 }
-  });
+    // Margins and usable width
+    const margin = { left: 10, right: 10, top: 70, bottom: 40 };
+    const usablePageWidth = pageWidth - margin.left - margin.right;
 
-  // Save the PDF
-  doc.save('user_summary.pdf');
-};
+    // Proportions for each column (must match headers length).
+    // Adjust these numbers to change relative widths.
+    // Sum of proportions doesn't need to be 1; we normalize them below.
+    const proportions = [0.04, 0.16, 0.26, 0.10, 0.07, 0.07, 0.08, 0.14, 0.07, 0.06];
 
+    // Normalize and compute widths (ensure min widths)
+    const totalProp = proportions.reduce((a, b) => a + b, 0);
+    const rawWidths = proportions.map(p => (p / totalProp) * usablePageWidth);
 
+    // Minimum widths to avoid columns being too narrow
+    const minWidths = [30, 70, 120, 50, 40, 40, 60, 90, 60, 60];
+
+    // Final widths: max(raw, min)
+    const finalWidths = rawWidths.map((w, i) => Math.max(w, minWidths[i]));
+
+    // If final widths sum exceed usablePageWidth (due to minWidth bumps), scale down proportionally
+    const sumFinal = finalWidths.reduce((a, b) => a + b, 0);
+    if (sumFinal > usablePageWidth) {
+      const scale = usablePageWidth / sumFinal;
+      for (let i = 0; i < finalWidths.length; i++) finalWidths[i] = Math.floor(finalWidths[i] * scale);
+      // last column gets remaining pixels to make total exact
+      const diff = usablePageWidth - finalWidths.reduce((a, b) => a + b, 0);
+      if (diff > 0) finalWidths[finalWidths.length - 1] += diff;
+    } else {
+      // if there's leftover space, give a little extra to the Email and formatted duration columns
+      const leftover = usablePageWidth - sumFinal;
+      if (leftover > 0) finalWidths[2] += Math.floor(leftover * 0.6); // email
+      finalWidths[7] += Math.floor(leftover * 0.4); // formatted duration
+    }
+
+    // Prepare columnStyles for autoTable (index keys)
+    const columnStyles = {};
+    for (let i = 0; i < finalWidths.length; i++) {
+      columnStyles[i] = { cellWidth: finalWidths[i] };
+      // Align certain columns
+      if (i === 0) columnStyles[i].halign = 'center';
+      if (i === 6) columnStyles[i].halign = 'right';
+      if (i === 3 || i === 4 || i === 5) columnStyles[i].halign = 'center';
+    }
+
+    // autoTable options
+    autoTable(doc, {
+      head: [headers],
+      body: tableData,
+      startY: margin.top, // leaves space for title
+      margin: { left: margin.left, right: margin.right },
+      styles: {
+        fontSize: 9,
+        cellPadding: 6,
+        overflow: 'linebreak',
+        valign: 'middle',
+      },
+      headStyles: {
+        fillColor: [41, 128, 185],
+        textColor: [255, 255, 255],
+        halign: 'center'
+      },
+      alternateRowStyles: { fillColor: [245, 245, 245] },
+      columnStyles,
+      tableWidth: 'auto',
+      showHead: 'everyPage',
+      didDrawPage: (data) => {
+        // footer: page number
+        const pageCount = doc.internal.getNumberOfPages();
+        const pageNumber = doc.internal.getCurrentPageInfo().pageNumber;
+        const footerText = `Page ${pageNumber} of ${pageCount}`;
+        doc.setFontSize(9);
+        doc.setTextColor(100);
+        doc.text(footerText, pageWidth - margin.right, pageHeight - 20, { align: 'right' });
+      }
+    });
+
+    // Save PDF
+    doc.save('CRM-users-workreport-summary.pdf');
+  };
 
 
 
