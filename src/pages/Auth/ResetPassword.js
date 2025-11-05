@@ -4,6 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import { toast } from 'react-toastify';
 import { AiFillEye, AiFillEyeInvisible } from 'react-icons/ai';
+import { BASEURL } from '../../service/baseUrl';
 
 function ResetPassword() {
     const { id, token } = useParams()
@@ -112,11 +113,11 @@ function ResetPassword() {
 
         }
         if (validateAll()) {
-            console.log("Form submitted:", inputs);
+           /* console.log("Form submitted:", inputs);*/
             // proceed with your API call or other logic
         }
         try {
-            const result = await axios.post(`http://localhost:4000/reset-password/${id}/${token}`, { password })
+            const result = await axios.post(`${BASEURL}/reset-password/${id}/${token}`, { password })
 
 
             if (result.status == 200) {
@@ -160,41 +161,6 @@ function ResetPassword() {
                 <form className="signup-card" >
                     <h6 className="form-heading" >Reset Password</h6>
 
-                    {/*  <div style={{ position: 'relative', width: '100%' }}>
-                        <input type={showPassword ? 'text' : 'password'} name="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="New password" required />
-                        <span
-                            onClick={() => setShowPassword((prev) => !prev)}
-                            style={{
-                                position: 'absolute',
-                                right: 8,
-                                top: '50%',
-                                transform: 'translateY(-50%)',
-                                cursor: 'pointer'
-                            }}
-                            aria-label="Toggle Password Visibility"
-                        >
-                            {showPassword ? <AiFillEye /> : <AiFillEyeInvisible />}
-                        </span>
-                    </div>*/}
-
-
-                    {/*   <div style={{ position: 'relative', width: '100%' }}>
-                        <input type={showConfirmPassword ? 'text' : 'password'} placeholder="Confirm new password" value={confirm} onChange={e => setConfirm(e.target.value)} required />
-                        <span
-                            onClick={() => setShowConfirmPassword((prev) => !prev)}
-                            style={{
-                                position: 'absolute',
-                                right: 8,
-                                top: '50%',
-
-                                transform: 'translateY(-50%)',
-                                cursor: 'pointer'
-                            }}
-                            aria-label="Toggle Password Visibility"
-                        >
-                            {showConfirmPassword ? <AiFillEye /> : <AiFillEyeInvisible />}
-                        </span>
-                    </div>*/}
                     <div className="password-field-wrapper">
                         <div className={`input-container${errors.password ? ' error' : ''}`}>
                             <input

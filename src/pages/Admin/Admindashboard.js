@@ -36,7 +36,7 @@ function AdminDashboard() {
           newUsers: resp.data,
         }));
       } catch (err) {
-        console.error("Error fetching new users:", err);
+       /* console.error("Error fetching new users:", err);*/
       }
     };
     fetchNewUsers();
@@ -56,7 +56,7 @@ function AdminDashboard() {
           pendingUsers: resp.data.pendingUsers,
         }));
       } catch (err) {
-        console.error("Failed to fetch admin overview:", err);
+       /* console.error("Failed to fetch admin overview:", err);*/
       } finally {
         setLoading(false);
       }
@@ -77,7 +77,7 @@ function AdminDashboard() {
           setError("Failed to fetch stats");
         }
       } catch (err) {
-        console.error("Error fetching dashboard stats", err);
+      /*  console.error("Error fetching dashboard stats", err);*/
         setError("Server error");
       } finally {
         setLoading(false);
@@ -97,7 +97,7 @@ function AdminDashboard() {
           setCompletionEvents(resp.data.data);
         }
       } catch (err) {
-        console.error("Error fetching user completions:", err);
+      /*  console.error("Error fetching user completions:", err);*/
       }
     };
     fetchCompletions();
@@ -228,7 +228,7 @@ function AdminDashboard() {
                             await axios.delete(`${BASEURL}/admin/user-completion/${u._id}`);
                             setCompletionEvents(events => events.filter(ev => ev._id !== u._id));
                           } catch (err) {
-                            console.error("Failed to dismiss notification:", err);
+                           /* console.error("Failed to dismiss notification:", err);*/
                           }
                         }}
                         title="Dismiss"

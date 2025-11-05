@@ -33,7 +33,7 @@ function Forgotpassword() {
         setError(err);
         if (!err) {
             // proceed with valid email
-            console.log("Submitted email:", email);
+           /* console.log("Submitted email:", email);*/
         }
     };
 

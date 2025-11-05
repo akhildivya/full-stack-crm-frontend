@@ -34,7 +34,7 @@ function Header() {
   const toPath = auth.user?.userType === 'Admin'
     ? '/admin-dashboard'
     : '/user-dashboard';
-    const title = auth?.user?.username
+  const title = auth?.user?.username
     ? `${auth.user.username}${auth.user.userType ? ` (${auth.user.userType})` : ''}`
     : 'Dropdown';
   return (
@@ -62,7 +62,7 @@ function Header() {
                   <Nav.Link href="/login"><strong>Login</strong></Nav.Link>
 
                 </> : <>   <Nav.Link href={toPath} ><strong>Dashboard</strong></Nav.Link>
-                  
+
                   <Nav.Link onClick={handleLogout}  ><strong>Logout</strong></Nav.Link></>
               }
 

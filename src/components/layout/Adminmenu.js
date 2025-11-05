@@ -5,6 +5,7 @@ import { useAuth } from '../../context/auth';
 import { FaCheckCircle, FaTimesCircle } from "react-icons/fa";
 import { useEffect, useState } from 'react';
 import axios from 'axios';
+import { BASEURL } from '../../service/baseUrl';
 
 function Adminmenu() {
   const [verified, setVerified] = useState(null);
@@ -18,7 +19,7 @@ function Adminmenu() {
   useEffect(() => {
     // Fetch admin's verification status
     if (user) {
-      axios.get('http://localhost:4000/admin-status')
+      axios.get(`${BASEURL}/admin-status`)
         .then(response => setVerified(response.data.verified))
         .catch(error => console.error(error));
     }
@@ -34,7 +35,6 @@ function Adminmenu() {
   }
   return (
     <>
-
       <nav className="admin-sidebar">
         <div className="admin-panel p-3">
           <div className="brand mb-3 d-flex align-items-center">
@@ -82,27 +82,17 @@ function Adminmenu() {
               <span>Summary</span>
             </NavLink>
 
-            
+            <NavLink to="/admin-dashboard/user-performance" className={linkClass}>
+              <i className="bi bi-trophy-fill me-2" aria-hidden="true"></i>
+              <span>Performance</span>
+            </NavLink>
 
-             <NavLink to="/admin-dashboard/follow-up" className={linkClass}>
+            <NavLink to="/admin-dashboard/follow-up" className={linkClass}>
               <i className="bi bi-archive me-2" aria-hidden="true"></i>
               <span>Follow up</span>
             </NavLink>
 
-            {/*<NavLink to="/admin-dashboard/about" className={linkClass}>
-              <i className="bi bi-info-circle-fill me-2" aria-hidden="true"></i>
-              <span>About</span>
-            </NavLink>
-
-            <NavLink to="/admin-dashboard/contact" className={linkClass}>
-              <i className="bi bi-telephone-fill me-2" aria-hidden="true"></i>
-              <span>Contact</span>
-            </NavLink>*/}
-
-
           </div>
-
-
         </div>
       </nav>
     </>

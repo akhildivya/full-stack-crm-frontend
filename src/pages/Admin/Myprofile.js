@@ -21,7 +21,7 @@ function Myprofile() {
       .then(res => setUser(res.data))
       .catch(err => console.error(err));
   }, []);
-  console.log(user);
+ /* console.log(user);*/
 
 
 

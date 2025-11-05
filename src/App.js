@@ -1,8 +1,5 @@
 import { Route, Routes } from "react-router-dom";
 import HomePage from "./pages/HomePage";
-import About from "./pages/About";
-import Contact from "./pages/Contact";
-import Policy from "./pages/Policy";
 import Pagenotfound from "./pages/Pagenotfound";
 import Register from "./pages/Auth/Register";
 import Login from "./pages/Auth/Login";
@@ -25,6 +22,7 @@ import Taskcompleted from "./pages/user/Taskcompleted";
 import Workreport from "./pages/Admin/Workreport";
 import Summary from "./pages/Admin/Summary";
 import Followup from "./pages/Admin/Followup";
+import UserPerformance from "./pages/Admin/UserPerformance";
 
 
 function App() {
@@ -44,20 +42,20 @@ function App() {
           <Route path='all-users' element={<Allusers />} />
           <Route path='my-profile' element={<Myprofile />} />
           <Route path='upload-sheet' element={<Uploadsheet />} />
-          <Route path='about' element={<About />}></Route>
-          <Route path='contact' element={<Contact />}></Route>
+        
           <Route path='student-details' element={<Viewstudents />}> </Route>
           <Route path='alloted-duties' element={<Duties />}> </Route>
           <Route path='work-report' element={<Workreport />}></Route>
           <Route path='summary-report' element={<Summary />}></Route>
           <Route path='follow-up' element={<Followup />}></Route>
+          <Route path='user-performance' element={<UserPerformance />}></Route>
         </Route>
         <Route path='/register' element={<Register />}></Route>
         <Route path='/login' element={<Login />}></Route>
         <Route path='/forgot-password' element={<Forgotpassword />}></Route>
         <Route path='/reset-password/:id/:token' element={<ResetPassword />}></Route>
 
-        <Route path='/policy' element={<Policy />}></Route>
+    
         <Route path='*' element={<Pagenotfound />}></Route>
       </Routes>
 

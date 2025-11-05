@@ -599,15 +599,15 @@ function DutyList() {
                       <thead>
                         <tr>
                           {[
-                            { key: '#', show: true },
-                            { key: 'Name', show: true },
-                            { key: 'Status', show: true },
-                            { key: 'Email', show: isExpanded },
-                            { key: 'Phone', show: true },
-                            { key: 'Course', show: isExpanded },
-                            { key: 'Place', show: isExpanded },
-                            { key: 'Assigned At', show: isExpanded },
-                            { key: 'Actions', show: true },
+                            { key: '#', show: true,  sortKey: 'index' },
+                            { key: 'Name', show: true,sortKey: 'name' },
+                            { key: 'Status', show: true, sortKey: 'status'  },
+                            { key: 'Email', show: isExpanded, sortKey: 'email' },
+                            { key: 'Phone', show: true , sortKey: 'phone'},
+                            { key: 'Course', show: isExpanded, sortKey: 'course' },
+                            { key: 'Place', show: isExpanded , sortKey: 'place'},
+                            { key: 'Assigned At', show: isExpanded , sortKey: 'assignedAt' },
+                            { key: 'Actions', show: true, sortKey: null },
                           ]
                             .filter(col => col.show)
                             .map((col, idx) => (

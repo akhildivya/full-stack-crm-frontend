@@ -15,7 +15,7 @@ function Viewstudents() {
   const [students, setStudents] = useState([]);
   const [assignedStudents, setAssignedStudents] = useState([]); // new
   const [showAssignedModal, setShowAssignedModal] = useState(false); // new
-const [isExpandedView, setIsExpandedView] = useState(true);
+  const [isExpandedView, setIsExpandedView] = useState(true);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
@@ -700,183 +700,183 @@ const [isExpandedView, setIsExpandedView] = useState(true);
                 Marked : {students.filter(stu => stu.callMarked === 'marked').length} | {" "}
                 Not marked : {students.filter(stu => stu.callMarked !== 'marked').length}
               </div>
-              
-               <div className="mt-3 mb-3">
-        <Button
-          variant={isExpandedView ? 'secondary' : 'primary'}
-          size="sm"
-          onClick={() => setIsExpandedView(prev => !prev)}
-        >
-          {isExpandedView ? 'Shrink View' : 'Expand View'}
-        </Button>
-      </div>
-      
-      <div className="table-responsive vs-table-responsive">
-        <Table className="custom-table table-hover align-middle">
-          <thead className="table-header">
-            <tr>
-              <th>
-                <input
-                  type="checkbox"
-                  checked={
-                    currentRows.length > 0 &&
-                    currentRows.every(stu => selectedIds.has(stu._id))
-                  }
-                  onChange={(e) => {
-                    if (e.target.checked) {
-                      handleSelectAllCurrentPage();
-                    } else {
-                      handleUnselectAllCurrentPage();
-                    }
-                  }}
-                />
-              </th>
-              <th>#</th>
-              <th>Name</th>
-              {isExpandedView ? (
-                <>
-                  <th>Email</th>
-                  <th>Phone</th>
-                  <th>Course</th>
-                  <th>Place</th>
-                </>
-              ) : (
-                <>
-                  <th>Phone</th>
-                  <th>Course</th>
-                </>
-              )}
-              <th>Status</th>
-              <th>Call Status</th>
-              <th style={{ minWidth: '140px' }}>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {currentRows.length > 0 ? (
-              currentRows.map((student, idx) => (
-                <tr key={student._id || idx}>
-                  <td className="align-middle">
-                    <input
-                      type="checkbox"
-                      checked={selectedIds.has(student._id)}
-                      onChange={() => handleToggleSelect(student._id)}
-                    />
-                  </td>
-                  <td className="align-middle">{indexOfFirstRow + idx + 1}</td>
-                  <td
-                    className={
-                      `align-middle ` +
-                      (student.assignedTo ? "assigned-name " : "") +
-                      (student.assignedTo && student.callMarked === 'marked' ? "name-strikethrough " : "")
-                    }
-                  >
-                    <OverlayTrigger
-                      placement="top"
-                      overlay={
-                        <Tooltip id={`tooltip-assignee-${student._id}`}>
-                          <div>
-                            <strong>Assignee:</strong> {student.assignedTo?.username || 'None'}
-                          </div>
-                          <div>
-                            <strong>Assigned Date:</strong>{" "}
-                            {student.assignedAt
-                              ? new Date(student.assignedAt).toLocaleString('en-IN', {
-                                  day: '2-digit',
-                                  month: 'short',
-                                  year: 'numeric',
-                                  hour: '2-digit',
-                                  minute: '2-digit',
-                                  second: '2-digit',
-                                  hour12: true,
-                                })
-                              : 'None'}
-                          </div>
-                        </Tooltip>
-                      }
-                    >
-                      <span style={{
-                        textDecoration:
-                          student.assignedTo && student.callMarked === 'marked'
-                            ? "line-through"
-                            : "none"
-                      }}>
-                        {student.name}
-                      </span>
-                    </OverlayTrigger>
-                  </td>
 
-                  {isExpandedView ? (
-                    <>
-                      <td className={`align-middle ${student.assignedTo && student.callMarked==='marked' ? 'name-strikethrough' : ''}`}>
-                        {student.email}
-                      </td>
-                      <td className={`align-middle ${student.assignedTo && student.callMarked==='marked' ? 'name-strikethrough' : ''}`}>
-                        {student.phone}
-                      </td>
-                      <td className={`align-middle ${student.assignedTo && student.callMarked==='marked' ? 'name-strikethrough' : ''}`}>
-                        {student.course}
-                      </td>
-                      <td className={`align-middle ${student.assignedTo && student.callMarked==='marked' ? 'name-strikethrough' : ''}`}>
-                        {student.place}
-                      </td>
-                    </>
-                  ) : (
-                    <>
-                      <td className={`align-middle ${student.assignedTo && student.callMarked==='marked' ? 'name-strikethrough' : ''}`}>
-                        {student.phone}
-                      </td>
-                      <td className={`align-middle ${student.assignedTo && student.callMarked==='marked' ? 'name-strikethrough' : ''}`}>
-                        {student.course}
-                      </td>
-                    </>
-                  )}
+              <div className="mt-3 mb-3">
+                <Button
+                  variant={isExpandedView ? 'secondary' : 'primary'}
+                  size="sm"
+                  onClick={() => setIsExpandedView(prev => !prev)}
+                >
+                  {isExpandedView ? 'Shrink View' : 'Expand View'}
+                </Button>
+              </div>
 
-                  <td className="align-middle">
-                    {student.assignedTo ? (
-                      <span className="badge bg-success">Assigned</span>
+              <div className="table-responsive vs-table-responsive">
+                <Table className="custom-table table-hover align-middle">
+                  <thead className="table-header">
+                    <tr>
+                      <th>
+                        <input
+                          type="checkbox"
+                          checked={
+                            currentRows.length > 0 &&
+                            currentRows.every(stu => selectedIds.has(stu._id))
+                          }
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              handleSelectAllCurrentPage();
+                            } else {
+                              handleUnselectAllCurrentPage();
+                            }
+                          }}
+                        />
+                      </th>
+                      <th>#</th>
+                      <th>Name</th>
+                      {isExpandedView ? (
+                        <>
+                          <th>Email</th>
+                          <th>Phone</th>
+                          <th>Course</th>
+                          <th>Place</th>
+                        </>
+                      ) : (
+                        <>
+                          <th>Phone</th>
+                          <th>Course</th>
+                        </>
+                      )}
+                      <th>Status</th>
+                      <th>Call Status</th>
+                      <th style={{ minWidth: '140px' }}>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {currentRows.length > 0 ? (
+                      currentRows.map((student, idx) => (
+                        <tr key={student._id || idx}>
+                          <td className="align-middle">
+                            <input
+                              type="checkbox"
+                              checked={selectedIds.has(student._id)}
+                              onChange={() => handleToggleSelect(student._id)}
+                            />
+                          </td>
+                          <td className="align-middle">{indexOfFirstRow + idx + 1}</td>
+                          <td
+                            className={
+                              `align-middle ` +
+                              (student.assignedTo ? "assigned-name " : "") +
+                              (student.assignedTo && student.callMarked === 'marked' ? "name-strikethrough " : "")
+                            }
+                          >
+                            <OverlayTrigger
+                              placement="top"
+                              overlay={
+                                <Tooltip id={`tooltip-assignee-${student._id}`}>
+                                  <div>
+                                    <strong>Assignee:</strong> {student.assignedTo?.username || 'None'}
+                                  </div>
+                                  <div>
+                                    <strong>Assigned Date:</strong>{" "}
+                                    {student.assignedAt
+                                      ? new Date(student.assignedAt).toLocaleString('en-IN', {
+                                        day: '2-digit',
+                                        month: 'short',
+                                        year: 'numeric',
+                                        hour: '2-digit',
+                                        minute: '2-digit',
+                                        second: '2-digit',
+                                        hour12: true,
+                                      })
+                                      : 'None'}
+                                  </div>
+                                </Tooltip>
+                              }
+                            >
+                              <span style={{
+                                textDecoration:
+                                  student.assignedTo && student.callMarked === 'marked'
+                                    ? "line-through"
+                                    : "none"
+                              }}>
+                                {student.name}
+                              </span>
+                            </OverlayTrigger>
+                          </td>
+
+                          {isExpandedView ? (
+                            <>
+                              <td className={`align-middle ${student.assignedTo && student.callMarked === 'marked' ? 'name-strikethrough' : ''}`}>
+                                {student.email}
+                              </td>
+                              <td className={`align-middle ${student.assignedTo && student.callMarked === 'marked' ? 'name-strikethrough' : ''}`}>
+                                {student.phone}
+                              </td>
+                              <td className={`align-middle ${student.assignedTo && student.callMarked === 'marked' ? 'name-strikethrough' : ''}`}>
+                                {student.course}
+                              </td>
+                              <td className={`align-middle ${student.assignedTo && student.callMarked === 'marked' ? 'name-strikethrough' : ''}`}>
+                                {student.place}
+                              </td>
+                            </>
+                          ) : (
+                            <>
+                              <td className={`align-middle ${student.assignedTo && student.callMarked === 'marked' ? 'name-strikethrough' : ''}`}>
+                                {student.phone}
+                              </td>
+                              <td className={`align-middle ${student.assignedTo && student.callMarked === 'marked' ? 'name-strikethrough' : ''}`}>
+                                {student.course}
+                              </td>
+                            </>
+                          )}
+
+                          <td className="align-middle">
+                            {student.assignedTo ? (
+                              <span className="badge bg-success">Assigned</span>
+                            ) : (
+                              <span className="badge bg-secondary">Unassigned</span>
+                            )}
+                          </td>
+                          <td className="align-middle">
+                            {student.callMarked === 'marked' ? (
+                              <span className="badge bg-success">Marked</span>
+                            ) : (
+                              <span className="badge bg-secondary">Not Marked</span>
+                            )}
+                          </td>
+                          <td className="align-middle">
+                            <div className="d-flex justify-content-end">
+                              <Button
+                                variant="primary"
+                                size="sm"
+                                className="me-2"
+                                onClick={() => handleEdit(student)}
+                              >
+                                Edit
+                              </Button>
+                              <Button
+                                variant="danger"
+                                className="btn-transition"
+                                size="sm"
+                                onClick={() => handleConfirmDeleteOne(student._id)}
+                              >
+                                Delete
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
                     ) : (
-                      <span className="badge bg-secondary">Unassigned</span>
+                      <tr className="vs-no-data">
+                        <td colSpan={isExpandedView ? 10 : 8}>
+                          No matching records found.
+                        </td>
+                      </tr>
                     )}
-                  </td>
-                  <td className="align-middle">
-                    {student.callMarked === 'marked' ? (
-                      <span className="badge bg-success">Marked</span>
-                    ) : (
-                      <span className="badge bg-secondary">Not Marked</span>
-                    )}
-                  </td>
-                  <td className="align-middle">
-                    <div className="d-flex justify-content-end">
-                      <Button
-                        variant="primary"
-                        size="sm"
-                        className="me-2"
-                        onClick={() => handleEdit(student)}
-                      >
-                        Edit
-                      </Button>
-                      <Button
-                        variant="danger"
-                        className="btn-transition"
-                        size="sm"
-                        onClick={() => handleConfirmDeleteOne(student._id)}
-                      >
-                        Delete
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-              ))
-            ) : (
-              <tr className="vs-no-data">
-                <td colSpan={isExpandedView ? 10 : 8}>
-                  No matching records found.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </Table>
-      </div>
+                  </tbody>
+                </Table>
+              </div>
 
               <div className="d-flex flex-column flex-sm-row justify-content-between align-items-center mt-4">
                 <div className="mb-2 mb-sm-0">

@@ -75,7 +75,7 @@ function Login() {
 
         e.preventDefault()
         if (validateAll()) {
-            console.log("Form submitted:", inputs);
+           /* console.log("Form submitted:", inputs);*/
             // proceed with your API call or other logic
         }
         const { email, password } = inputs
@@ -94,7 +94,7 @@ function Login() {
         }
         else {
             const result = await loginApi(inputs)
-            console.log(result);
+         /*   console.log(result);*/
             if (result.status == 200) {
 
                 toast.success('Login success', {

@@ -69,7 +69,9 @@ function Notifications() {
     localStorage.setItem(dismissedKey, "true");
     localStorage.setItem(`${dismissedKey}_timestamp`, latestTimestamp);
 
-    toast.info("Notification dismissed!");
+    toast.info("Notification dismissed!", {
+      position: "top-center"
+    });
   };
 
   function formatDateToDDMMMYYYY(dateString) {
@@ -128,7 +130,7 @@ function Notifications() {
                         {toShow.map(student => (
                           <li
                             key={student._id}
-                            className={ newStudentIds.includes(student._id) ? "new" : "" }
+                            className={newStudentIds.includes(student._id) ? "new" : ""}
                           >
                             <span>{student.name}</span>
                             <span className="time">

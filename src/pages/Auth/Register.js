@@ -59,7 +59,7 @@ function Register() {
         return Object.keys(newErrors).length === 0;
     };
 
-    console.log(inputs);
+    /* console.log(inputs);*/
 
 
     const validateField = (name, value) => {
@@ -91,12 +91,8 @@ function Register() {
         if (name === "phone") {
             if (!value) {
                 error = "mobile number is required";
-            } else if (value.length < 10) {
-                error = "minimum 10 digits";
-            } else if (value.length > 15) {
-                error = "maximum 15 characters";
-            } else if (!/^\+?[0-9]{10,15}$/.test(value)) {
-                error = "invalid mobile number format";
+            } else if (!/^\d{10}$/.test(value)) {
+                error = "mobile number must be exactly 10 digits";
             }
         }
 
@@ -160,42 +156,10 @@ function Register() {
             return;
         }
         if (validateAll()) {
-            console.log("Form submitted:", inputs);
+            /*  console.log("Form submitted:", inputs);*/
             // proceed with your API call or other logic
         }
-        {/*   if (userType == "Admin" && secretKey != "AdarshT") {
 
-            toast.warn('Invalid Admin', {
-                position: "top-center",
-                autoClose: 5000,
-                hideProgressBar: false,
-                closeOnClick: false,
-                pauseOnHover: true,
-                draggable: true,
-                progress: undefined,
-                theme: "light",
-
-            });
-        
-            return
-
-        }
-        if (!username || !email || !password || !confirmPassword) {
-            toast.warn('All fields are required!', {
-                position: "top-center",
-                autoClose: 5000,
-                hideProgressBar: false,
-                closeOnClick: false,
-                pauseOnHover: true,
-                draggable: true,
-                progress: undefined,
-                theme: "light",
-
-            });
-
-            return
-
-       }*/}
         if (password !== confirmPassword) {
             toast.warn('Passwords do not match', {
                 position: "top-center",
@@ -223,7 +187,7 @@ function Register() {
 
         try {
             const result = await registerApi({ username, email, phone, password, userType })
-            console.log(result);
+            /* console.log(result);*/
             if (result.status == 200) {
                 toast.success(`${result?.data}`, {
                     position: "top-center",
@@ -340,19 +304,7 @@ function Register() {
                         </div>
                     ) : null}
 
-                    {/* <div className='wrapper'>
 
-                        <input type="text" name="username"
-                            value={inputs.username}
-                            onChange={handleChange}
-                            onBlur={handleBlur}
-                            placeholder="username" required
-                            className="input-with-icon"
-
-                        />
-
-                        {errors.username && <p className="error-message">{errors.username}</p>}
-                    </div>*/}
 
                     <div className="password-field-wrapper">
                         <div className={`input-container${errors.username ? ' error' : ''}`}>
@@ -408,18 +360,7 @@ function Register() {
                         {errors.phone && <p className="error-message">{errors.phone}</p>}
                     </div>
 
-                    {/* <div className="wrapper">
-                        <input type="email" name="email"
-                            value={inputs.email}
-                            onChange={handleChange}
-                            onBlur={handleBlur}
-                            placeholder="email" required
-                            className="input-with-icon"
-                        />
 
-                        {errors.email && <p className="error-message">{errors.email}</p>}
-
-                    </div>*/}
 
 
 

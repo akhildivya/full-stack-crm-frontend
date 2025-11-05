@@ -1,0 +1,53 @@
+/* ====== Performance Report Table Styling (Green header / Red row-hover) ====== */
+.performance-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.performance-table th,
+.performance-table td {
+  vertical-align: middle;
+  text-align: center;
+  white-space: nowrap; /* prevents date/time from breaking */
+  padding: 10px 12px;
+}
+
+.performance-table thead {
+  background-color: #28a745; /* green header background */
+  color: #ffffff;            /* white text for header */
+  border-bottom: 2px solid #1e7e34; /* slightly darker green border */
+}
+
+.performance-table th {
+  font-weight: 600;
+  color: #ffffff; /* ensure header text is white */
+}
+
+.performance-table tbody tr:hover {
+  background-color: #d8f6e8; /* very light red background on hover */
+  color: #721c24; /* darker red text on hover for contrast */
+  transition: background-color 0.2s ease-in-out;
+}
+
+.performance-table td {
+  border-top: 1px solid #dee2e6;
+}
+
+.performance-table td:last-child,
+.performance-table th:last-child {
+  white-space: nowrap; /* keeps action buttons aligned */
+}
+
+/* Responsive adjustments */
+.performance-table-responsive {
+  overflow-x: auto;
+}
+
+@media (max-width: 768px) {
+  .performance-table th,
+  .performance-table td {
+    padding: 8px 10px;
+    font-size: 13px;
+  }
+}

@@ -4,6 +4,7 @@ import '../../css/admin.css'
 import axios from 'axios';
 import { useAuth } from '../../context/auth';
 import { FaCheckCircle, FaTimesCircle } from "react-icons/fa";
+import { BASEURL } from '../../service/baseUrl';
 
 function Usermenu() {
   const [verified, setVerified] = useState(null);
@@ -20,12 +21,12 @@ function Usermenu() {
 
     const fetchStatus = async () => {
       try {
-        const response = await axios.get('http://localhost:4000/status');
+        const response = await axios.get(`${BASEURL}/status`);
         if (response.data && typeof response.data.verified !== 'undefined') {
           setVerified(response.data.verified);
         }
       } catch (error) {
-        console.error('Error fetching verified status:', error);
+       /* console.error('Error fetching verified status:', error);*/
       }
     };
 
@@ -79,7 +80,7 @@ function Usermenu() {
               <span>Daily routine</span>
             </NavLink>
 
-              <NavLink to="/user-dashboard/completed-tasks" className={linkClass}>
+            <NavLink to="/user-dashboard/completed-tasks" className={linkClass}>
               <i className="bi bi-card-checklist me-2" aria-hidden="true"></i>
               <span>Body of work</span>
             </NavLink>

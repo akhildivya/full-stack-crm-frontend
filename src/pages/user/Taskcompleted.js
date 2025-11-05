@@ -378,7 +378,7 @@ function Taskcompleted() {
                           </div>
                         </div>
 
- 
+
                         <div className="col-md-4 mb-2">
                           <div className="summary-card bg-danger text-white p-3 rounded shadow-sm">
                             <h6>Interested (Yes)</h6>
@@ -435,12 +435,23 @@ function Taskcompleted() {
                           {summary.courseCounts && (() => {
                             const normalizedCourseCounts = {};
                             Object.entries(summary.courseCounts).forEach(([course, count]) => {
-                              const normalizedCourse = course.toLowerCase();
-                              let displayCourse = course;
+                              const normalized = course.trim().toLowerCase();
+                              let displayCourse;
 
-                              if (normalizedCourse.includes('btech')) displayCourse = 'BTech';
-                              else if (normalizedCourse.includes('plus one')) displayCourse = 'Plus One';
-                              else if (normalizedCourse.includes('plus two')) displayCourse = 'Plus Two';
+                              if (normalized.includes('btech')) {
+                                displayCourse = 'BTech';
+                              } else if (normalized.includes('plus one') || normalized === 'plusone') {
+                                displayCourse = 'Plus One';
+                              } else if (normalized.includes('plus two') || normalized === 'plustwo') {
+                                displayCourse = 'Plus Two';
+                              } else {
+                                // title-case as fallback
+                                displayCourse = course
+                                  .trim()
+                                  .split(/\s+/)
+                                  .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+                                  .join(' ');
+                              }
 
                               normalizedCourseCounts[displayCourse] = (normalizedCourseCounts[displayCourse] || 0) + count;
                             });
@@ -453,6 +464,7 @@ function Taskcompleted() {
                           })()}
                         </div>
                       </div>
+
                     </div>
                   </div>
                 </div>
@@ -506,7 +518,7 @@ function Taskcompleted() {
               {showInfo && (
                 <Alert variant="info" dismissible onClose={() => setShowInfo(false)}>
                   📄 Download the PDF for future reference. <br />
-                  ⚠️ If admin deletes your record, the table content will be removed.
+                  ⚠️ If the admin deletes your record, the table content will be removed.
                 </Alert>
               )}
 

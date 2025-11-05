@@ -328,26 +328,31 @@ function Workreport() {
     };
 
     // Course-wise counts (for current selected user)
-    const courseCounts = useMemo(() => {
-        const map = {};
+  const courseCounts = useMemo(() => {
+  const map = {};
 
-        students.forEach(s => {
-            const course = s.course?.toLowerCase().trim();
+  students.forEach(s => {
+    const raw = s.course?.trim() || "";
+    const course = raw.toLowerCase();
 
-            // Normalize course names
-            if (course === 'btech' || course === 'btech') {
-                map['BTech'] = (map['BTech'] || 0) + 1;
-            } else if (course === 'plus one' || course === 'plus one') {
-                map['Plus One'] = (map['Plus One'] || 0) + 1;
-            } else if (course === 'plus two' || course === 'plus two') {
-                map['Plus Two'] = (map['Plus Two'] || 0) + 1;
-            } else {
-                map[course] = (map[course] || 0) + 1;
-            }
-        });
+    if (course === 'btech') {
+      map['BTech'] = (map['BTech'] || 0) + 1;
+    } else if (course === 'plus one' || course === 'plusone') {
+      map['Plus One'] = (map['Plus One'] || 0) + 1;
+    } else if (course === 'plus two' || course === 'plustwo') {
+      map['Plus Two'] = (map['Plus Two'] || 0) + 1;
+    } else {
+      // Title-case the other course for consistency
+      const key = raw
+        .split(/\s+/)
+        .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+        .join(' ');
+      map[key] = (map[key] || 0) + 1;
+    }
+  });
 
-        return map;
-    }, [students]);
+  return map;
+}, [students]);
     // inside Workreport component (after processedStudents)
     const formatDisplayDate = (dateVal) => {
         if (!dateVal) return '';
@@ -1059,7 +1064,7 @@ function Workreport() {
                                                                     { label: "Total Contacts", value: summary.totalContacts },
                                                                     { label: "Completed", value: summary.completed },
                                                                     { label: "Pending", value: summary.pending },
-                                                                    { label: "Total Call Duration (min)", value: summary.totalCallDuration },
+                                                                    { label: "Total Call Duration (minutes)", value: summary.totalCallDuration },
                                                                     {
                                                                         label: "Total Call Duration (sec)",
                                                                         value: (() => {
@@ -1370,7 +1375,7 @@ function Workreport() {
                                         </Dropdown.Toggle>
 
                                         <Dropdown.Menu>
-                                            {[2, 5, 10, 25, 50, 100].map((num) => (
+                                            {[ 5, 10,15,20, 25,100].map((num) => (
                                                 <Dropdown.Item key={num} onClick={() => handleRowsPerPageChange({ target: { value: num } })}>
                                                     {num}
                                                 </Dropdown.Item>
