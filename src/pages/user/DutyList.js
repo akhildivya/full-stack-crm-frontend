@@ -37,8 +37,22 @@ function DutyList() {
   });
   const [auth] = useAuth();
 
-  const [callSessionId, setCallSessionId] = useState(null); // NEW
-  const [callStartTime, setCallStartTime] = useState(null);     // NEW
+  const [completedStudentIds, setCompletedStudentIds] = useState(() => {
+    const raw = localStorage.getItem('completedStudentIds');
+    return raw ? JSON.parse(raw) : [];
+  });
+
+  const [callSessionId, setCallSessionId] = useState(() => {
+    return localStorage.getItem('callSessionId') || null;
+  }); // NEW: init from localStorage // NEW
+  const [callStartTime, setCallStartTime] = useState(() => {
+    const v = localStorage.getItem('callStartTime');
+    return v ? parseInt(v, 10) : null;
+  }); // NEW: init from localStorage
+
+   const [currentStudentId, setCurrentStudentId] = useState(null);
+
+  const callInProgress = !!callSessionId;
 
 
 
@@ -51,7 +65,7 @@ function DutyList() {
         // call backend stop endpoint
         axios.post(`${BASEURL}/stop`, {
           sessionId: callSessionId,
-          // include other fields if needed, e.g., callStatus, interested, planType
+         
         }, {
           headers: { Authorization: auth.token }
         }).then(res => {
@@ -70,10 +84,24 @@ function DutyList() {
           toast.error('Error stopping call session', {
             position: 'top-center'
           }); // NEW
+        }).finally(() => {
+         if (currentStudentId) {
+            setCompletedStudentIds(prev => {
+              const newList = [...prev, String(currentStudentId)];
+              localStorage.setItem('completedStudentIds', JSON.stringify(newList));
+              return newList;
+            });
+          }
+          setCurrentStudentId(null);
+
+          setCallSessionId(null);  // NEW
+          setCallStartTime(null);  // NEW
+          localStorage.removeItem('callSessionId');
+          localStorage.removeItem('callStartTime');
+          localStorage.setItem('callInProgress', 'false');
         });
 
-        setCallSessionId(null);  // NEW
-        setCallStartTime(null);  // NEW
+
       }
     };
 
@@ -566,6 +594,7 @@ function DutyList() {
                         </Button>
                       </div>
                     </div>
+                    
                     <Table className="custom-table table-hover align-middle">
                       <thead>
                         <tr>
@@ -613,6 +642,7 @@ function DutyList() {
 
                           return currentItems.map((s, idx) => {
                             const isUpdated = updatedStudents.includes(s._id);
+                            const isCompleted = completedStudentIds.includes(s._id); // NEW
                             const isLatest =
                               s.assignedAt &&
                               new Date(s.assignedAt).getTime() === latestAssignedTime &&
@@ -638,35 +668,52 @@ function DutyList() {
                                 </td>
                                 {isExpanded && <td>{s.email}</td>}
                                 <td>
-                                  <a
-                                    href={`tel:${s.phone}`}
-                                    onClick={e => {
-                                      e.preventDefault(); // NEW
-                                      // call start endpoint
-                                      axios.post(`${BASEURL}/start`, {
-                                        studentId: s._id
-                                      }, {
-                                        headers: { Authorization: auth.token }
-                                      }).then(res => {
-                                        setCallSessionId(res.data.sessionId); // NEW
-                                        setCallStartTime(Date.now());         // NEW
-                                        toast.info('Timer started', {
-                                          position: 'top-center'
-                                        });           // NEW
-                                      }).catch(err => {
-                                        console.error('Error starting call session', err);
-                                        toast.error('Error starting timer session', {
-                                          position: 'top-center'
-                                        }); // NEW
-                                      });
+                {isCompleted ? (
+                  <span style={{
+                    textDecoration: 'line-through',
+                    color: 'grey',
+                    cursor: 'not-allowed'
+                  }}>
+                    {s.phone}
+                  </span>
+                ) : (
+                  <a
+                    href={`tel:${s.phone}`}
+                    onClick={async e => {
+                      e.preventDefault();
+                      if (callInProgress) {
+                        toast.info('Call already in progress.', { position: 'top-center' });
+                        return;
+                      }
+                      // When starting, set currentStudentId
+                      setCurrentStudentId(s._id);
 
-                                      window.location.href = `tel:${s.phone}`; // existing link behavior
-                                    }}
-                                    style={{ textDecoration: 'none', color: 'blue' }}
-                                  >
-                                    {s.phone}
-                                  </a>
-                                </td>
+                      const res = await axios.post(`${BASEURL}/start`, { studentId: s._id }, {
+                        headers: { Authorization: auth.token },
+                      });
+                      const newSessionId = res.data.sessionId;
+                      const startTime = Date.now();
+                      setCallSessionId(newSessionId);
+                      setCallStartTime(startTime);
+                      localStorage.setItem('callSessionId', newSessionId);
+                      localStorage.setItem('callStartTime', startTime.toString());
+                      localStorage.setItem('callInProgress', 'true');
+
+                      toast.info('Timer started', { position: 'top-center' });
+                      window.location.href = `tel:${s.phone}`;
+                    }}
+                    style={{
+                      textDecoration: 'none',
+                      color: 'blue',
+                      cursor: callInProgress ? 'not-allowed' : 'pointer',
+                      pointerEvents: callInProgress ? 'none' : 'auto',
+                      opacity: callInProgress ? 0.6 : 1
+                    }}
+                  >
+                    {s.phone}
+                  </a>
+                )}
+              </td>
                                 {isExpanded && (
                                   <>
                                     <td>{s.course}</td>

@@ -82,6 +82,8 @@ function Adminmenu() {
               <span>Summary</span>
             </NavLink>
 
+            
+
              <NavLink to="/admin-dashboard/follow-up" className={linkClass}>
               <i className="bi bi-archive me-2" aria-hidden="true"></i>
               <span>Follow up</span>

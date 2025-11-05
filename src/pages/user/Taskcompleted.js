@@ -377,6 +377,8 @@ function Taskcompleted() {
                             <h3>{summary.totalCallDuration}</h3>
                           </div>
                         </div>
+
+ 
                         <div className="col-md-4 mb-2">
                           <div className="summary-card bg-danger text-white p-3 rounded shadow-sm">
                             <h6>Interested (Yes)</h6>
