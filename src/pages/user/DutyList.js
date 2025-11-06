@@ -18,6 +18,7 @@ function DutyList() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  const [hideVerified, setHideVerified] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortKey, setSortKey] = useState('name');
@@ -50,7 +51,7 @@ function DutyList() {
     return v ? parseInt(v, 10) : null;
   }); // NEW: init from localStorage
 
-   const [currentStudentId, setCurrentStudentId] = useState(null);
+  const [currentStudentId, setCurrentStudentId] = useState(null);
 
   const callInProgress = !!callSessionId;
 
@@ -65,7 +66,7 @@ function DutyList() {
         // call backend stop endpoint
         axios.post(`${BASEURL}/stop`, {
           sessionId: callSessionId,
-         
+
         }, {
           headers: { Authorization: auth.token }
         }).then(res => {
@@ -85,7 +86,7 @@ function DutyList() {
             position: 'top-center'
           }); // NEW
         }).finally(() => {
-         if (currentStudentId) {
+          if (currentStudentId) {
             setCompletedStudentIds(prev => {
               const newList = [...prev, String(currentStudentId)];
               localStorage.setItem('completedStudentIds', JSON.stringify(newList));
@@ -237,12 +238,18 @@ function DutyList() {
     });
   }, [filtered, sortKey, sortOrder, updatedStudents]);
 
+  const visibleRows = useMemo(() => {
+    if (!hideVerified) {
+      return sorted;
+    }
+    return sorted.filter(s => !(s.callInfo?.verified === true));
+  }, [sorted, hideVerified]);
 
   // pagination
   const currentItems = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
-    return sorted.slice(startIndex, startIndex + itemsPerPage);
-  }, [sorted, currentPage, itemsPerPage]);
+    return visibleRows.slice(startIndex, startIndex + itemsPerPage);
+  }, [visibleRows, currentPage, itemsPerPage]);
 
   const totalPages = Math.ceil(sorted.length / itemsPerPage);
 
@@ -593,20 +600,29 @@ function DutyList() {
                           {isExpanded ? "Shrink View" : "Expand View"}
                         </Button>
                       </div>
+                      <div className="d-flex align-items-center  gap-2">
+                        <button
+                          className="btn btn-outline-secondary btn-sm"
+                          onClick={() => setHideVerified(prev => !prev)}
+                        >
+                          {hideVerified ? "Show Verified Rows" : "Hide Verified Rows"}
+                        </button>
+                        {/* ... other controls */}
+                      </div>
                     </div>
-                    
+
                     <Table className="custom-table table-hover align-middle">
                       <thead>
                         <tr>
                           {[
-                            { key: '#', show: true,  sortKey: 'index' },
-                            { key: 'Name', show: true,sortKey: 'name' },
-                            { key: 'Status', show: true, sortKey: 'status'  },
+                            { key: '#', show: true, sortKey: 'index' },
+                            { key: 'Name', show: true, sortKey: 'name' },
+                            { key: 'Status', show: true, sortKey: 'status' },
                             { key: 'Email', show: isExpanded, sortKey: 'email' },
-                            { key: 'Phone', show: true , sortKey: 'phone'},
+                            { key: 'Phone', show: true, sortKey: 'phone' },
                             { key: 'Course', show: isExpanded, sortKey: 'course' },
-                            { key: 'Place', show: isExpanded , sortKey: 'place'},
-                            { key: 'Assigned At', show: isExpanded , sortKey: 'assignedAt' },
+                            { key: 'Place', show: isExpanded, sortKey: 'place' },
+                            { key: 'Assigned At', show: isExpanded, sortKey: 'assignedAt' },
                             { key: 'Actions', show: true, sortKey: null },
                           ]
                             .filter(col => col.show)
@@ -668,52 +684,52 @@ function DutyList() {
                                 </td>
                                 {isExpanded && <td>{s.email}</td>}
                                 <td>
-                {isCompleted ? (
-                  <span style={{
-                    textDecoration: 'line-through',
-                    color: 'grey',
-                    cursor: 'not-allowed'
-                  }}>
-                    {s.phone}
-                  </span>
-                ) : (
-                  <a
-                    href={`tel:${s.phone}`}
-                    onClick={async e => {
-                      e.preventDefault();
-                      if (callInProgress) {
-                        toast.info('Call already in progress.', { position: 'top-center' });
-                        return;
-                      }
-                      // When starting, set currentStudentId
-                      setCurrentStudentId(s._id);
+                                  {isCompleted ? (
+                                    <span style={{
+                                      textDecoration: 'line-through',
+                                      color: 'grey',
+                                      cursor: 'not-allowed'
+                                    }}>
+                                      {s.phone}
+                                    </span>
+                                  ) : (
+                                    <a
+                                      href={`tel:${s.phone}`}
+                                      onClick={async e => {
+                                        e.preventDefault();
+                                        if (callInProgress) {
+                                          toast.info('Call already in progress.', { position: 'top-center' });
+                                          return;
+                                        }
+                                        // When starting, set currentStudentId
+                                        setCurrentStudentId(s._id);
 
-                      const res = await axios.post(`${BASEURL}/start`, { studentId: s._id }, {
-                        headers: { Authorization: auth.token },
-                      });
-                      const newSessionId = res.data.sessionId;
-                      const startTime = Date.now();
-                      setCallSessionId(newSessionId);
-                      setCallStartTime(startTime);
-                      localStorage.setItem('callSessionId', newSessionId);
-                      localStorage.setItem('callStartTime', startTime.toString());
-                      localStorage.setItem('callInProgress', 'true');
+                                        const res = await axios.post(`${BASEURL}/start`, { studentId: s._id }, {
+                                          headers: { Authorization: auth.token },
+                                        });
+                                        const newSessionId = res.data.sessionId;
+                                        const startTime = Date.now();
+                                        setCallSessionId(newSessionId);
+                                        setCallStartTime(startTime);
+                                        localStorage.setItem('callSessionId', newSessionId);
+                                        localStorage.setItem('callStartTime', startTime.toString());
+                                        localStorage.setItem('callInProgress', 'true');
 
-                      toast.info('Timer started', { position: 'top-center' });
-                      window.location.href = `tel:${s.phone}`;
-                    }}
-                    style={{
-                      textDecoration: 'none',
-                      color: 'blue',
-                      cursor: callInProgress ? 'not-allowed' : 'pointer',
-                      pointerEvents: callInProgress ? 'none' : 'auto',
-                      opacity: callInProgress ? 0.6 : 1
-                    }}
-                  >
-                    {s.phone}
-                  </a>
-                )}
-              </td>
+                                        toast.info('Timer started', { position: 'top-center' });
+                                        window.location.href = `tel:${s.phone}`;
+                                      }}
+                                      style={{
+                                        textDecoration: 'none',
+                                        color: 'blue',
+                                        cursor: callInProgress ? 'not-allowed' : 'pointer',
+                                        pointerEvents: callInProgress ? 'none' : 'auto',
+                                        opacity: callInProgress ? 0.6 : 1
+                                      }}
+                                    >
+                                      {s.phone}
+                                    </a>
+                                  )}
+                                </td>
                                 {isExpanded && (
                                   <>
                                     <td>{s.course}</td>

@@ -82,7 +82,7 @@ function Summary() {
     {
       Header: 'Completed At',
       accessor: 'completedAt',
-      Cell: ({ value, row }) => {
+      Cell: ({ value, row }) =>  {
         const { completed, totalContacts } = row.original;
         const allDone = (completed > 0 && completed === totalContacts);
         return allDone ? (value || '—') : 'Pending';

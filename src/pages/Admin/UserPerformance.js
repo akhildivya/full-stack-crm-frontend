@@ -26,7 +26,6 @@ function UserPerformance() {
   const [currentPage, setCurrentPage] = useState(1);
   const rowsPerPage = 10;
 
-  // NEW: search & sort state
   const [searchTerm, setSearchTerm] = useState("");
   const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
 
@@ -46,6 +45,7 @@ function UserPerformance() {
           headers: { Authorization: auth?.token },
         });
         setReports(res.data || []);
+        
       } catch (err) {
         console.error(err);
         setError(err.response?.data?.message || "Failed to fetch reports");
@@ -58,7 +58,6 @@ function UserPerformance() {
 
   const handlePageChange = (page) => setCurrentPage(page);
 
-  // ✅ Updated: Search also includes totalPlans
   const filteredReports = useMemo(() => {
     const term = searchTerm.toLowerCase();
     return reports.filter((r) => {
@@ -68,19 +67,16 @@ function UserPerformance() {
           ? (r.week || "").toLowerCase()
           : (r.month || "").toLowerCase();
       const weekMonthMatch = weekOrMonth.includes(term);
-      const durationMatch = String(r.totalCallDurationSeconds || "").includes(
-        term
-      );
+      const durationMatch = String(r.totalCallDurationSeconds || "").includes(term);
       const plansMatch = String(r.totalPlans || "").includes(term);
       return nameMatch || weekMonthMatch || durationMatch || plansMatch;
     });
   }, [reports, searchTerm, reportType]);
 
-  // ✅ Updated: Sort also supports totalPlans
   const sortedReports = useMemo(() => {
     const { key, direction } = sortConfig;
     if (!key) return filteredReports;
-    const sorted = [...filteredReports].sort((a, b) => {
+    return [...filteredReports].sort((a, b) => {
       const aVal = a[key] ?? "";
       const bVal = b[key] ?? "";
       if (typeof aVal === "number" && typeof bVal === "number") {
@@ -92,7 +88,6 @@ function UserPerformance() {
       if (aStr > bStr) return direction === "asc" ? 1 : -1;
       return 0;
     });
-    return sorted;
   }, [filteredReports, sortConfig]);
 
   const totalPages = Math.ceil(sortedReports.length / rowsPerPage);
@@ -103,31 +98,7 @@ function UserPerformance() {
     return Math.max(...currentRows.map((r) => r.totalCallDurationSeconds || 0));
   }, [currentRows]);
 
-
-// NEW
-const exportToPDF = () => {
-  const doc = new jsPDF();
-  const title = `${reportType === "weekly" ? "Weekly" : "Monthly"} Performance Report`;
-  const pageWidth = doc.internal.pageSize.getWidth();
-
-  const tableColumn = [
-    "#",
-    "Username",
-    reportType === "weekly" ? "Week (Range)" : "Month",
-    "Assigned Count",
-    "Completed Count",
-    "Total Call Duration (sec)",
-    "Total Plans (Starter / Gold / Master)",
-    "Assigned Dates",
-    "Completed Dates",
-  ];
-
-  const formatDate = (date) => {
-    const d = new Date(date);
-    const options = { day: "2-digit", month: "short", year: "numeric" };
-    return d.toLocaleDateString("en-IN", options).replace(/\s/g, "-");
-  };
-
+  // Helpers to compute date ranges
   const getWeekRange = (weekValue) => {
     const [yearStr, weekStr] = `${weekValue}`.split("-W");
     const year = parseInt(yearStr, 10);
@@ -137,71 +108,107 @@ const exportToPDF = () => {
     const endDate = new Date(startDate);
     endDate.setDate(startDate.getDate() + 6);
     const opts = { day: "2-digit", month: "short", year: "numeric" };
-    return `${startDate.toLocaleDateString("en-IN", opts)} to ${endDate.toLocaleDateString("en-IN", opts)}`;
+    return { 
+      text: `${startDate.toLocaleDateString("en-IN", opts)} to ${endDate.toLocaleDateString("en-IN", opts)}`,
+      start: startDate,
+      end: endDate,
+    };
   };
 
-  const formatMonth = (monthValue) => {
+  const getMonthRange = (monthValue) => {
     const [yearStr, monthNumStr] = `${monthValue}`.split("-");
     const year = parseInt(yearStr, 10);
     const monthNum = parseInt(monthNumStr, 10) - 1;
-    const dateObj = new Date(year, monthNum, 1);
-    const opts = { month: "short" };
-    const monthName = dateObj.toLocaleDateString("en-IN", opts);
-    return `${monthName}-${year}`;
+    const start = new Date(year, monthNum, 1);
+    const end = new Date(year, monthNum + 1, 0);
+     const opts = { day: "2-digit", month: "short", year: "numeric" };
+    return {
+      text: `${start.toLocaleDateString("en-IN", opts)}`,
+      fullRangeText: `${start.toLocaleDateString("en-IN", opts)} to ${end.toLocaleDateString("en-IN", opts)}`,
+      start,
+      end,
+    };
   };
 
-  const highestDuration = reports.length
-    ? Math.max(...reports.map((r) => r.totalCallDurationSeconds || 0))
-    : null;
+  const isPeriodPending = (r) => {
+    const now = new Date();
+    if (reportType === "weekly" && r.week) {
+      const { end } = getWeekRange(r.week);
+      // if current date is before end of that week, it’s pending
+      return now <= end;
+    }
+    if (reportType === "monthly" && r.month) {
+      const { end } = getMonthRange(r.month);
+      return now <= end;
+    }
+    return false;
+  };
 
-  // Tick mark — plain Unicode check
-  const tickMark = "✅";
+  const exportToPDF = () => {
+    const doc = new jsPDF();
+    const title = `${reportType === "weekly" ? "Weekly" : "Monthly"} Performance Report`;
+    const pageWidth = doc.internal.pageSize.getWidth();
 
-  const tableRows = reports.map((r, idx) => [
-    idx + 1,
-    r.username,
-    reportType === "weekly"
-      ? `${r.week}\n(${getWeekRange(r.week)})`
-      : formatMonth(r.month),
-    r.assignedCount,
-    r.completedCount,
-    r.totalCallDurationSeconds === highestDuration
-      ? `${r.totalCallDurationSeconds} ${tickMark}`
-      : `${r.totalCallDurationSeconds}`,
-    `${r.totalPlans ?? 0} (${r.planCounts?.Starter ?? 0} / ${r.planCounts?.Gold ?? 0} / ${r.planCounts?.Master ?? 0})`,
-    r.assignedDates?.map((d) => formatDate(d)).join(", "),
-    r.completedDates?.map((d) => d && formatDate(d)).join(", "),
-  ]);
+    const tableColumn = [
+      "#",
+      "Username",
+      reportType === "weekly" ? "Week (Range)" : "Month",
+      "Assigned Count",
+      "Completed Count",
+      "Total Call Duration (sec)",
+      "Total Plans (Starter / Gold / Master)",
+      "Assigned Dates",
+      "Completed Dates",
+    ];
 
-  autoTable(doc, {
-    head: [tableColumn],
-    body: tableRows,
-    startY: 25,
-    styles: { fontSize: 8, cellPadding: 2, overflow: 'linebreak' },
-    showHead: "everyPage",
-    didDrawPage: () => {
-      doc.setFontSize(14);
-      doc.setFont("helvetica", "bold");
-      const titleWidth = doc.getTextWidth(title);
-      const xTitle = (pageWidth - titleWidth) / 2;
-      doc.text(title, xTitle, 15);
+    const formatDate = (date) => {
+      const d = new Date(date);
+      const options = { day: "2-digit", month: "short", year: "numeric" };
+      return d.toLocaleDateString("en-IN", options).replace(/\s/g, "-");
+    };
 
-      doc.setFontSize(8);
-      doc.setFont("helvetica", "normal");
-      const pageCount = doc.internal.getNumberOfPages();
-      const pageCurrent = doc.internal.getCurrentPageInfo().pageNumber;
-      const footerText = `Page ${pageCurrent} of ${pageCount}`;
-      const xFooter = (pageWidth - doc.getTextWidth(footerText)) / 2;
-      const yFooter = doc.internal.pageSize.getHeight() - 10;
-      doc.text(footerText, xFooter, yFooter);
-    },
-  });
+    const tableRows = reports.map((r, idx) => [
+      idx + 1,
+      r.username,
+      reportType === "weekly"
+        ? `${r.week}\n(${getWeekRange(r.week).text})`
+        : `${r.month} (${getMonthRange(r.month).fullRangeText})`,
+      r.assignedCount,
+      r.completedCount,
+      r.totalCallDurationSeconds === highestDuration
+        ? `${r.totalCallDurationSeconds} ✅`
+        : `${r.totalCallDurationSeconds}`,
+      `${r.totalPlans ?? 0} (${r.planCounts?.Starter ?? 0} / ${r.planCounts?.Gold ?? 0} / ${r.planCounts?.Master ?? 0})`,
+      r.assignedDates?.map((d) => formatDate(d)).join(", "),
+      r.completedDates?.map((d) => d && formatDate(d)).join(", "),
+    ]);
 
-  doc.save(`CRM-${reportType}-Performance-report.pdf`);
-};
+    autoTable(doc, {
+      head: [tableColumn],
+      body: tableRows,
+      startY: 25,
+      styles: { fontSize: 8, cellPadding: 2, overflow: "linebreak" },
+      showHead: "everyPage",
+      didDrawPage: () => {
+        doc.setFontSize(14);
+        doc.setFont("helvetica", "bold");
+        const titleWidth = doc.getTextWidth(title);
+        const xTitle = (pageWidth - titleWidth) / 2;
+        doc.text(title, xTitle, 15);
 
+        doc.setFontSize(8);
+        doc.setFont("helvetica", "normal");
+        const pageCount = doc.internal.getNumberOfPages();
+        const pageCurrent = doc.internal.getCurrentPageInfo().pageNumber;
+        const footerText = `Page ${pageCurrent} of ${pageCount}`;
+        const xFooter = (pageWidth - doc.getTextWidth(footerText)) / 2;
+        const yFooter = doc.internal.pageSize.getHeight() - 10;
+        doc.text(footerText, xFooter, yFooter);
+      },
+    });
 
-
+    doc.save(`CRM-${reportType}-Performance-report.pdf`);
+  };
 
   return (
     <Layout title={"CRM - Performance Analysis"}>
@@ -217,19 +224,18 @@ const exportToPDF = () => {
               <div className="d-flex justify-content-center gap-2 mb-4">
                 <Button
                   variant={reportType === "weekly" ? "primary" : "outline-primary"}
-                  onClick={() => setReportType("weekly")}
+                  onClick={() => { setReportType("weekly"); setCurrentPage(1); }}
                 >
                   Weekly
                 </Button>
                 <Button
                   variant={reportType === "monthly" ? "primary" : "outline-primary"}
-                  onClick={() => setReportType("monthly")}
+                  onClick={() => { setReportType("monthly"); setCurrentPage(1); }}
                 >
                   Monthly
                 </Button>
               </div>
 
-              {/* 🔍 Search & Sort Controls */}
               <div className="mb-3">
                 <div className="row g-2 align-items-stretch">
                   <div className="col-12 col-md-6 d-flex">
@@ -255,8 +261,7 @@ const exportToPDF = () => {
                           setSortConfig({
                             key: "username",
                             direction:
-                              sortConfig.key === "username" &&
-                                sortConfig.direction === "asc"
+                              sortConfig.key === "username" && sortConfig.direction === "asc"
                                 ? "desc"
                                 : "asc",
                           })
@@ -277,8 +282,7 @@ const exportToPDF = () => {
                           setSortConfig({
                             key: "totalCallDurationSeconds",
                             direction:
-                              sortConfig.key === "totalCallDurationSeconds" &&
-                                sortConfig.direction === "asc"
+                              sortConfig.key === "totalCallDurationSeconds" && sortConfig.direction === "asc"
                                 ? "desc"
                                 : "asc",
                           })
@@ -299,8 +303,7 @@ const exportToPDF = () => {
                           setSortConfig({
                             key: "totalPlans",
                             direction:
-                              sortConfig.key === "totalPlans" &&
-                                sortConfig.direction === "asc"
+                              sortConfig.key === "totalPlans" && sortConfig.direction === "asc"
                                 ? "desc"
                                 : "asc",
                           })
@@ -321,17 +324,15 @@ const exportToPDF = () => {
                           setSortConfig({
                             key: reportType === "weekly" ? "week" : "month",
                             direction:
-                              sortConfig.key ===
-                                (reportType === "weekly" ? "week" : "month") &&
-                                sortConfig.direction === "asc"
+                              sortConfig.key === (reportType === "weekly" ? "week" : "month") &&
+                              sortConfig.direction === "asc"
                                 ? "desc"
                                 : "asc",
                           })
                         }
                       >
                         Sort {reportType === "weekly" ? "Week" : "Month"}{" "}
-                        {sortConfig.key ===
-                          (reportType === "weekly" ? "week" : "month")
+                        {sortConfig.key === (reportType === "weekly" ? "week" : "month")
                           ? sortConfig.direction === "asc"
                             ? "▲"
                             : "▼"
@@ -364,95 +365,76 @@ const exportToPDF = () => {
                         <th>#</th>
                         <th>Username</th>
                         <th>{reportType === "weekly" ? "Week" : "Month"}</th>
-                        <th>Assigned Count</th>
-                        <th>Completed Count</th>
+                        <th>Assigned Count(Total)</th>
+                        <th>Completed Count(Total)</th>
                         <th>Total Call Duration (sec)</th>
                         <th>Total Plans</th>
-                       
                       </tr>
                     </thead>
                     <tbody>
                       {currentRows.length > 0 ? (
-                        currentRows.map((r, i) => (
-                          <tr key={i}>
-                            <td>{indexOfFirstRow + i + 1}</td>
-                            <td>{r.username}</td>
-                            <td>
-                              {reportType === "weekly" ? (
+                        currentRows.map((r, i) => {
+                          const pending = isPeriodPending(r);
+                          return (
+                            <tr key={i}>
+                              <td>{indexOfFirstRow + i + 1}</td>
+                              <td>{r.username}</td>
+                              <td>
                                 <OverlayTrigger
                                   placement="top"
                                   overlay={
-                                    <Tooltip id={`tooltip-week-${r.week}`}>
-                                      {(() => {
-                                        const [yearStr, weekStr] = `${r.week}`.split("-W");
-                                        const year = parseInt(yearStr, 10);
-                                        const week = parseInt(weekStr, 10);
-                                        const daysOffset = (week - 1) * 7;
-                                        const startDate = new Date(year, 0, 1 + daysOffset);
-                                        const endDate = new Date(startDate);
-                                        endDate.setDate(startDate.getDate() + 6);
-                                        const opts = {
-                                          day: "2-digit",
-                                          month: "short",
-                                          year: "numeric",
-                                        };
-                                        return `${startDate.toLocaleDateString(
-                                          "en-IN",
-                                          opts
-                                        )} to ${endDate.toLocaleDateString(
-                                          "en-IN",
-                                          opts
-                                        )}`;
-                                      })()}
+                                    <Tooltip id={`tooltip-period-${i}`}>
+                                      {reportType === "weekly"
+                                        ? getWeekRange(r.week).text
+                                        : getMonthRange(r.month).fullRangeText}
                                     </Tooltip>
                                   }
                                 >
-                                  <span>{r.week}</span>
+                                  <span>
+                                    {reportType === "weekly" ? r.week : r.month}
+                                    {pending && (
+                                      <span className="badge bg-warning ms-2">
+                                        Pending
+                                      </span>
+                                    )}
+                                  </span>
                                 </OverlayTrigger>
-                              ) : (
-                                (() => {
-                                  const [yearStr, monthNumStr] = `${r.month}`.split("-");
-                                  const year = parseInt(yearStr, 10);
-                                  const monthNum = parseInt(monthNumStr, 10) - 1;
-                                  const dateObj = new Date(year, monthNum, 1);
-                                  const opts = { month: "short", year: "numeric" };
-                                  return <span>{dateObj.toLocaleDateString("en-IN", opts)}</span>;
-                                })()
-                              )}
-                            </td>
-<td>
-  {r.assignedCount }
-</td>
-                            <td>{r.completedCount}</td>
-                            <td>
-                              {r.totalCallDurationSeconds}
-                              {r.totalCallDurationSeconds === highestDuration && (
-                                <span style={{ marginLeft: 6 }}>🏆</span>
-                              )}
-                            </td>
-                            <td>
-                              {/* Display totalPlans and breakdown tooltip */}
-                              <OverlayTrigger
-                                placement="top"
-                                overlay={
-                                  <Tooltip id={`tooltip-plans-${i}`}>
-                                    {`Starter: ${r.planCounts?.Starter ?? 0}
+                              </td>
+                              <td>{r.assignedCount}</td>
+                              <td>{r.completedCount}</td>
+                              <td>
+                                {r.totalCallDurationSeconds}
+                                {r.totalCallDurationSeconds === highestDuration && (
+                                  <span style={{ marginLeft: 6 }}>🏆</span>
+                                )}
+                              </td>
+                              <td>
+                                <OverlayTrigger
+                                  placement="top"
+                                  overlay={
+                                    <Tooltip id={`tooltip-plans-${i}`}>
+                                      {`Starter: ${r.planCounts?.Starter ?? 0}
 Gold: ${r.planCounts?.Gold ?? 0}
 Master: ${r.planCounts?.Master ?? 0}`}
-                                  </Tooltip>
-                                }
-                              >
-                                <span style={{ cursor: 'pointer', textDecoration: 'underline' }}>
-                                  {r.totalPlans ?? 0}
-                                </span>
-                              </OverlayTrigger>
-                            </td>
-                            
-                          </tr>
-                        ))
+                                    </Tooltip>
+                                  }
+                                >
+                                  <span
+                                    style={{
+                                      cursor: "pointer",
+                                      textDecoration: "underline",
+                                    }}
+                                  >
+                                    {r.totalPlans ?? 0}
+                                  </span>
+                                </OverlayTrigger>
+                              </td>
+                            </tr>
+                          );
+                        })
                       ) : (
                         <tr>
-                          <td colSpan="9" className="text-center text-muted py-4">
+                          <td colSpan="7" className="text-center text-muted py-4">
                             No {reportType} reports available.
                           </td>
                         </tr>
