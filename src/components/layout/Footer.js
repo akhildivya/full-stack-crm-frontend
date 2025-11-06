@@ -11,7 +11,7 @@ function Footer() {
     <div className="footer-container container-fluid w-100 m-2 p-3 bg-light text-center">
       <Row className="justify-content-center">
         <Col xs="12">
-          <b className="footer-text">&copy; {new Date().getFullYear()} CRM Dashboard. All rights reserved.</b>
+          <b className="footer-text">&copy; {new Date().getFullYear()} Superhhero Learning CRM. All rights reserved.</b>
         </Col>
       </Row>
       <Row className="justify-content-center mt-3">

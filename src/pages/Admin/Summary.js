@@ -25,6 +25,9 @@ function Summary() {
   const [userSummary, setUserSummary] = useState([]);
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
+ 
+  
+
   useEffect(() => {
     axios
       .get(`${BASEURL}/admin/users-summary-report`)
@@ -32,44 +35,70 @@ function Summary() {
       .catch((err) => console.error('Error fetching user summary', err));
   }, []);
 
+
+
   function formatMinSecFromSeconds(totalSecs) {
     const mins = Math.floor(totalSecs / 60);
     const secs = totalSecs % 60;
     return `${mins} min ${secs} sec`;
   }
 
+  const columns = useMemo(() => [
+    { Header: '#', accessor: 'slno', Cell: ({ row }) => row.index + 1 },
+    { Header: 'Name', accessor: 'name' },
+    { Header: 'Email', accessor: 'email' },
+    { Header: 'Phone', accessor: 'phone' },
+    { Header: 'Assigned', accessor: 'totalContacts' },
+    {
+      Header: 'Completed',
+      accessor: 'completed',
+      Cell: ({ row }) => {
+        const { completed, totalContacts } = row.original;
+        // Show number only if all tasks completed (i.e., match total) => therefore verified tasks only scenario
+        return (completed > 0 && completed === totalContacts) ? completed : 'Pending';
+      }
+    },
+    {
+      Header: 'Total Call Duration',
+      accessor: 'totalDuration',
+      Cell: ({ value, row }) => {
+        const { completed, totalContacts } = row.original;
+        const allDone = (completed > 0 && completed === totalContacts);
+        const totalMinutes = Number(value) || 0;
+        const totalSecs = Math.floor(totalMinutes * 60);
+        const formattedMinSec = formatMinSecFromSeconds(totalSecs);
 
-  const columns = useMemo(
-    () => [
-      { Header: '#', accessor: 'slno', Cell: ({ row }) => row.index + 1 },
-      { Header: 'Name', accessor: 'name' },
-      { Header: 'Email', accessor: 'email' },
-      { Header: 'Phone', accessor: 'phone' },
-      { Header: 'Assigned', accessor: 'totalContacts' },
-      { Header: 'Completed', accessor: 'completed' },
-      {
-        Header: 'Total Call Duration',
-        accessor: 'totalDuration',
-        Cell: ({ value }) => {
-          // Assuming value is in **minutes**
-          const totalMinutes = value;
-          const totalSecs = Math.floor(totalMinutes * 60);
-          const formattedMinSec = formatMinSecFromSeconds(totalSecs);
-          const tooltipText = `${formattedMinSec} (${totalSecs} sec)`;
-          return (
-            <span title={tooltipText}>
-              {value.toFixed(2)}
-            </span>
-          );
-        },
-      },
-      { Header: 'Assigned At', accessor: 'assignedAt' },
-      { Header: 'Completed At', accessor: 'completedAt' },
-    ],
-    []
-  );
+        return (
+          <span
+            title={allDone ? `${formattedMinSec} (${totalSecs} sec)` : 'User tasks not yet verified/completed'}
+            style={{ color: allDone ? '#000' : '#888' }}
+          >
+            {totalMinutes.toFixed(2)}
+          </span>
+        );
+      }
+    },
+    { Header: 'Assigned At', accessor: 'assignedAt' },
+    {
+      Header: 'Completed At',
+      accessor: 'completedAt',
+      Cell: ({ value, row }) => {
+        const { completed, totalContacts } = row.original;
+        const allDone = (completed > 0 && completed === totalContacts);
+        return allDone ? (value || '—') : 'Pending';
+      }
+    }
+  ], []);
 
-  const data = useMemo(() => userSummary, [userSummary]);
+
+  const data = useMemo(() =>
+    userSummary.map((u, idx) => ({
+      ...u,
+      slno: idx + 1,
+      completed: u.completed ?? 0,
+      completedAt: u.completedAt ?? ''
+    }))
+    , [userSummary]);
 
   const {
     getTableProps,
@@ -277,17 +306,18 @@ function Summary() {
                   </LineChart>
                 </ResponsiveContainer>
               </div>
-              <div>
-                <input
-                  type="text"
-                  value={globalFilter || ''}
-                  onChange={(e) => setGlobalFilter(e.target.value || undefined)}
-                  placeholder="Search..."
-                  className="form-control mb-3"
-                />
+              <div className="d-flex flex-wrap align-items-center mb-3 gap-2">
+                <div className="flex-grow-1" style={{ minWidth: 0 }}>
+                  <input
+                    type="text"
+                    value={globalFilter || ''}
+                    onChange={(e) => setGlobalFilter(e.target.value || undefined)}
+                    placeholder="Search..."
+                    className="form-control w-100 mb-2 mb-md-0"
+                  />
+                </div>
 
-
-
+                
               </div>
               {/* Table section */}
               <div className="table-responsive">

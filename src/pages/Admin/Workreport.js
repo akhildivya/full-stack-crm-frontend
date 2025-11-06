@@ -328,31 +328,31 @@ function Workreport() {
     };
 
     // Course-wise counts (for current selected user)
-  const courseCounts = useMemo(() => {
-  const map = {};
+    const courseCounts = useMemo(() => {
+        const map = {};
 
-  students.forEach(s => {
-    const raw = s.course?.trim() || "";
-    const course = raw.toLowerCase();
+        students.forEach(s => {
+            const raw = s.course?.trim() || "";
+            const course = raw.toLowerCase();
 
-    if (course === 'btech') {
-      map['BTech'] = (map['BTech'] || 0) + 1;
-    } else if (course === 'plus one' || course === 'plusone') {
-      map['Plus One'] = (map['Plus One'] || 0) + 1;
-    } else if (course === 'plus two' || course === 'plustwo') {
-      map['Plus Two'] = (map['Plus Two'] || 0) + 1;
-    } else {
-      // Title-case the other course for consistency
-      const key = raw
-        .split(/\s+/)
-        .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
-        .join(' ');
-      map[key] = (map[key] || 0) + 1;
-    }
-  });
+            if (course === 'btech') {
+                map['BTech'] = (map['BTech'] || 0) + 1;
+            } else if (course === 'plus one' || course === 'plusone') {
+                map['Plus One'] = (map['Plus One'] || 0) + 1;
+            } else if (course === 'plus two' || course === 'plustwo') {
+                map['Plus Two'] = (map['Plus Two'] || 0) + 1;
+            } else {
+                // Title-case the other course for consistency
+                const key = raw
+                    .split(/\s+/)
+                    .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+                    .join(' ');
+                map[key] = (map[key] || 0) + 1;
+            }
+        });
 
-  return map;
-}, [students]);
+        return map;
+    }, [students]);
     // inside Workreport component (after processedStudents)
     const formatDisplayDate = (dateVal) => {
         if (!dateVal) return '';
@@ -967,10 +967,23 @@ function Workreport() {
                                                             key={u._id}
                                                             onClick={() => handleUserSelect({ target: { value: u._id } })}
                                                             active={u._id === selectedUserId}
+                                                            className="d-flex justify-content-between align-items-center user-dropdown-item"
                                                         >
-                                                            {duplicateUsernames.has(u.username)
-                                                                ? `${u.username} (${u.email})`
-                                                                : u.username}
+                                                            <span className="user-dropdown-username">
+                                                                {duplicateUsernames.has(u.username) ? (
+                                                                    <>
+                                                                        {u.username}
+                                                                        <small style={{ fontSize: '0.85em', color: '#666' }} className="user-dropdown-email ms-2">
+                                                                            (
+                                                                            {u.email.length > 12
+                                                                                ? u.email.slice(0, 12) + '…'
+                                                                                : u.email
+                                                                            }
+                                                                            )
+                                                                        </small>
+                                                                    </>
+                                                                ) : u.username}
+                                                            </span>
                                                         </Dropdown.Item>
                                                     ))}
                                                 </Dropdown.Menu>
@@ -1375,7 +1388,7 @@ function Workreport() {
                                         </Dropdown.Toggle>
 
                                         <Dropdown.Menu>
-                                            {[ 5, 10,15,20, 25,100].map((num) => (
+                                            {[5, 10, 15, 20, 25, 100].map((num) => (
                                                 <Dropdown.Item key={num} onClick={() => handleRowsPerPageChange({ target: { value: num } })}>
                                                     {num}
                                                 </Dropdown.Item>

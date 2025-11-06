@@ -98,21 +98,29 @@ function Allusers() {
 
   // filtering
   const normalized = searchTerm.trim().toLowerCase();
-  const filtered = useMemo(() => {
-    return users.filter(user => {
-      if (!normalized) return true;
-      const name = String(user.username || user.name || "").toLowerCase();
-      const email = String(user.email || "").toLowerCase();
-      const phone = String(user.phone || "").toLowerCase();
-      const statusText = user.verified ? "verified" : "not verified";
-      return (
-        name.includes(normalized) ||
-        email.includes(normalized) ||
-        phone.includes(normalized) ||
-        statusText.includes(normalized)
-      );
-    });
-  }, [users, normalized]);
+
+const filtered = useMemo(() => {
+  return users.filter(user => {
+    // If no search term, return all
+    if (!normalized) return true;
+
+    const name  = (user.username || user.name || "").toString().toLowerCase();
+    const email = (user.email || "").toString().toLowerCase();
+    const phone = (user.phone || "").toString().toLowerCase();
+
+    // Make sure verified is strictly a boolean
+    const isVerified = !!user.verified;
+    const statusText = isVerified ? "verified" : "not verified";
+
+    return (
+      name.includes(normalized) ||
+      email.includes(normalized) ||
+      phone.includes(normalized) ||
+      statusText.includes(normalized)
+    );
+  });
+}, [users, normalized]);
+
 
   // sorting
   const sorted = useMemo(() => {

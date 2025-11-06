@@ -119,7 +119,9 @@ function Followup() {
 
 const handleExportExcel = () => {
         if (rows.length === 0) {
-            toast.info("No data available to export");
+            toast.info("No data available to export", {
+  position: "top-center"
+});
             return;
         }
 
@@ -170,7 +172,7 @@ const handleExportExcel = () => {
                                 setRows(prev => prev.filter(r => r._id !== id));
                                 setTotalCount(prev => prev - 1);
                                 toast.success('Record deleted successfully', {
-                                    position: "top-right",
+                                    position: "top-center",
                                     autoClose: 5000,
                                     hideProgressBar: false,
                                     closeOnClick: false,

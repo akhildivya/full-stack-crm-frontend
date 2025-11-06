@@ -504,7 +504,8 @@ function Viewstudents() {
     // Prepare data rows
     const dataRows = filtered.map((stu, idx) => [
       assignedIdxFirst + idx + 1,
-      stu.assignedTo?.username || stu.assignedTo?._id || '',
+     (stu.assignedTo?.username || stu.assignedTo?._id || '') +
+    (stu.assignedTo?.email ? `\n${stu.assignedTo.email}` : ''),
       formatAssignedDate(stu.assignedAt) || '',
       stu.name || '',
       stu.email || '',

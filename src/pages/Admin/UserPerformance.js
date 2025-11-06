@@ -1,46 +1,50 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import Adminmenu from "../../components/layout/Adminmenu";
 import Layout from "../../components/layout/Layout";
 import axios from "axios";
-import { Spinner, Alert, Button } from "react-bootstrap";
+import {
+  OverlayTrigger,
+  Tooltip,
+  Spinner,
+  Alert,
+  Button,
+} from "react-bootstrap";
 import { useAuth } from "../../context/auth";
 import { BASEURL } from "../../service/baseUrl";
-import { FaFileDownload } from 'react-icons/fa';
+import { FaFileDownload } from "react-icons/fa";
 import { jsPDF } from "jspdf";
 import { autoTable } from "jspdf-autotable";
 
-import '../../css/performance.css'
+import "../../css/performance.css";
+
 function UserPerformance() {
   const [auth] = useAuth();
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [reportType, setReportType] = useState("weekly"); // ✅ toggle weekly/monthly
+  const [reportType, setReportType] = useState("weekly");
   const [currentPage, setCurrentPage] = useState(1);
   const rowsPerPage = 10;
 
+  // NEW: search & sort state
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
+
   const indexOfLastRow = currentPage * rowsPerPage;
   const indexOfFirstRow = indexOfLastRow - rowsPerPage;
-  const currentRows = reports.slice(indexOfFirstRow, indexOfLastRow);
 
-  const totalPages = Math.ceil(reports.length / rowsPerPage);
-
-  const handlePageChange = (page) => setCurrentPage(page);
   useEffect(() => {
     const fetchReports = async () => {
       try {
         setLoading(true);
         setError("");
-
         const endpoint =
           reportType === "weekly"
             ? `${BASEURL}/admin/weekly-report`
             : `${BASEURL}/admin/monthly-report`;
-
         const res = await axios.get(endpoint, {
           headers: { Authorization: auth?.token },
         });
-
         setReports(res.data || []);
       } catch (err) {
         console.error(err);
@@ -49,67 +53,155 @@ function UserPerformance() {
         setLoading(false);
       }
     };
-
     if (auth?.token) fetchReports();
   }, [auth, reportType]);
 
-  const exportToPDF = () => {
-    const doc = new jsPDF();
+  const handlePageChange = (page) => setCurrentPage(page);
 
-    const title = `${reportType === "weekly" ? "Weekly" : "Monthly"} Performance Report`;
-    const pageWidth = doc.internal.pageSize.getWidth();
-
-    // prepare columns & rows
-    const tableColumn = [
-      "SL. No",
-      "Username",
-      reportType === "weekly" ? "Week" : "Month",
-      "Assigned Count",
-      "Completed Count",
-      "Total Call Duration (sec)",
-      "Assigned Dates",
-      "Completed Dates",
-    ];
-
-    const tableRows = reports.map((r, idx) => [
-      idx + 1,
-      r.username,
-      reportType === "weekly" ? r.week : r.month,
-      r.assignedCount,
-      r.completedCount,
-      r.totalCallDurationSeconds,
-      r.assignedDates?.map((d) => new Date(d).toLocaleDateString()).join(", "),
-      r.completedDates?.map((d) => d && new Date(d).toLocaleDateString()).join(", "),
-    ]);
-
-    autoTable(doc, {
-      head: [tableColumn],
-      body: tableRows,
-      startY: 25,
-      styles: { fontSize: 8, cellPadding: 2 },
-      showHead: "everyPage",
-      didDrawPage: (data) => {
-        // Header: centered title
-        doc.setFontSize(14);
-        doc.setFont("helvetica", "bold");
-        const titleWidth = doc.getTextWidth(title);
-        const xTitle = (pageWidth - titleWidth) / 2;
-        doc.text(title, xTitle, 15);
-
-        // Footer: page number
-        const pageCount = doc.internal.getNumberOfPages();
-        const pageCurrent = doc.internal.getCurrentPageInfo().pageNumber;
-        const footerText = `Page ${pageCurrent} of ${pageCount}`;
-        doc.setFontSize(8);
-        doc.setFont("helvetica", "normal");
-        const xFooter = (pageWidth - doc.getTextWidth(footerText)) / 2;
-        const yFooter = doc.internal.pageSize.getHeight() - 10;
-        doc.text(footerText, xFooter, yFooter);
-      },
+  // ✅ Updated: Search also includes totalPlans
+  const filteredReports = useMemo(() => {
+    const term = searchTerm.toLowerCase();
+    return reports.filter((r) => {
+      const nameMatch = r.username?.toLowerCase().includes(term);
+      const weekOrMonth =
+        reportType === "weekly"
+          ? (r.week || "").toLowerCase()
+          : (r.month || "").toLowerCase();
+      const weekMonthMatch = weekOrMonth.includes(term);
+      const durationMatch = String(r.totalCallDurationSeconds || "").includes(
+        term
+      );
+      const plansMatch = String(r.totalPlans || "").includes(term);
+      return nameMatch || weekMonthMatch || durationMatch || plansMatch;
     });
+  }, [reports, searchTerm, reportType]);
 
-    doc.save(`CRM-${reportType}-Performance-report.pdf`);
+  // ✅ Updated: Sort also supports totalPlans
+  const sortedReports = useMemo(() => {
+    const { key, direction } = sortConfig;
+    if (!key) return filteredReports;
+    const sorted = [...filteredReports].sort((a, b) => {
+      const aVal = a[key] ?? "";
+      const bVal = b[key] ?? "";
+      if (typeof aVal === "number" && typeof bVal === "number") {
+        return direction === "asc" ? aVal - bVal : bVal - aVal;
+      }
+      const aStr = String(aVal).toLowerCase();
+      const bStr = String(bVal).toLowerCase();
+      if (aStr < bStr) return direction === "asc" ? -1 : 1;
+      if (aStr > bStr) return direction === "asc" ? 1 : -1;
+      return 0;
+    });
+    return sorted;
+  }, [filteredReports, sortConfig]);
+
+  const totalPages = Math.ceil(sortedReports.length / rowsPerPage);
+  const currentRows = sortedReports.slice(indexOfFirstRow, indexOfLastRow);
+
+  const highestDuration = useMemo(() => {
+    if (currentRows.length === 0) return null;
+    return Math.max(...currentRows.map((r) => r.totalCallDurationSeconds || 0));
+  }, [currentRows]);
+
+
+// NEW
+const exportToPDF = () => {
+  const doc = new jsPDF();
+  const title = `${reportType === "weekly" ? "Weekly" : "Monthly"} Performance Report`;
+  const pageWidth = doc.internal.pageSize.getWidth();
+
+  const tableColumn = [
+    "#",
+    "Username",
+    reportType === "weekly" ? "Week (Range)" : "Month",
+    "Assigned Count",
+    "Completed Count",
+    "Total Call Duration (sec)",
+    "Total Plans (Starter / Gold / Master)",
+    "Assigned Dates",
+    "Completed Dates",
+  ];
+
+  const formatDate = (date) => {
+    const d = new Date(date);
+    const options = { day: "2-digit", month: "short", year: "numeric" };
+    return d.toLocaleDateString("en-IN", options).replace(/\s/g, "-");
   };
+
+  const getWeekRange = (weekValue) => {
+    const [yearStr, weekStr] = `${weekValue}`.split("-W");
+    const year = parseInt(yearStr, 10);
+    const week = parseInt(weekStr, 10);
+    const daysOffset = (week - 1) * 7;
+    const startDate = new Date(year, 0, 1 + daysOffset);
+    const endDate = new Date(startDate);
+    endDate.setDate(startDate.getDate() + 6);
+    const opts = { day: "2-digit", month: "short", year: "numeric" };
+    return `${startDate.toLocaleDateString("en-IN", opts)} to ${endDate.toLocaleDateString("en-IN", opts)}`;
+  };
+
+  const formatMonth = (monthValue) => {
+    const [yearStr, monthNumStr] = `${monthValue}`.split("-");
+    const year = parseInt(yearStr, 10);
+    const monthNum = parseInt(monthNumStr, 10) - 1;
+    const dateObj = new Date(year, monthNum, 1);
+    const opts = { month: "short" };
+    const monthName = dateObj.toLocaleDateString("en-IN", opts);
+    return `${monthName}-${year}`;
+  };
+
+  const highestDuration = reports.length
+    ? Math.max(...reports.map((r) => r.totalCallDurationSeconds || 0))
+    : null;
+
+  // Tick mark — plain Unicode check
+  const tickMark = "✅";
+
+  const tableRows = reports.map((r, idx) => [
+    idx + 1,
+    r.username,
+    reportType === "weekly"
+      ? `${r.week}\n(${getWeekRange(r.week)})`
+      : formatMonth(r.month),
+    r.assignedCount,
+    r.completedCount,
+    r.totalCallDurationSeconds === highestDuration
+      ? `${r.totalCallDurationSeconds} ${tickMark}`
+      : `${r.totalCallDurationSeconds}`,
+    `${r.totalPlans ?? 0} (${r.planCounts?.Starter ?? 0} / ${r.planCounts?.Gold ?? 0} / ${r.planCounts?.Master ?? 0})`,
+    r.assignedDates?.map((d) => formatDate(d)).join(", "),
+    r.completedDates?.map((d) => d && formatDate(d)).join(", "),
+  ]);
+
+  autoTable(doc, {
+    head: [tableColumn],
+    body: tableRows,
+    startY: 25,
+    styles: { fontSize: 8, cellPadding: 2, overflow: 'linebreak' },
+    showHead: "everyPage",
+    didDrawPage: () => {
+      doc.setFontSize(14);
+      doc.setFont("helvetica", "bold");
+      const titleWidth = doc.getTextWidth(title);
+      const xTitle = (pageWidth - titleWidth) / 2;
+      doc.text(title, xTitle, 15);
+
+      doc.setFontSize(8);
+      doc.setFont("helvetica", "normal");
+      const pageCount = doc.internal.getNumberOfPages();
+      const pageCurrent = doc.internal.getCurrentPageInfo().pageNumber;
+      const footerText = `Page ${pageCurrent} of ${pageCount}`;
+      const xFooter = (pageWidth - doc.getTextWidth(footerText)) / 2;
+      const yFooter = doc.internal.pageSize.getHeight() - 10;
+      doc.text(footerText, xFooter, yFooter);
+    },
+  });
+
+  doc.save(`CRM-${reportType}-Performance-report.pdf`);
+};
+
+
+
 
   return (
     <Layout title={"CRM - Performance Analysis"}>
@@ -118,12 +210,10 @@ function UserPerformance() {
           <aside className="col-md-3">
             <Adminmenu />
           </aside>
-
           <main className="col-md-9">
             <div className="card admin-card p-4 shadow-sm">
               <h4 className="mb-3 text-center">Performance Reports</h4>
 
-              {/* Toggle Weekly / Monthly */}
               <div className="d-flex justify-content-center gap-2 mb-4">
                 <Button
                   variant={reportType === "weekly" ? "primary" : "outline-primary"}
@@ -137,6 +227,119 @@ function UserPerformance() {
                 >
                   Monthly
                 </Button>
+              </div>
+
+              {/* 🔍 Search & Sort Controls */}
+              <div className="mb-3">
+                <div className="row g-2 align-items-stretch">
+                  <div className="col-12 col-md-6 d-flex">
+                    <input
+                      type="text"
+                      className="form-control flex-grow-1"
+                      placeholder="Search by name, week/month, duration or total plans…"
+                      value={searchTerm}
+                      onChange={(e) => {
+                        setSearchTerm(e.target.value);
+                        setCurrentPage(1);
+                      }}
+                      style={{ height: "100%" }}
+                    />
+                  </div>
+                  <div className="col-12 col-md-6 d-flex">
+                    <div className="btn-group w-100 d-flex">
+                      <Button
+                        variant="outline-secondary"
+                        size="sm"
+                        className="flex-fill"
+                        onClick={() =>
+                          setSortConfig({
+                            key: "username",
+                            direction:
+                              sortConfig.key === "username" &&
+                                sortConfig.direction === "asc"
+                                ? "desc"
+                                : "asc",
+                          })
+                        }
+                      >
+                        Sort Name{" "}
+                        {sortConfig.key === "username"
+                          ? sortConfig.direction === "asc"
+                            ? "▲"
+                            : "▼"
+                          : ""}
+                      </Button>
+                      <Button
+                        variant="outline-secondary"
+                        size="sm"
+                        className="flex-fill"
+                        onClick={() =>
+                          setSortConfig({
+                            key: "totalCallDurationSeconds",
+                            direction:
+                              sortConfig.key === "totalCallDurationSeconds" &&
+                                sortConfig.direction === "asc"
+                                ? "desc"
+                                : "asc",
+                          })
+                        }
+                      >
+                        Sort Duration{" "}
+                        {sortConfig.key === "totalCallDurationSeconds"
+                          ? sortConfig.direction === "asc"
+                            ? "▲"
+                            : "▼"
+                          : ""}
+                      </Button>
+                      <Button
+                        variant="outline-secondary"
+                        size="sm"
+                        className="flex-fill"
+                        onClick={() =>
+                          setSortConfig({
+                            key: "totalPlans",
+                            direction:
+                              sortConfig.key === "totalPlans" &&
+                                sortConfig.direction === "asc"
+                                ? "desc"
+                                : "asc",
+                          })
+                        }
+                      >
+                        Sort Plans{" "}
+                        {sortConfig.key === "totalPlans"
+                          ? sortConfig.direction === "asc"
+                            ? "▲"
+                            : "▼"
+                          : ""}
+                      </Button>
+                      <Button
+                        variant="outline-secondary"
+                        size="sm"
+                        className="flex-fill"
+                        onClick={() =>
+                          setSortConfig({
+                            key: reportType === "weekly" ? "week" : "month",
+                            direction:
+                              sortConfig.key ===
+                                (reportType === "weekly" ? "week" : "month") &&
+                                sortConfig.direction === "asc"
+                                ? "desc"
+                                : "asc",
+                          })
+                        }
+                      >
+                        Sort {reportType === "weekly" ? "Week" : "Month"}{" "}
+                        {sortConfig.key ===
+                          (reportType === "weekly" ? "week" : "month")
+                          ? sortConfig.direction === "asc"
+                            ? "▲"
+                            : "▼"
+                          : ""}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               {loading && (
@@ -164,6 +367,7 @@ function UserPerformance() {
                         <th>Assigned Count</th>
                         <th>Completed Count</th>
                         <th>Total Call Duration (sec)</th>
+                        <th>Total Plans</th>
                         <th>Assigned Dates</th>
                         <th>Completed Dates</th>
                       </tr>
@@ -174,41 +378,105 @@ function UserPerformance() {
                           <tr key={i}>
                             <td>{indexOfFirstRow + i + 1}</td>
                             <td>{r.username}</td>
-                            <td>{reportType === "weekly" ? r.week : r.month}</td>
-                            <td>{r.assignedCount}</td>
+                            <td>
+                              {reportType === "weekly" ? (
+                                <OverlayTrigger
+                                  placement="top"
+                                  overlay={
+                                    <Tooltip id={`tooltip-week-${r.week}`}>
+                                      {(() => {
+                                        const [yearStr, weekStr] = `${r.week}`.split("-W");
+                                        const year = parseInt(yearStr, 10);
+                                        const week = parseInt(weekStr, 10);
+                                        const daysOffset = (week - 1) * 7;
+                                        const startDate = new Date(year, 0, 1 + daysOffset);
+                                        const endDate = new Date(startDate);
+                                        endDate.setDate(startDate.getDate() + 6);
+                                        const opts = {
+                                          day: "2-digit",
+                                          month: "short",
+                                          year: "numeric",
+                                        };
+                                        return `${startDate.toLocaleDateString(
+                                          "en-IN",
+                                          opts
+                                        )} to ${endDate.toLocaleDateString(
+                                          "en-IN",
+                                          opts
+                                        )}`;
+                                      })()}
+                                    </Tooltip>
+                                  }
+                                >
+                                  <span>{r.week}</span>
+                                </OverlayTrigger>
+                              ) : (
+                                (() => {
+                                  const [yearStr, monthNumStr] = `${r.month}`.split("-");
+                                  const year = parseInt(yearStr, 10);
+                                  const monthNum = parseInt(monthNumStr, 10) - 1;
+                                  const dateObj = new Date(year, monthNum, 1);
+                                  const opts = { month: "short", year: "numeric" };
+                                  return <span>{dateObj.toLocaleDateString("en-IN", opts)}</span>;
+                                })()
+                              )}
+                            </td>
+<td>
+  {r.assignedCount }
+</td>
                             <td>{r.completedCount}</td>
-                            <td>{r.totalCallDurationSeconds}</td>
+                            <td>
+                              {r.totalCallDurationSeconds}
+                              {r.totalCallDurationSeconds === highestDuration && (
+                                <span style={{ marginLeft: 6 }}>🏆</span>
+                              )}
+                            </td>
+                            <td>
+                              {/* Display totalPlans and breakdown tooltip */}
+                              <OverlayTrigger
+                                placement="top"
+                                overlay={
+                                  <Tooltip id={`tooltip-plans-${i}`}>
+                                    {`Starter: ${r.planCounts?.Starter ?? 0}
+Gold: ${r.planCounts?.Gold ?? 0}
+Master: ${r.planCounts?.Master ?? 0}`}
+                                  </Tooltip>
+                                }
+                              >
+                                <span style={{ cursor: 'pointer', textDecoration: 'underline' }}>
+                                  {r.totalPlans ?? 0}
+                                </span>
+                              </OverlayTrigger>
+                            </td>
                             <td>
                               {r.assignedDates
-                                ?.map((d) => new Date(d).toLocaleDateString('en‑IN', {
-                                  day: '2-digit',
-                                  month: '2-digit',
-                                  year: 'numeric',
-                                  hour: '2-digit',
-                                  minute: '2-digit',
-                                  second: '2-digit',
-                                  hour12: false
-                                }))
+                                ?.map((d) =>
+                                  new Date(d).toLocaleDateString("en-IN", {
+                                    day: "2-digit",
+                                    month: "short",
+                                    year: "numeric",
+                                  })
+                                )
                                 .join(", ")}
                             </td>
                             <td>
                               {r.completedDates
-                                ?.map((d) => d && new Date(d).toLocaleDateString('en‑IN', {
-                                  day: '2-digit',
-                                  month: '2-digit',
-                                  year: 'numeric',
-                                  hour: '2-digit',
-                                  minute: '2-digit',
-                                  second: '2-digit',
-                                  hour12: false
-                                }))
+                                ?.map(
+                                  (d) =>
+                                    d &&
+                                    new Date(d).toLocaleDateString("en-IN", {
+                                      day: "2-digit",
+                                      month: "short",
+                                      year: "numeric",
+                                    })
+                                )
                                 .join(", ")}
                             </td>
                           </tr>
                         ))
                       ) : (
                         <tr>
-                          <td colSpan="8" className="text-center text-muted py-4">
+                          <td colSpan="9" className="text-center text-muted py-4">
                             No {reportType} reports available.
                           </td>
                         </tr>
@@ -242,14 +510,10 @@ function UserPerformance() {
                 </div>
 
                 <Button variant="success" size="sm" onClick={exportToPDF}>
-                  <FaFileDownload style={{ justifyContent: 'center' }} />
-
+                  <FaFileDownload style={{ justifyContent: "center" }} />
                 </Button>
-
               </div>
             </div>
-
-
           </main>
         </div>
       </div>
