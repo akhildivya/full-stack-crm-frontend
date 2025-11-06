@@ -368,8 +368,7 @@ const exportToPDF = () => {
                         <th>Completed Count</th>
                         <th>Total Call Duration (sec)</th>
                         <th>Total Plans</th>
-                        <th>Assigned Dates</th>
-                        <th>Completed Dates</th>
+                       
                       </tr>
                     </thead>
                     <tbody>
@@ -448,30 +447,7 @@ Master: ${r.planCounts?.Master ?? 0}`}
                                 </span>
                               </OverlayTrigger>
                             </td>
-                            <td>
-                              {r.assignedDates
-                                ?.map((d) =>
-                                  new Date(d).toLocaleDateString("en-IN", {
-                                    day: "2-digit",
-                                    month: "short",
-                                    year: "numeric",
-                                  })
-                                )
-                                .join(", ")}
-                            </td>
-                            <td>
-                              {r.completedDates
-                                ?.map(
-                                  (d) =>
-                                    d &&
-                                    new Date(d).toLocaleDateString("en-IN", {
-                                      day: "2-digit",
-                                      month: "short",
-                                      year: "numeric",
-                                    })
-                                )
-                                .join(", ")}
-                            </td>
+                            
                           </tr>
                         ))
                       ) : (
