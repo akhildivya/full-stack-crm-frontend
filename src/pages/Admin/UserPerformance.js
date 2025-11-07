@@ -45,7 +45,7 @@ function UserPerformance() {
           headers: { Authorization: auth?.token },
         });
         setReports(res.data || []);
-        
+
       } catch (err) {
         console.error(err);
         setError(err.response?.data?.message || "Failed to fetch reports");
@@ -98,6 +98,11 @@ function UserPerformance() {
     return Math.max(...currentRows.map((r) => r.totalCallDurationSeconds || 0));
   }, [currentRows]);
 
+  const highestTimer = useMemo(() => {
+    if (currentRows.length === 0) return null;
+    return Math.max(...currentRows.map(r => r.totalTimerSeconds || 0));
+  }, [currentRows]);
+
   // Helpers to compute date ranges
   const getWeekRange = (weekValue) => {
     const [yearStr, weekStr] = `${weekValue}`.split("-W");
@@ -108,7 +113,7 @@ function UserPerformance() {
     const endDate = new Date(startDate);
     endDate.setDate(startDate.getDate() + 6);
     const opts = { day: "2-digit", month: "short", year: "numeric" };
-    return { 
+    return {
       text: `${startDate.toLocaleDateString("en-IN", opts)} to ${endDate.toLocaleDateString("en-IN", opts)}`,
       start: startDate,
       end: endDate,
@@ -121,7 +126,7 @@ function UserPerformance() {
     const monthNum = parseInt(monthNumStr, 10) - 1;
     const start = new Date(year, monthNum, 1);
     const end = new Date(year, monthNum + 1, 0);
-     const opts = { day: "2-digit", month: "short", year: "numeric" };
+    const opts = { day: "2-digit", month: "short", year: "numeric" };
     return {
       text: `${start.toLocaleDateString("en-IN", opts)}`,
       fullRangeText: `${start.toLocaleDateString("en-IN", opts)} to ${end.toLocaleDateString("en-IN", opts)}`,
@@ -146,7 +151,7 @@ function UserPerformance() {
 
   const exportToPDF = () => {
     const doc = new jsPDF();
-    const title = `${reportType === "weekly" ? "Weekly" : "Monthly"} Performance Report`;
+    const title = `CRM - ${reportType === "weekly" ? "Weekly" : "Monthly"} Performance Report`;
     const pageWidth = doc.internal.pageSize.getWidth();
 
     const tableColumn = [
@@ -157,8 +162,7 @@ function UserPerformance() {
       "Completed Count",
       "Total Call Duration (sec)",
       "Total Plans (Starter / Gold / Master)",
-      "Assigned Dates",
-      "Completed Dates",
+
     ];
 
     const formatDate = (date) => {
@@ -179,8 +183,7 @@ function UserPerformance() {
         ? `${r.totalCallDurationSeconds} ✅`
         : `${r.totalCallDurationSeconds}`,
       `${r.totalPlans ?? 0} (${r.planCounts?.Starter ?? 0} / ${r.planCounts?.Gold ?? 0} / ${r.planCounts?.Master ?? 0})`,
-      r.assignedDates?.map((d) => formatDate(d)).join(", "),
-      r.completedDates?.map((d) => d && formatDate(d)).join(", "),
+
     ]);
 
     autoTable(doc, {
@@ -325,7 +328,7 @@ function UserPerformance() {
                             key: reportType === "weekly" ? "week" : "month",
                             direction:
                               sortConfig.key === (reportType === "weekly" ? "week" : "month") &&
-                              sortConfig.direction === "asc"
+                                sortConfig.direction === "asc"
                                 ? "desc"
                                 : "asc",
                           })
@@ -368,6 +371,7 @@ function UserPerformance() {
                         <th>Assigned Count(Total)</th>
                         <th>Completed Count(Total)</th>
                         <th>Total Call Duration (sec)</th>
+                        <th>Timer Duration (sec)</th>   {/* <-- NEW */}
                         <th>Total Plans</th>
                       </tr>
                     </thead>
@@ -405,6 +409,12 @@ function UserPerformance() {
                               <td>
                                 {r.totalCallDurationSeconds}
                                 {r.totalCallDurationSeconds === highestDuration && (
+                                  <span style={{ marginLeft: 6 }}>🏆</span>
+                                )}
+                              </td>
+                              <td>
+                                {r.totalTimerSeconds}   {/* <-- NEW */}
+                                {r.totalTimerSeconds === highestTimer && (
                                   <span style={{ marginLeft: 6 }}>🏆</span>
                                 )}
                               </td>
