@@ -78,16 +78,7 @@ function Summary() {
         );
       }
     },
-    { Header: 'Assigned At', accessor: 'assignedAt' },
-    {
-      Header: 'Completed At',
-      accessor: 'completedAt',
-      Cell: ({ value, row }) =>  {
-        const { completed, totalContacts } = row.original;
-        const allDone = (completed > 0 && completed === totalContacts);
-        return allDone ? (value || '—') : 'Pending';
-      }
-    }
+   
   ], []);
 
 
@@ -139,7 +130,7 @@ function Summary() {
     const pageHeight = doc.internal.pageSize.getHeight();
 
     // Title
-    const title = 'User Summary Report';
+    const title = 'CRM - User Summary Report';
     doc.setFontSize(16);
     doc.setFont('helvetica', 'bold');
     doc.text(title, pageWidth / 2, 40, { align: 'center' });
@@ -154,8 +145,7 @@ function Summary() {
       'Completed',
       'Total Call Duration (min)',                 // numeric (original)
       'Total Call Duration (min:sec | sec)',      // formatted tooltip-style column
-      'Assigned At',
-      'Completed At'
+      
     ];
 
     // Build tableData
@@ -165,17 +155,18 @@ function Summary() {
       const formattedMinSec = formatMinSecFromSeconds(totalSecs);
       const formattedTooltipLike = `${formattedMinSec} (${totalSecs} sec)`;
 
+       const assignedVal   = user.totalContacts  ?? 0;
+  const completedVal  = user.completed      ?? 0;
       return [
         idx + 1,
         user.name || '',
         user.email || '',
         user.phone || '',
-        user.totalContacts ?? '',
-        user.completed ?? '',
+        assignedVal   === 0 ? 'Pending' : assignedVal,
+    completedVal  === 0 ? 'Pending' : completedVal,
         Number.isFinite(totalMinutes) ? totalMinutes.toFixed(4) : String(user.totalDuration || ''),
         formattedTooltipLike,
-        user.assignedAt || '',
-        user.completedAt || ''
+        
       ];
     });
 

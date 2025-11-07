@@ -117,11 +117,11 @@ function Followup() {
         doc.save(fileName);
     };
 
-const handleExportExcel = () => {
+    const handleExportExcel = () => {
         if (rows.length === 0) {
             toast.info("No data available to export", {
-  position: "top-center"
-});
+                position: "top-center"
+            });
             return;
         }
 
@@ -143,15 +143,38 @@ const handleExportExcel = () => {
             }),
         }));
 
-        const worksheet = XLSX.utils.json_to_sheet(data);
+        // Create the worksheet with json data (headers will be auto)
+        const worksheet = XLSX.utils.json_to_sheet(data, { skipHeader: false });
+
+        // Insert a title at the top. For example one row with the report title
+        const sheetTitle = mode === 'admission'
+            ? 'CRM – Admission Follow-up Report'
+            : 'CRM – Contact Later Follow-up Report';
+
+        // Add the title row at the very top (row 1)
+        XLSX.utils.sheet_add_aoa(worksheet, [[sheetTitle]], { origin: "A1" });
+
+        // Then shift the data down one row so headers appear from row 2
+        // We can reposition the data with origin: "A2"
+        XLSX.utils.sheet_add_json(
+            worksheet,
+            data,
+            { skipHeader: true, origin: "A2" }
+        );
+
+        // Optionally, you could remove the original data from row 1 if it duplicated,
+        // or you can skip the first json_to_sheet step and build with AOA + JSON entirely.
+
         const workbook = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(workbook, worksheet, 'Followup Data');
 
         const fileName = mode === 'admission'
             ? 'CRM-Admission-Followup-Report.xlsx'
-            : 'CRM-ContactLater-Followup-Report.xlsx';
+            : 'CRM-ContactLater-Follow-up-Report.xlsx';
+
         XLSX.writeFile(workbook, fileName);
     };
+
 
 
     // derived paginated rows
@@ -440,7 +463,7 @@ const handleExportExcel = () => {
                                     <FaFilePdf size={16} />
                                 </Button>
 
-                                 <Button
+                                <Button
                                     variant="outline-success"
                                     className="icon-only-btn d-flex align-items-center justify-content-center p-2"
                                     onClick={handleExportExcel}

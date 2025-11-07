@@ -33,6 +33,7 @@ function UserPerformance() {
   const indexOfFirstRow = indexOfLastRow - rowsPerPage;
 
   useEffect(() => {
+    let intervalId;
     const fetchReports = async () => {
       try {
         setLoading(true);
@@ -53,23 +54,41 @@ function UserPerformance() {
         setLoading(false);
       }
     };
-    if (auth?.token) fetchReports();
+    if (auth?.token) { fetchReports(); intervalId = setInterval(fetchReports, 60 * 1000); }
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
   }, [auth, reportType]);
 
   const handlePageChange = (page) => setCurrentPage(page);
 
   const filteredReports = useMemo(() => {
-    const term = searchTerm.toLowerCase();
+    const term = searchTerm.trim().toLowerCase();
+    if (!term) return reports;
+
     return reports.filter((r) => {
-      const nameMatch = r.username?.toLowerCase().includes(term);
-      const weekOrMonth =
-        reportType === "weekly"
-          ? (r.week || "").toLowerCase()
-          : (r.month || "").toLowerCase();
-      const weekMonthMatch = weekOrMonth.includes(term);
-      const durationMatch = String(r.totalCallDurationSeconds || "").includes(term);
-      const plansMatch = String(r.totalPlans || "").includes(term);
-      return nameMatch || weekMonthMatch || durationMatch || plansMatch;
+      const username = r.username?.toLowerCase() || "";
+      const weekOrMonth = reportType === "weekly"
+        ? (r.week || "").toLowerCase()
+        : (r.month || "").toLowerCase();
+
+      const assignedCountStr = String(r.assignedCount ?? "").toLowerCase();
+      const completedCountStr = String(r.completedCount ?? "").toLowerCase();
+      const durationStr = String(r.totalCallDurationSeconds ?? "").toLowerCase();
+      const timerStr = String(r.totalTimerSeconds ?? "").toLowerCase();
+      const totalPlansStr = String(r.totalPlans ?? "").toLowerCase();
+      const planCountsStr = `${r.planCounts?.Starter ?? 0} ${r.planCounts?.Gold ?? 0} ${r.planCounts?.Master ?? 0}`.toLowerCase();
+
+      return (
+        username.includes(term) ||
+        weekOrMonth.includes(term) ||
+        assignedCountStr.includes(term) ||
+        completedCountStr.includes(term) ||
+        durationStr.includes(term) ||
+        timerStr.includes(term) ||
+        totalPlansStr.includes(term) ||
+        planCountsStr.includes(term)
+      );
     });
   }, [reports, searchTerm, reportType]);
 
@@ -148,7 +167,6 @@ function UserPerformance() {
     }
     return false;
   };
-
   const exportToPDF = () => {
     const doc = new jsPDF();
     const title = `CRM - ${reportType === "weekly" ? "Weekly" : "Monthly"} Performance Report`;
@@ -157,34 +175,48 @@ function UserPerformance() {
     const tableColumn = [
       "#",
       "Username",
+        "Phone",     
       reportType === "weekly" ? "Week (Range)" : "Month",
       "Assigned Count",
       "Completed Count",
       "Total Call Duration (sec)",
+      "Timer Duration (sec)",
       "Total Plans (Starter / Gold / Master)",
-
+      "Status"
     ];
 
-    const formatDate = (date) => {
-      const d = new Date(date);
-      const options = { day: "2-digit", month: "short", year: "numeric" };
-      return d.toLocaleDateString("en-IN", options).replace(/\s/g, "-");
-    };
+    // Use sortedReports here so it respects search & sort
+    const exportList = sortedReports;     // ← change from `reports` to `sortedReports`
 
-    const tableRows = reports.map((r, idx) => [
-      idx + 1,
-      r.username,
-      reportType === "weekly"
-        ? `${r.week}\n(${getWeekRange(r.week).text})`
-        : `${r.month} (${getMonthRange(r.month).fullRangeText})`,
-      r.assignedCount,
-      r.completedCount,
-      r.totalCallDurationSeconds === highestDuration
-        ? `${r.totalCallDurationSeconds} ✅`
-        : `${r.totalCallDurationSeconds}`,
-      `${r.totalPlans ?? 0} (${r.planCounts?.Starter ?? 0} / ${r.planCounts?.Gold ?? 0} / ${r.planCounts?.Master ?? 0})`,
+    const tableRows = exportList.map((r, idx) => {
+      const callDurSec = r.totalCallDurationSeconds ?? 0;
+      const timerSec = r.totalTimerSeconds ?? 0;
 
-    ]);
+      const callDurLabel = (callDurSec === highestDuration)
+        ? `${callDurSec} ✔`
+        : `${callDurSec}`;
+
+      const timerLabel = (timerSec === highestTimer)
+        ? `${timerSec} ✔`
+        : `${timerSec}`;
+
+      const status = (r.completedCount < r.assignedCount) ? "Pending" : "Completed";
+
+      return [
+        idx + 1,
+        r.username || "",
+         r.phone     || "",       
+        reportType === "weekly"
+          ? `${r.week}\n(${getWeekRange(r.week).text})`
+          : `${r.month} (${getMonthRange(r.month).fullRangeText})`,
+        r.assignedCount ?? 0,
+        r.completedCount ?? 0,
+        callDurLabel,
+        timerLabel,
+        `${r.totalPlans ?? 0} (${r.planCounts?.Starter ?? 0} / ${r.planCounts?.Gold ?? 0} / ${r.planCounts?.Master ?? 0})`,
+        status
+      ];
+    });
 
     autoTable(doc, {
       head: [tableColumn],
@@ -192,6 +224,14 @@ function UserPerformance() {
       startY: 25,
       styles: { fontSize: 8, cellPadding: 2, overflow: "linebreak" },
       showHead: "everyPage",
+      didParseCell: (data) => {
+        if (data.section === 'body') {
+          const status = data.row.raw[data.row.raw.length - 1];
+          if (status === "Pending") {
+            data.cell.styles.textColor = [200, 0, 0];
+          }
+        }
+      },
       didDrawPage: () => {
         doc.setFontSize(14);
         doc.setFont("helvetica", "bold");
@@ -212,6 +252,10 @@ function UserPerformance() {
 
     doc.save(`CRM-${reportType}-Performance-report.pdf`);
   };
+
+
+
+
 
   return (
     <Layout title={"CRM - Performance Analysis"}>
@@ -245,7 +289,7 @@ function UserPerformance() {
                     <input
                       type="text"
                       className="form-control flex-grow-1"
-                      placeholder="Search by name, week/month, duration or total plans…"
+                      placeholder="Search ....."
                       value={searchTerm}
                       onChange={(e) => {
                         setSearchTerm(e.target.value);
@@ -293,6 +337,27 @@ function UserPerformance() {
                       >
                         Sort Duration{" "}
                         {sortConfig.key === "totalCallDurationSeconds"
+                          ? sortConfig.direction === "asc"
+                            ? "▲"
+                            : "▼"
+                          : ""}
+                      </Button>
+                      <Button
+                        variant="outline-secondary"
+                        size="sm"
+                        className="flex-fill"
+                        onClick={() =>
+                          setSortConfig({
+                            key: "totalTimerSeconds",
+                            direction:
+                              sortConfig.key === "totalTimerSeconds" && sortConfig.direction === "asc"
+                                ? "desc"
+                                : "asc",
+                          })
+                        }
+                      >
+                        Sort Timer{" "}
+                        {sortConfig.key === "totalTimerSeconds"
                           ? sortConfig.direction === "asc"
                             ? "▲"
                             : "▼"
@@ -382,7 +447,11 @@ function UserPerformance() {
                           return (
                             <tr key={i}>
                               <td>{indexOfFirstRow + i + 1}</td>
-                              <td>{r.username}</td>
+                              <td>{r.username}
+                                <div className="text-muted" style={{ fontSize: '0.9em' }}>
+                                  {r.phone}
+                                </div>
+                              </td>
                               <td>
                                 <OverlayTrigger
                                   placement="top"
@@ -432,7 +501,7 @@ Master: ${r.planCounts?.Master ?? 0}`}
                                   <span
                                     style={{
                                       cursor: "pointer",
-                                      textDecoration: "underline",
+
                                     }}
                                   >
                                     {r.totalPlans ?? 0}

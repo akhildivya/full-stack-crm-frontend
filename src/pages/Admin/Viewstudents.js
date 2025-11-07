@@ -34,7 +34,7 @@ function Viewstudents() {
   const [sortColumn, setSortColumn] = useState('name');
   const [sortOrder, setSortOrder] = useState('asc');
 
-
+  const [hideAssignedMarked, setHideAssignedMarked] = useState(false);
 
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [users, setUsers] = useState([]);
@@ -326,10 +326,21 @@ function Viewstudents() {
       : bVal.localeCompare(aVal);
   });
 
+  let filteredList = sortedStudents;
+
+  if (hideAssignedMarked) {
+    filteredList = filteredList.filter(stu => {
+      const isAssigned = !!stu.assignedTo;
+      const isCallMarked = stu.callMarked === 'marked';
+      // keep rows that are NOT both assigned AND marked
+      return !(isAssigned && isCallMarked);
+    });
+  }
+
   const indexOfLastRow = currentPage * rowsPerPage;
   const indexOfFirstRow = indexOfLastRow - rowsPerPage;
-  const currentRows = sortedStudents.slice(indexOfFirstRow, indexOfLastRow);
-  const totalPages = Math.ceil(sortedStudents.length / rowsPerPage);
+  const currentRows = filteredList.slice(indexOfFirstRow, indexOfLastRow);
+  const totalPages = Math.ceil(filteredList.length / rowsPerPage);
 
   const goToPage = (pageNum) => {
     if (pageNum < 1) pageNum = 1;
@@ -504,8 +515,8 @@ function Viewstudents() {
     // Prepare data rows
     const dataRows = filtered.map((stu, idx) => [
       assignedIdxFirst + idx + 1,
-     (stu.assignedTo?.username || stu.assignedTo?._id || '') +
-    (stu.assignedTo?.email ? `\n${stu.assignedTo.email}` : ''),
+      (stu.assignedTo?.username || stu.assignedTo?._id || '') +
+      (stu.assignedTo?.email ? `\n${stu.assignedTo.email}` : ''),
       formatAssignedDate(stu.assignedAt) || '',
       stu.name || '',
       stu.email || '',
@@ -702,7 +713,7 @@ function Viewstudents() {
                 Not marked : {students.filter(stu => stu.callMarked !== 'marked').length}
               </div>
 
-              <div className="mt-3 mb-3">
+              <div className="d-flex flex-wrap gap-2 mb-3 mt-3">
                 <Button
                   variant={isExpandedView ? 'secondary' : 'primary'}
                   size="sm"
@@ -710,8 +721,14 @@ function Viewstudents() {
                 >
                   {isExpandedView ? 'Shrink View' : 'Expand View'}
                 </Button>
+                <Button
+                  variant={hideAssignedMarked ? 'outline-primary' : 'secondary'}
+                  size="sm"
+                  onClick={() => setHideAssignedMarked(prev => !prev)}
+                >
+                  {hideAssignedMarked ? 'Show Assigned & Marked' : 'Hide Assigned & Marked'}
+                </Button>
               </div>
-
 
               <div className="table-responsive vs-table-responsive">
                 <Table className="custom-table table-hover align-middle">
