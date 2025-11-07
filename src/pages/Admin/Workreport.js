@@ -77,7 +77,7 @@ function Workreport() {
         fetchStudents();
         intervalId = setInterval(() => {
             fetchStudents();
-        }, 300000);
+        }, 2 * 60 * 1000);
         // reset page when user changes
         setCurrentPage(1);
         return () => {

@@ -130,7 +130,7 @@ function Summary() {
     const pageHeight = doc.internal.pageSize.getHeight();
 
     // Title
-    const title = 'CRM - User Summary Report';
+    const title = `CRM - User's Summary Report`;
     doc.setFontSize(16);
     doc.setFont('helvetica', 'bold');
     doc.text(title, pageWidth / 2, 40, { align: 'center' });
@@ -177,14 +177,14 @@ function Summary() {
     // Proportions for each column (must match headers length).
     // Adjust these numbers to change relative widths.
     // Sum of proportions doesn't need to be 1; we normalize them below.
-    const proportions = [0.04, 0.16, 0.26, 0.10, 0.07, 0.07, 0.08, 0.14, 0.07, 0.06];
+    const proportions = [0.04, 0.16, 0.26, 0.20, 0.07, 0.07, 0.08, 0.14];
 
     // Normalize and compute widths (ensure min widths)
     const totalProp = proportions.reduce((a, b) => a + b, 0);
     const rawWidths = proportions.map(p => (p / totalProp) * usablePageWidth);
 
     // Minimum widths to avoid columns being too narrow
-    const minWidths = [30, 70, 120, 50, 40, 40, 60, 90, 60, 60];
+    const minWidths = [30, 70, 120, 50, 40, 40, 60, 90];
 
     // Final widths: max(raw, min)
     const finalWidths = rawWidths.map((w, i) => Math.max(w, minWidths[i]));

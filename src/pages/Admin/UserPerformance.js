@@ -38,10 +38,10 @@ function UserPerformance() {
       try {
         setLoading(true);
         setError("");
-        const endpoint =
-          reportType === "weekly"
-            ? `${BASEURL}/admin/weekly-report`
-            : `${BASEURL}/admin/monthly-report`;
+        let endpoint;
+        if (reportType === "weekly") endpoint = `${BASEURL}/admin/weekly-report`;
+        else if (reportType === "monthly") endpoint = `${BASEURL}/admin/monthly-report`;
+        else if (reportType === "daily") endpoint = `${BASEURL}/admin/daily-report`;
         const res = await axios.get(endpoint, {
           headers: { Authorization: auth?.token },
         });
@@ -68,9 +68,11 @@ function UserPerformance() {
 
     return reports.filter((r) => {
       const username = r.username?.toLowerCase() || "";
-      const weekOrMonth = reportType === "weekly"
+      const periodStr = reportType === "weekly"
         ? (r.week || "").toLowerCase()
-        : (r.month || "").toLowerCase();
+        : reportType === "monthly"
+          ? (r.month || "").toLowerCase()
+          : (r.day || "").toLowerCase();
 
       const assignedCountStr = String(r.assignedCount ?? "").toLowerCase();
       const completedCountStr = String(r.completedCount ?? "").toLowerCase();
@@ -81,7 +83,7 @@ function UserPerformance() {
 
       return (
         username.includes(term) ||
-        weekOrMonth.includes(term) ||
+        periodStr.includes(term) ||
         assignedCountStr.includes(term) ||
         completedCountStr.includes(term) ||
         durationStr.includes(term) ||
@@ -96,6 +98,13 @@ function UserPerformance() {
     const { key, direction } = sortConfig;
     if (!key) return filteredReports;
     return [...filteredReports].sort((a, b) => {
+      if (key === "day") {
+        const dateA = new Date(a.day);
+        const dateB = new Date(b.day);
+        return direction === "asc"
+          ? dateA - dateB
+          : dateB - dateA;
+      }
       const aVal = a[key] ?? "";
       const bVal = b[key] ?? "";
       if (typeof aVal === "number" && typeof bVal === "number") {
@@ -169,52 +178,69 @@ function UserPerformance() {
   };
   const exportToPDF = () => {
     const doc = new jsPDF();
-    const title = `CRM - ${reportType === "weekly" ? "Weekly" : "Monthly"} Performance Report`;
+    const title = `CRM - ${reportType === "weekly"
+        ? "Weekly"
+        : reportType === "monthly"
+          ? "Monthly"
+          : "Daily"
+      } Performance Report`;
+
     const pageWidth = doc.internal.pageSize.getWidth();
 
     const tableColumn = [
       "#",
       "Username",
-        "Phone",     
-      reportType === "weekly" ? "Week (Range)" : "Month",
-      "Assigned Count",
-      "Completed Count",
+      "Phone",
+      reportType === "weekly"
+        ? "Week (Range)"
+        : reportType === "monthly"
+          ? "Month"
+          : "Date",
+      "Assigned Count (Total)",
+      "Completed Count (Total)",
       "Total Call Duration (sec)",
       "Timer Duration (sec)",
       "Total Plans (Starter / Gold / Master)",
       "Status"
     ];
 
-    // Use sortedReports here so it respects search & sort
-    const exportList = sortedReports;     // ← change from `reports` to `sortedReports`
+    const exportList = sortedReports;
 
     const tableRows = exportList.map((r, idx) => {
       const callDurSec = r.totalCallDurationSeconds ?? 0;
       const timerSec = r.totalTimerSeconds ?? 0;
 
-      const callDurLabel = (callDurSec === highestDuration)
-        ? `${callDurSec} ✔`
-        : `${callDurSec}`;
+      const callDurLabel =
+        callDurSec === highestDuration ? `${callDurSec} ✔` : `${callDurSec}`;
+      const timerLabel =
+        timerSec === highestTimer ? `${timerSec} ✔` : `${timerSec}`;
 
-      const timerLabel = (timerSec === highestTimer)
-        ? `${timerSec} ✔`
-        : `${timerSec}`;
+      const status =
+        r.completedCount < r.assignedCount ? "Pending" : "Completed";
 
-      const status = (r.completedCount < r.assignedCount) ? "Pending" : "Completed";
+      const dateLabel =
+        reportType === "weekly"
+          ? `${r.week} (${getWeekRange(r.week).text})`
+          : reportType === "monthly"
+            ? `${r.month} (${getMonthRange(r.month).fullRangeText})`
+            : new Date(r.day).toLocaleDateString("en-IN", {
+              day: "2-digit",
+              month: "short",
+              year: "numeric",
+            });
 
       return [
         idx + 1,
         r.username || "",
-         r.phone     || "",       
-        reportType === "weekly"
-          ? `${r.week}\n(${getWeekRange(r.week).text})`
-          : `${r.month} (${getMonthRange(r.month).fullRangeText})`,
+        r.phone || "",
+        dateLabel,
         r.assignedCount ?? 0,
         r.completedCount ?? 0,
         callDurLabel,
         timerLabel,
-        `${r.totalPlans ?? 0} (${r.planCounts?.Starter ?? 0} / ${r.planCounts?.Gold ?? 0} / ${r.planCounts?.Master ?? 0})`,
-        status
+        `${r.totalPlans ?? 0} (${r.planCounts?.Starter ?? 0} / ${r.planCounts?.Gold ?? 0
+        } / ${r.planCounts?.Master ?? 0})`,
+        status,
       ];
     });
 
@@ -225,7 +251,7 @@ function UserPerformance() {
       styles: { fontSize: 8, cellPadding: 2, overflow: "linebreak" },
       showHead: "everyPage",
       didParseCell: (data) => {
-        if (data.section === 'body') {
+        if (data.section === "body") {
           const status = data.row.raw[data.row.raw.length - 1];
           if (status === "Pending") {
             data.cell.styles.textColor = [200, 0, 0];
@@ -257,6 +283,7 @@ function UserPerformance() {
 
 
 
+
   return (
     <Layout title={"CRM - Performance Analysis"}>
       <div className="container-fluid m-3 p-3 admin-root">
@@ -269,6 +296,12 @@ function UserPerformance() {
               <h4 className="mb-3 text-center">Performance Reports</h4>
 
               <div className="d-flex justify-content-center gap-2 mb-4">
+                <Button
+                  variant={reportType === "daily" ? "primary" : "outline-primary"}
+                  onClick={() => { setReportType("daily"); setCurrentPage(1); }}
+                >
+                  Daily
+                </Button>
                 <Button
                   variant={reportType === "weekly" ? "primary" : "outline-primary"}
                   onClick={() => { setReportType("weekly"); setCurrentPage(1); }}
@@ -384,28 +417,36 @@ function UserPerformance() {
                             : "▼"
                           : ""}
                       </Button>
-                      <Button
-                        variant="outline-secondary"
-                        size="sm"
-                        className="flex-fill"
-                        onClick={() =>
-                          setSortConfig({
-                            key: reportType === "weekly" ? "week" : "month",
-                            direction:
-                              sortConfig.key === (reportType === "weekly" ? "week" : "month") &&
-                                sortConfig.direction === "asc"
-                                ? "desc"
-                                : "asc",
-                          })
-                        }
-                      >
-                        Sort {reportType === "weekly" ? "Week" : "Month"}{" "}
-                        {sortConfig.key === (reportType === "weekly" ? "week" : "month")
-                          ? sortConfig.direction === "asc"
-                            ? "▲"
-                            : "▼"
-                          : ""}
-                      </Button>
+                     <Button
+  variant="outline-secondary"
+  size="sm"
+  className="flex-fill"
+  onClick={() =>
+    setSortConfig({
+      key: reportType === "weekly"   ? "week"
+           : reportType === "monthly"  ? "month"
+           : "day",
+      direction:
+        sortConfig.key === (reportType === "weekly" ? "week"
+                       : reportType === "monthly"? "month"
+                       : "day")
+        && sortConfig.direction === "asc"
+          ? "desc"
+          : "asc",
+    })
+  }
+>
+  Sort {reportType === "weekly"   ? "Week"
+        : reportType === "monthly"  ? "Month"
+        : "Date"}{" "}
+  {sortConfig.key === (reportType === "weekly" ? "week"
+                       : reportType === "monthly"? "month"
+                       : "day")
+    ? sortConfig.direction === "asc"
+      ? "▲"
+      : "▼"
+    : ""}
+</Button>
                     </div>
                   </div>
                 </div>
@@ -432,7 +473,11 @@ function UserPerformance() {
                       <tr>
                         <th>#</th>
                         <th>Username</th>
-                        <th>{reportType === "weekly" ? "Week" : "Month"}</th>
+                        <th>
+                          {reportType === "weekly" ? "Week" :
+                            reportType === "monthly" ? "Month" :
+                              "Date"}
+                        </th>
                         <th>Assigned Count(Total)</th>
                         <th>Completed Count(Total)</th>
                         <th>Total Call Duration (sec)</th>
@@ -453,25 +498,40 @@ function UserPerformance() {
                                 </div>
                               </td>
                               <td>
-                                <OverlayTrigger
-                                  placement="top"
-                                  overlay={
-                                    <Tooltip id={`tooltip-period-${i}`}>
-                                      {reportType === "weekly"
-                                        ? getWeekRange(r.week).text
-                                        : getMonthRange(r.month).fullRangeText}
-                                    </Tooltip>
-                                  }
-                                >
+                                {reportType === "daily" ? (
                                   <span>
-                                    {reportType === "weekly" ? r.week : r.month}
+                                    {new Date(r.day).toLocaleDateString("en-IN", {
+                                      day: "2-digit",
+                                      month: "short",
+                                      year: "numeric"
+                                    })}
                                     {pending && (
                                       <span className="badge bg-warning ms-2">
                                         Pending
                                       </span>
                                     )}
                                   </span>
-                                </OverlayTrigger>
+                                ) : (
+                                  <OverlayTrigger
+                                    placement="top"
+                                    overlay={
+                                      <Tooltip id={`tooltip-period-${i}`}>
+                                        {reportType === "weekly"
+                                          ? getWeekRange(r.week).text
+                                          : getMonthRange(r.month).fullRangeText}
+                                      </Tooltip>
+                                    }
+                                  >
+                                    <span>
+                                      {reportType === "weekly" ? r.week : r.month}
+                                      {pending && (
+                                        <span className="badge bg-warning ms-2">
+                                          Pending
+                                        </span>
+                                      )}
+                                    </span>
+                                  </OverlayTrigger>
+                                )}
                               </td>
                               <td>{r.assignedCount}</td>
                               <td>{r.completedCount}</td>

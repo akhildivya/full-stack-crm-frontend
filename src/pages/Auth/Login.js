@@ -153,7 +153,7 @@ function Login() {
         }
     }
     return (
-        <Layout title={'CRM - Login'}>
+        <Layout title={'CRM - Sign In'}>
 
             <div className="signup-page">
                 <form className="signup-card" >

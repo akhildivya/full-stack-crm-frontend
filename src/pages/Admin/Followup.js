@@ -10,6 +10,7 @@ import { Dropdown, Button } from 'react-bootstrap';
 import { FaTrash, FaFilePdf, FaFileExcel } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import * as XLSX from 'xlsx';
+import { OverlayTrigger, Tooltip } from 'react-bootstrap';
 const ROWS_PER_PAGE_OPTIONS = [5, 10, 25, 50];
 
 function Followup() {
@@ -369,7 +370,20 @@ function Followup() {
                                             rows.map((r, i) => (
                                                 <tr key={r._id}>
                                                     <td>{(page - 1) * rowsPerPage + i + 1}</td>
-                                                    <td>{r.name}</td>
+                                                    <td>
+                                                        <OverlayTrigger
+                                                            placement="top"
+                                                            overlay={
+                                                                <Tooltip id={`tooltip-${r._id}`}>
+                                                                    {mode === 'admission'
+                                                                        ? `Plan Type: ${r.planType || 'N/A'}`
+                                                                        : `Current Assignee: ${r.assigneeName || 'N/A'}`}
+                                                                </Tooltip>
+                                                            }
+                                                        >
+                                                            <span>{r.name}</span>
+                                                        </OverlayTrigger>
+                                                    </td>
                                                     <td>{r.email}</td>
                                                     <td>{r.phone}</td>
                                                     <td>{r.course}</td>

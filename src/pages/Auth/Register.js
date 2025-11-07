@@ -254,7 +254,7 @@ function Register() {
     }
 
     return (
-        <Layout title={'CRM - Register New User'}>
+        <Layout title={'CRM - Sign Up'}>
             <div className="signup-page">
                 <form className="signup-card"  >
                     <h6 className="form-heading" >Register</h6>
