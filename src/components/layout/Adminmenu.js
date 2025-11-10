@@ -77,15 +77,17 @@ function Adminmenu() {
               <span>Work report</span>
             </NavLink>
 
+             <NavLink to="/admin-dashboard/user-performance" className={linkClass}>
+              <i className="bi bi-trophy-fill me-2" aria-hidden="true"></i>
+              <span>Performance</span>
+            </NavLink>
+
             <NavLink to="/admin-dashboard/summary-report" className={linkClass}>
               <i className="bi bi-file-pdf me-2" aria-hidden="true"></i>
               <span>Summary</span>
             </NavLink>
 
-            <NavLink to="/admin-dashboard/user-performance" className={linkClass}>
-              <i className="bi bi-trophy-fill me-2" aria-hidden="true"></i>
-              <span>Performance</span>
-            </NavLink>
+           
 
             <NavLink to="/admin-dashboard/follow-up" className={linkClass}>
               <i className="bi bi-archive me-2" aria-hidden="true"></i>

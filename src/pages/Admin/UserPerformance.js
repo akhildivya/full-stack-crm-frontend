@@ -132,21 +132,34 @@ function UserPerformance() {
   }, [currentRows]);
 
   // Helpers to compute date ranges
-  const getWeekRange = (weekValue) => {
-    const [yearStr, weekStr] = `${weekValue}`.split("-W");
-    const year = parseInt(yearStr, 10);
-    const week = parseInt(weekStr, 10);
-    const daysOffset = (week - 1) * 7;
-    const startDate = new Date(year, 0, 1 + daysOffset);
-    const endDate = new Date(startDate);
-    endDate.setDate(startDate.getDate() + 6);
-    const opts = { day: "2-digit", month: "short", year: "numeric" };
-    return {
-      text: `${startDate.toLocaleDateString("en-IN", opts)} to ${endDate.toLocaleDateString("en-IN", opts)}`,
-      start: startDate,
-      end: endDate,
-    };
+const getWeekRange = (weekValue) => {
+  const [yearStr, weekStr] = `${weekValue}`.split("-W");
+  const year = parseInt(yearStr, 10);
+  const week = parseInt(weekStr, 10);
+
+  const jan1 = new Date(year, 0, 1);
+  const jan1Day = jan1.getDay(); // Sunday=0 ... Saturday=6
+
+  // Find first Sunday on or before Jan 1
+  const firstSunday = new Date(year, 0, 1 - jan1Day);
+
+  // Calculate start date based on Sunday + (week-1)*7 days
+  const startDate = new Date(firstSunday);
+  startDate.setDate(firstSunday.getDate() + (week - 1) * 7);
+
+  // End date is 6 days after start date (Saturday)
+  const endDate = new Date(startDate);
+  endDate.setDate(startDate.getDate() + 6);
+
+  const opts = { day: "2-digit", month: "short", year: "numeric" };
+  return {
+    text: `${startDate.toLocaleDateString("en-IN", opts)} to ${endDate.toLocaleDateString("en-IN", opts)}`,
+    start: startDate,
+    end: endDate,
   };
+};
+
+
 
   const getMonthRange = (monthValue) => {
     const [yearStr, monthNumStr] = `${monthValue}`.split("-");

@@ -260,6 +260,7 @@ function Summary() {
     // Filter out entries lacking name or duration if needed
     return userSummary.map(user => ({
       name: user.name,
+      
       totalDuration: user.totalDuration,
     }));
   }, [userSummary]);

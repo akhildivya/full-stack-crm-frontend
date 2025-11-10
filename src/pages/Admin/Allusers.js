@@ -110,13 +110,19 @@ const filtered = useMemo(() => {
 
     // Make sure verified is strictly a boolean
     const isVerified = !!user.verified;
-    const statusText = isVerified ? "verified" : "not verified";
+       // Check if search term is "verified" or "not verified"
+    if (normalized === "verified") {
+      return isVerified;
+    }
+    if (normalized === "not verified") {
+      return !isVerified;
+    }
 
+    // Otherwise, search in name, email, phone
     return (
       name.includes(normalized) ||
       email.includes(normalized) ||
-      phone.includes(normalized) ||
-      statusText.includes(normalized)
+      phone.includes(normalized)
     );
   });
 }, [users, normalized]);

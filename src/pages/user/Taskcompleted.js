@@ -19,6 +19,7 @@ function Taskcompleted() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [showVerified, setShowVerified] = useState(true);
   const [showInfo, setShowInfo] = useState(true);
   const columns = [
     { label: 'Name', key: 'name' },
@@ -65,6 +66,8 @@ function Taskcompleted() {
 
   const filtered = useMemo(() => {
     return (students || []).filter(s => {
+       if (showVerified === false && s.callInfo?.verified) return false;
+
       if (!normalized) return true;
 
       const callStatus = s.callInfo?.callStatus || '';
@@ -503,7 +506,7 @@ function Taskcompleted() {
 
 
               <div className="mb-2 d-flex justify-content-between align-items-center">
-                <div>
+                <div className="d-flex gap-2">
                   <button
                     type="button"
                     className="btn btn-sm btn-outline-secondary"
@@ -511,6 +514,15 @@ function Taskcompleted() {
                   >
                     {isExpanded ? 'Shrink' : 'Expand'}
                   </button>
+
+                   <button
+      type="button"
+      className={`btn btn-sm ${showVerified ? 'btn-outline-success' : 'btn-outline-danger'}`}
+      onClick={() => setShowVerified(prev => !prev)}
+      title={showVerified ? 'Click to hide verified rows' : 'Click to show verified rows'}
+    >
+      {showVerified ? 'Hide Verified' : 'Show Verified'}
+    </button>
                 </div>
                 <div className="text-muted small">{isExpanded ? 'Expanded view' : 'Compact view'}</div>
               </div>

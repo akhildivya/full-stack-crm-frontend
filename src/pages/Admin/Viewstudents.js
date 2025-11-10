@@ -79,7 +79,9 @@ function Viewstudents() {
     const counts = {};
     assignedStudents.forEach(stu => {
       const name = stu.assignedTo?.username || 'Unassigned';
-      counts[name] = (counts[name] || 0) + 1;
+      const email = stu.assignedTo?.email || 'No Email';
+      const key = `${name} (${email})`;
+      counts[key] = (counts[key] || 0) + 1;
     });
     return counts;
   }, [assignedStudents]);
@@ -469,7 +471,7 @@ function Viewstudents() {
       }
     });
 
-    doc.save('crm_contact_details_summary_report.pdf');
+    doc.save('CRM-contact-details-summary-report.pdf');
   };
 
   const exportAssignedToPDF = () => {
@@ -597,6 +599,8 @@ function Viewstudents() {
 
     return `${day}-${month}-${year} ${hourStr}:${minutes}:${seconds} ${ampm}`;
   }
+
+
   if (loading) {
     return (
       <div className="loader-overlay">
@@ -1257,9 +1261,9 @@ function Viewstudents() {
           </div>
           <div className="mb-3">
             <strong>Summary:</strong>{' '}
-            {Object.entries(assigneeCounts).map(([name, cnt], idx, arr) => (
-              <span key={name}>
-                {name}: {cnt}
+            {Object.entries(assigneeCounts).map(([key, cnt], idx, arr) => (
+              <span key={key}>
+                {key}: {cnt}
                 {idx < arr.length - 1 ? ' | ' : ''}
               </span>
             ))}
