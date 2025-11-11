@@ -73,7 +73,7 @@ function DutyList() {
           toast.success(
             <>
               Timer ended. Duration:{' '}
-              <span style={{ filter: 'blur(5px)', display: 'inline-block' }}>
+              <span style={{ filter: 'blur(1px)', display: 'inline-block' }}>
                 {durationSeconds} seconds
               </span>
               .

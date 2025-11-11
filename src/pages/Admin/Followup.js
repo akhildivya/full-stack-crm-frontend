@@ -377,7 +377,7 @@ function Followup() {
                                                 <tr key={r._id}>
                                                     <td>{(page - 1) * rowsPerPage + i + 1}</td>
                                                     <td>
-                                                        <OverlayTrigger
+                                                      {/*  <OverlayTrigger
                                                             placement="top"
                                                             overlay={
                                                                 <Tooltip id={`tooltip-${r._id}`}>
@@ -388,7 +388,8 @@ function Followup() {
                                                             }
                                                         >
                                                             <span>{r.name}</span>
-                                                        </OverlayTrigger>
+                                                        </OverlayTrigger>*/}
+                                                         <span>{r.name}</span>
                                                     </td>
                                                     <td>{r.email}</td>
                                                     <td>{r.phone}</td>

@@ -7,6 +7,8 @@ import { useAuth } from '../../context/auth'
 import { useNavigate } from 'react-router-dom'
 import AdminConfirmDelete from './AdminConfirmDelete'
 import {BASEURL} from '../../service/baseUrl'
+import { toast } from 'react-toastify';
+
 function Myprofile() {
   const navigate = useNavigate()
   const [auth, setAuth] = useAuth();
@@ -108,26 +110,25 @@ function Myprofile() {
       return;
     }
 
-    setEditing(false);
+    
     try {
-      const res = await axios.put(`${BASEURL}/admin-profile`, form); // adapt to your API
+    const res = await axios.put(`${BASEURL}/admin-profile`, form);
+    const updatedUser = res.data;
 
-      const updatedUser = res.data; // ensure this is the updated user object
+    setUser(updatedUser);
+    setForm(updatedUser);
+    setAuth((prev) => ({ ...prev, user: updatedUser }));
+    setEditing(false);
 
-      // Update local component state
-      setUser(updatedUser);
-      setForm(updatedUser);
-      setEditing(false);
-
-      // IMPORTANT: update global auth state so other components re-render
-      setAuth(prev => ({ ...prev, user: updatedUser }));
-
-      // If you also store auth in localStorage separately, update that too (AuthProvider already handles persistence)
-      // localStorage.setItem('auth', JSON.stringify({ ...auth, user: updatedUser }));
-
-    } catch (err) {
-      console.error('Save failed', err);
+    toast.success('Profile updated successfully!', { position: 'top-center' });
+  } catch (err) {
+    console.error('Save failed', err);
+    if (err.response?.status === 400 && err.response.data?.message) {
+      toast.warning(err.response.data.message, { position: 'top-center' });
+      return;
     }
+    toast.error('Error updating profile. Please try again later.', { position: 'top-center' });
+  }
   };
 
   if (user == null) return  <div className="loader-overlay">

@@ -7,7 +7,8 @@ import { useAuth } from '../../context/auth'
 import { editUserProfileApi } from '../../service/allApis'
 import { useNavigate } from 'react-router-dom'
 import ConfirmDeleteModal from './ConfirmDeleteModal'
-import {BASEURL} from '../../service/baseUrl'
+import { BASEURL } from '../../service/baseUrl'
+import { toast } from 'react-toastify';
 function Profile() {
   const navigate = useNavigate()
   const [auth, setAuth] = useAuth();
@@ -20,27 +21,27 @@ function Profile() {
 
 
   useEffect(() => {
-  let mounted = true;
-  const fetchProfile = async () => {
-    try {
-      const res = await axios.get(`${BASEURL}/my-profile`);
-      if (!mounted) return;
-      setUser(res.data);
-      // keep edit form in sync when not editing
-      if (!editing) setForm(res.data);
-    } catch (err) {
-      console.error('Profile poll failed', err);
-    }
-  };
+    let mounted = true;
+    const fetchProfile = async () => {
+      try {
+        const res = await axios.get(`${BASEURL}/my-profile`);
+        if (!mounted) return;
+        setUser(res.data);
+        // keep edit form in sync when not editing
+        if (!editing) setForm(res.data);
+      } catch (err) {
+        console.error('Profile poll failed', err);
+      }
+    };
 
-  fetchProfile();                    // initial load
-  const id = setInterval(fetchProfile, 1000); // every 5s (tune as needed)
+    fetchProfile();                    // initial load
+    const id = setInterval(fetchProfile, 1000); // every 5s (tune as needed)
 
-  return () => {
-    mounted = false;
-    clearInterval(id);
-  };
-}, [editing]);
+    return () => {
+      mounted = false;
+      clearInterval(id);
+    };
+  }, [editing]);
 
 
 
@@ -114,32 +115,42 @@ function Profile() {
 
     setEditing(false);
     try {
-      // const res = await axios.put('http://localhost:4000/my-profile', form); // adapt to your API
+     
       const res = await editUserProfileApi(form)
       const updatedUser = res.data; // ensure this is the updated user object
 
       // Update local component state
       setUser(updatedUser);
       setForm(updatedUser);
-      setEditing(false);
+
 
       // IMPORTANT: update global auth state so other components re-render
       setAuth(prev => ({ ...prev, user: updatedUser }));
+      setEditing(false);
+      toast.success('Profile updated successfully!', { position: 'top-center' });
 
       // If you also store auth in localStorage separately, update that too (AuthProvider already handles persistence)
       // localStorage.setItem('auth', JSON.stringify({ ...auth, user: updatedUser }));
 
     } catch (err) {
       console.error('Save failed', err);
+      if (err.response?.status === 400) {
+        // backend returns msg e.g. 'Email already exists' or 'Phone number already exists'
+        toast.error(err.response.data.message, { position: 'top-center' });
+        return;
+      } else {
+        toast.error('Error updating profile. Please try again.', { position: 'top-center' });
+      }
+
     }
   };
 
-  if (user ==null) return <div className="loader-overlay">
-      <div className="loader-box">
-        <div className="spinner"></div>
-        <p className="loader-text">Loading...</p>
-      </div>
+  if (user == null) return <div className="loader-overlay">
+    <div className="loader-box">
+      <div className="spinner"></div>
+      <p className="loader-text">Loading...</p>
     </div>
+  </div>
 
   const confirmDelete = async () => {
     if (!selectedUser) return;
@@ -147,9 +158,9 @@ function Profile() {
     try {
       await axios.delete(`${BASEURL}/delete-user/${selectedUser._id}`);
       // Optionally update the UI list immediately:
-     
+
       setAuth(prev => ({ ...prev, user: null, token: '' }));
-        try { localStorage.removeItem('auth'); } catch (e) { /* ignore */ }
+      try { localStorage.removeItem('auth'); } catch (e) { /* ignore */ }
       closeModal();
       navigate('/'); // redirect to home
     } catch (err) {
