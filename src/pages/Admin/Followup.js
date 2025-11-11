@@ -312,12 +312,18 @@ function Followup() {
                                                             ? 'Course'
                                                             : sortKey === 'movedAt'
                                                                 ? 'Moved At'
-                                                                : 'Sort By'}
+                                                                : sortKey === 'phone'
+                                                                    ? 'Phone'
+                                                                    : sortKey === 'place'
+                                                                        ? 'Place'
+                                                                        : 'Sort By'}
                                             </Dropdown.Toggle>
                                             <Dropdown.Menu>
                                                 <Dropdown.Item eventKey="name">Name</Dropdown.Item>
                                                 <Dropdown.Item eventKey="email">Email</Dropdown.Item>
+                                                <Dropdown.Item eventKey="phone">Phone</Dropdown.Item>
                                                 <Dropdown.Item eventKey="course">Course</Dropdown.Item>
+                                                <Dropdown.Item eventKey="place">Place</Dropdown.Item>
                                                 <Dropdown.Item eventKey="movedAt">Moved At</Dropdown.Item>
                                             </Dropdown.Menu>
                                         </Dropdown>

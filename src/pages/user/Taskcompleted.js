@@ -105,7 +105,7 @@ function Taskcompleted() {
         completedAt.toLowerCase().includes(normalized)
       );
     });
-  }, [students, normalized]);
+  }, [students, normalized, showVerified]);
 
 
   const sorted = useMemo(() => {
