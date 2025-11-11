@@ -4,7 +4,6 @@ import Usermenu from '../../components/layout/Usermenu'
 import '../../css/admin.css'
 import axios from 'axios'
 import { useAuth } from '../../context/auth'
-import { editUserProfileApi } from '../../service/allApis'
 import { useNavigate } from 'react-router-dom'
 import ConfirmDeleteModal from './ConfirmDeleteModal'
 import { BASEURL } from '../../service/baseUrl'
@@ -116,7 +115,7 @@ function Profile() {
     setEditing(false);
     try {
      
-      const res = await editUserProfileApi(form)
+     const res = await axios.put(`${BASEURL}/my-profile`, form); 
       const updatedUser = res.data; // ensure this is the updated user object
 
       // Update local component state
@@ -136,7 +135,7 @@ function Profile() {
       console.error('Save failed', err);
       if (err.response?.status === 400) {
         // backend returns msg e.g. 'Email already exists' or 'Phone number already exists'
-        toast.error(err.response.data.message, { position: 'top-center' });
+        toast.warn(err.response.data.message, { position: 'top-center' });
         return;
       } else {
         toast.error('Error updating profile. Please try again.', { position: 'top-center' });

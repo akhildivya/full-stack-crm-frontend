@@ -262,7 +262,7 @@ function Viewstudents() {
       handleCloseModal();
     } catch (err) {
       if (err.response?.status === 400) {
-        toast.error(err.response.data.message, { position: "top-center" });
+        toast.warn(err.response.data.message, { position: "top-center" });
       } else if (err.response?.status === 404) {
         toast.error("Student not found!", { position: "top-center" });
       } else {

@@ -65,7 +65,7 @@ function Followup() {
         doc.text(title, textX, 20);
 
         // Define table headers
-        const head = [['Sl. No', 'Name', 'Email', 'Phone', 'Course', 'Place', 'Moved At']];
+        const head = [['Sl. No', 'Name', 'Email', 'Phone', 'Course', 'Place', mode === 'admission' ? 'Plan Type' : 'Assignee Name', 'Moved At']];
 
         // Prepare table body
         const body = rows.map((r, index) => [
@@ -75,6 +75,9 @@ function Followup() {
             r.phone,
             r.course,
             r.place,
+            mode === 'admission'
+                ? (r.planType || 'N/A')
+                : (r.assigneeName || 'N/A'),
             new Date(r.movedAt).toLocaleString('en-GB', {
                 day: '2-digit',
                 month: 'short',
@@ -133,6 +136,10 @@ function Followup() {
             "Phone": r.phone,
             "Course": r.course,
             "Place": r.place,
+            [mode === 'admission' ? "Plan Type" : "Assignee Name"]:
+                mode === 'admission'
+                    ? (r.planType || 'N/A')
+                    : (r.assigneeName || 'N/A'),
             "Moved At": new Date(r.movedAt).toLocaleString('en-GB', {
                 day: '2-digit',
                 month: 'short',
@@ -149,8 +156,8 @@ function Followup() {
 
         // Insert a title at the top. For example one row with the report title
         const sheetTitle = mode === 'admission'
-            ? 'CRM – Admission Follow-up Report'
-            : 'CRM – Contact Later Follow-up Report';
+            ? 'CRM - Admission Follow-up Report'
+            : 'CRM - Contact Later Follow-up Report';
 
         // Add the title row at the very top (row 1)
         XLSX.utils.sheet_add_aoa(worksheet, [[sheetTitle]], { origin: "A1" });
@@ -377,7 +384,7 @@ function Followup() {
                                                 <tr key={r._id}>
                                                     <td>{(page - 1) * rowsPerPage + i + 1}</td>
                                                     <td>
-                                                      {/*  <OverlayTrigger
+                                                        <OverlayTrigger
                                                             placement="top"
                                                             overlay={
                                                                 <Tooltip id={`tooltip-${r._id}`}>
@@ -388,8 +395,8 @@ function Followup() {
                                                             }
                                                         >
                                                             <span>{r.name}</span>
-                                                        </OverlayTrigger>*/}
-                                                         <span>{r.name}</span>
+                                                        </OverlayTrigger>
+
                                                     </td>
                                                     <td>{r.email}</td>
                                                     <td>{r.phone}</td>

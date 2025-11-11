@@ -8,10 +8,11 @@ import { autoTable } from 'jspdf-autotable';
 import { FaFilePdf } from 'react-icons/fa';
 import { Button } from 'react-bootstrap';
 import { toast } from 'react-toastify';
-import { Dropdown, ButtonGroup } from 'react-bootstrap';
+import { Dropdown, ButtonGroup, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { Accordion } from 'react-bootstrap';
 import { useAuth } from '../../context/auth';
-import { FaCheckCircle } from 'react-icons/fa';
+import { FaCheckCircle, FaArrowAltCircleRight } from 'react-icons/fa';
+
 function Workreport() {
     const [auth] = useAuth();
     const [users, setUsers] = useState([]);
@@ -798,7 +799,7 @@ function Workreport() {
             await axios.post(`${BASEURL}/admin/move-to-admission`, { ids: selectedIds });
             // remove those students from current table state
             setStudents(prev => prev.filter(s => !selectedIds.includes(s._id)));
-            toast.success("Moved to Admission successfully", {
+            toast.success("Added to Admission successfully", {
                 position: "top-center",
                 autoClose: 5000,
                 hideProgressBar: false,
@@ -830,7 +831,7 @@ function Workreport() {
         try {
             await axios.post(`${BASEURL}/admin/move-to-contact-later`, { ids: selectedIds });
             setStudents(prev => prev.filter(s => !selectedIds.includes(s._id)));
-            toast.success("Moved to Contact Later successfully", {
+            toast.success("Added to Contact Later successfully", {
                 position: "top-center",
                 autoClose: 5000,
                 hideProgressBar: false,
@@ -1263,10 +1264,18 @@ function Workreport() {
                                                                         />
                                                                     </td>
                                                                     <td>{serialNo}</td>
+
                                                                     <td>
                                                                         {s.name} {ci.verified && (
                                                                             <FaCheckCircle style={{ marginLeft: '5px', color: 'green' }} />
                                                                         )}
+                                                                      {(s.isMovedToAdmission || s.isMovedToContactLater) && (
+      <span className="hover-message">
+        {s.isMovedToAdmission
+          ? 'Moved to Admission'
+          : 'Moved to Contact Later'}
+      </span>
+    )}
                                                                     </td>
                                                                     <td>{ci.callStatus ?? '-'}</td>
                                                                     <td>
