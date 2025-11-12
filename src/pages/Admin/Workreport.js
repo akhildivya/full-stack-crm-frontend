@@ -798,8 +798,8 @@ function Workreport() {
         try {
             await axios.post(`${BASEURL}/admin/move-to-admission`, { ids: selectedIds });
             // remove those students from current table state
-            setStudents(prev => prev.filter(s => !selectedIds.includes(s._id)));
-            toast.success("Added to Admission successfully", {
+
+            toast.success("Added to admission", {
                 position: "top-center",
                 autoClose: 5000,
                 hideProgressBar: false,
@@ -830,8 +830,8 @@ function Workreport() {
     const handleBulkContactLater = async () => {
         try {
             await axios.post(`${BASEURL}/admin/move-to-contact-later`, { ids: selectedIds });
-            setStudents(prev => prev.filter(s => !selectedIds.includes(s._id)));
-            toast.success("Added to Contact Later successfully", {
+           
+            toast.success("Added to later contacts", {
                 position: "top-center",
                 autoClose: 5000,
                 hideProgressBar: false,
@@ -1266,17 +1266,46 @@ function Workreport() {
                                                                     <td>{serialNo}</td>
 
                                                                     <td>
-                                                                        {s.name} {ci.verified && (
-                                                                            <FaCheckCircle style={{ marginLeft: '5px', color: 'green' }} />
-                                                                        )}
-                                                                      {(s.isMovedToAdmission || s.isMovedToContactLater) && (
-      <span className="hover-message">
-        {s.isMovedToAdmission
-          ? 'Moved to Admission'
-          : 'Moved to Contact Later'}
-      </span>
+  <div className="d-flex align-items-center gap-1">
+    <span>{s.name}</span>
+
+    {/* ✅ Verified tooltip */}
+    {ci.verified && (
+      <OverlayTrigger
+        placement="top"
+        overlay={<Tooltip id={`verified-${s._id}`}>Verified Call Info</Tooltip>}
+      >
+        <span style={{ cursor: 'pointer' }}>
+          <FaCheckCircle style={{ color: 'green' }} />
+        </span>
+      </OverlayTrigger>
     )}
-                                                                    </td>
+
+    {/* ✅ Admission / Contact Later tooltip */}
+    {(s.isMovedToAdmission || s.isMovedToContactLater) && (
+      <OverlayTrigger
+        placement="top"
+        overlay={
+          <Tooltip id={`move-${s._id}`}>
+            {s.isMovedToAdmission
+              ? 'Moved to Admission'
+              : 'Moved to Contact Later'}
+          </Tooltip>
+        }
+      >
+        <span style={{ cursor: 'pointer' }}>
+          <FaArrowAltCircleRight
+            style={{
+              color: s.isMovedToAdmission ? 'blue' : 'orange',
+              marginLeft: '4px'
+            }}
+          />
+        </span>
+      </OverlayTrigger>
+    )}
+  </div>
+</td>
+
                                                                     <td>{ci.callStatus ?? '-'}</td>
                                                                     <td>
                                                                         {ci.callDuration != null && !isNaN(ci.callDuration) ?
