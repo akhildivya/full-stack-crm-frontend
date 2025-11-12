@@ -78,6 +78,17 @@ function ResetPassword() {
     const handleReset = async (e) => {
         e.preventDefault()
         const { password, confirmPassword } = inputs
+        const isValid = validateAll();
+
+        // ✅ If validation failed, show a toast warning
+        if (!isValid) {
+            toast.warn("Please fix the highlighted errors before submitting.", {
+                position: "top-center",
+                autoClose: 5000,
+                theme: "light",
+            });
+            return;
+        }
         if (!password || !confirmPassword) {
             toast.warn("Password cannot be blank", {
                 position: "top-center",
@@ -113,7 +124,7 @@ function ResetPassword() {
 
         }
         if (validateAll()) {
-           /* console.log("Form submitted:", inputs);*/
+            /* console.log("Form submitted:", inputs);*/
             // proceed with your API call or other logic
         }
         try {

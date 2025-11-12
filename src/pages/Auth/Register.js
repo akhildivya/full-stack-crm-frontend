@@ -127,7 +127,16 @@ function Register() {
 
         const { username, email, password, confirmPassword, userType, secretKey, phone } = inputs
         const errors = [];
+        if (!validateAll()) {
+            toast.warn('Please fix the errors before submitting', { 'position': 'top-center' });
+            return;
+        }
 
+        // Now also check password match etc
+        if (password !== confirmPassword) {
+            toast.warn('Passwords do not match', { 'position': 'top-center' });
+            return;
+        }
         if (userType === "Admin" && secretKey !== "Unl0ckMySuperH30Best2025!") {
             errors.push("Invalid secretkey");
             setInputs({

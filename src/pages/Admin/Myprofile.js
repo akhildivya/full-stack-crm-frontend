@@ -55,13 +55,9 @@ function Myprofile() {
     if (name === "phone") {
       if (!value) {
         error = "mobile number is required";
-      } else if (value.length < 10) {
-        error = "minimum 10 digits";
-      } else if (value.length > 15) {
-        error = "maximum 15 characters";
-      } else if (!/^\+?[0-9]{10,15}$/.test(value)) {
-        error = "invalid mobile number format";
-      }
+      } else if (!/^\d{10}$/.test(value)) {
+    error = "mobile number must be exactly 10 digits";
+  }
     }
     return error;
   };
@@ -105,10 +101,19 @@ function Myprofile() {
       const error = validate(field, form[field]);
       if (error) newErrors[field] = error;
     });
-    if (Object.keys(newErrors).length) {
-      setErrors(newErrors);
-      return;
-    }
+   if (Object.keys(newErrors).length > 0) {
+    setErrors(newErrors);
+    // Show toast of warning / error
+    toast.warn('Please fix validation errors before saving.', {
+      position: 'top-center',
+      autoClose: 5000,
+       onClose: () => {
+        setEditing(false);   // go back to normal view
+        setErrors({});       // clear inline error messages
+      }
+    });
+    return;
+  }
 
     
     try {

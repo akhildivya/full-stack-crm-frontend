@@ -197,6 +197,9 @@ function Viewstudents() {
       } else if (value.length > 50) {
         errorMsg = 'Course name too long';
       }
+      else if (!/^[A-Za-z\s\.,]+$/.test(value)) {
+    errorMsg = 'Course can contain only letters, spaces, comma(s) and dot(s)';
+  }
     }
     if (name === 'place') {
       if (!value) {
@@ -206,6 +209,9 @@ function Viewstudents() {
       } else if (value.length > 50) {
         errorMsg = 'Place too long';
       }
+      else if (!/^[A-Za-z\s\.,]+$/.test(value)) {
+    errorMsg = 'Place can contain only letters, spaces, comma(s) and dot(s)';
+  }
     }
     return errorMsg;
   };

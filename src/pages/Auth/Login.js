@@ -33,7 +33,7 @@ function Login() {
         }));
 
     }
-   {/* console.log(inputs);*/}
+    {/* console.log(inputs);*/ }
     const handleBlur = (e) => {
         // Optional: re-run validation on blur for fields that haven’t been touched
         handleChange(e);
@@ -74,9 +74,20 @@ function Login() {
     const handleLogin = async (e) => {
 
         e.preventDefault()
+        const isValid = validateAll();
+
+        // If validation failed, show a warning toast and stop
+        if (!isValid) {
+            toast.warn("Please fix the highlighted errors before submitting.", {
+                position: "top-center",
+                autoClose: 5000,
+                theme: "light",
+            });
+            return;
+        }
         if (validateAll()) {
-           /* console.log("Form submitted:", inputs);*/
-            // proceed with your API call or other logic
+            /* console.log("Form submitted:", inputs);*/
+            
         }
         const { email, password } = inputs
         if (!email || !password) {
@@ -94,7 +105,7 @@ function Login() {
         }
         else {
             const result = await loginApi(inputs)
-         /*   console.log(result);*/
+            /*   console.log(result);*/
             if (result.status == 200) {
 
                 toast.success('Login success', {

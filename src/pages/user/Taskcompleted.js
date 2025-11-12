@@ -71,9 +71,17 @@ function Taskcompleted() {
       if (!normalized) return true;
 
       const callStatus = s.callInfo?.callStatus || '';
-      const callDuration = s.callInfo?.callDuration ?? '';
+      const callDuration =  s.callInfo?.callDuration != null
+    ? `${Math.round(s.callInfo.callDuration * 60)} sec`
+    : '';
       const interested = s.callInfo?.interested || 'Inform Later';
       const planType = s.callInfo?.planType || '';
+      const assignedAtIso = s.assignedAt
+  ? new Date(s.assignedAt).toISOString()
+  : '';
+  const completedAtIso = s.callInfo?.completedAt
+  ? new Date(s.callInfo.completedAt).toISOString()
+  : '';
       const assignedAt = s.assignedAt ? new Date(s.assignedAt).toLocaleString('en-GB', {
         day: '2-digit',
         month: 'short',
@@ -102,41 +110,56 @@ function Taskcompleted() {
         interested.toLowerCase().includes(normalized) ||
         planType.toLowerCase().includes(normalized) ||
         assignedAt.toLowerCase().includes(normalized) ||
-        completedAt.toLowerCase().includes(normalized)
+        completedAt.toLowerCase().includes(normalized) ||
+        assignedAtIso.toLowerCase().includes(normalized) ||
+        completedAtIso.toLowerCase().includes(normalized)
       );
     });
   }, [students, normalized, showVerified]);
 
+const sorted = useMemo(() => {
+  return [...filtered].sort((a, b) => {
+    let aVal, bVal;
 
-  const sorted = useMemo(() => {
-    return [...filtered].sort((a, b) => {
-      let aVal = a[sortKey] ?? '';
-      let bVal = b[sortKey] ?? '';
+    // Determine values based on sortKey
+    if (sortKey === 'callStatus') {
+      aVal = a.callInfo?.callStatus ?? '';
+      bVal = b.callInfo?.callStatus ?? '';
+    } else if (sortKey === 'callDuration') {
+      // numeric compare: assume callDuration is in minutes (or some numeric)
+      aVal = a.callInfo?.callDuration ?? 0;
+      bVal = b.callInfo?.callDuration ?? 0;
+    } else if (sortKey === 'interested') {
+      aVal = a.callInfo?.interested || 'Inform Later';
+      bVal = b.callInfo?.interested || 'Inform Later';
+    } else if (sortKey === 'planType') {
+      aVal = a.callInfo?.planType ?? '';
+      bVal = b.callInfo?.planType ?? '';
+    } else if (sortKey === 'assignedAt') {
+      aVal = a.assignedAt ? new Date(a.assignedAt).getTime() : 0;
+      bVal = b.assignedAt ? new Date(b.assignedAt).getTime() : 0;
+    } else if (sortKey === 'completedAt') {
+      aVal = a.callInfo?.completedAt ? new Date(a.callInfo.completedAt).getTime() : 0;
+      bVal = b.callInfo?.completedAt ? new Date(b.callInfo.completedAt).getTime() : 0;
+    } else {
+      // fallback for simple keys
+      aVal = a[sortKey] ?? '';
+      bVal = b[sortKey] ?? '';
+    }
 
-      // Handle nested fields
-      if (sortKey === 'callStatus') {
-        aVal = a.callInfo?.callStatus ?? '';
-        bVal = b.callInfo?.callStatus ?? '';
-      } else if (sortKey === 'callDuration') {
-        aVal = a.callInfo?.callDuration ?? '';
-        bVal = b.callInfo?.callDuration ?? '';
-      } else if (sortKey === 'interested') {
-        aVal = a.callInfo?.interested || 'Inform Later';
-        bVal = b.callInfo?.interested || 'Inform Later';
-      } else if (sortKey === 'planType') {
-        aVal = a.callInfo?.planType ?? '';
-        bVal = b.callInfo?.planType ?? '';
-      } else if (sortKey === 'assignedAt' || sortKey === 'completedAt') {
-        aVal = aVal ? new Date(aVal) : new Date(0);
-        bVal = bVal ? new Date(bVal) : new Date(0);
-      }
-
-      // Compare values
+    // Perform compare
+    if (typeof aVal === 'string' && typeof bVal === 'string') {
+      // localeCompare for strings
+      const cmp = aVal.localeCompare(bVal);
+      return sortOrder === 'asc' ? cmp : -cmp;
+    } else {
+      // numeric compare (dates or numbers)
       if (aVal < bVal) return sortOrder === 'asc' ? -1 : 1;
       if (aVal > bVal) return sortOrder === 'asc' ? 1 : -1;
       return 0;
-    });
-  }, [filtered, sortKey, sortOrder]);
+    }
+  });
+}, [filtered, sortKey, sortOrder]);
 
   const currentItems = useMemo(() => {
     const start = (currentPage - 1) * itemsPerPage;
@@ -661,7 +684,7 @@ function Taskcompleted() {
                       </Dropdown.Toggle>
 
                       <Dropdown.Menu>
-                        {[5, 10, 15, 20, 25, 30, 35, 40, 50, 100].map(size => (
+                        {[5, 10, 15, 20, 25, 30, 35, 40, 50, 100,200,300].map(size => (
                           <Dropdown.Item
                             key={size}
                             active={itemsPerPage === size}

@@ -72,12 +72,8 @@ function Profile() {
     if (name === "phone") {
       if (!value) {
         error = "mobile number is required";
-      } else if (value.length < 10) {
-        error = "minimum 10 digits";
-      } else if (value.length > 15) {
-        error = "maximum 15 characters";
-      } else if (!/^\+?[0-9]{10,15}$/.test(value)) {
-        error = "invalid mobile number format";
+      } else if (!/^\d{10}$/.test(value)) {
+        error = "mobile number must be exactly 10 digits";
       }
     }
     return error;
@@ -107,38 +103,58 @@ function Profile() {
       const error = validate(field, form[field]);
       if (error) newErrors[field] = error;
     });
-    if (Object.keys(newErrors).length) {
+    if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
+      toast.warn('Please fix validation errors before saving.', {
+        position: 'top-center',
+        autoClose: 5000,
+        onClose: () => {
+          setEditing(false);   // go back to normal view
+          setErrors({});       // clear inline error messages
+        }
+      });
       return;
     }
 
-    setEditing(false);
     try {
-     
-     const res = await axios.put(`${BASEURL}/my-profile`, form); 
-      const updatedUser = res.data; // ensure this is the updated user object
 
-      // Update local component state
+      const res = await axios.put(`${BASEURL}/my-profile`, form);
+      const updatedUser = res.data;
       setUser(updatedUser);
       setForm(updatedUser);
-
-
-      // IMPORTANT: update global auth state so other components re-render
       setAuth(prev => ({ ...prev, user: updatedUser }));
       setEditing(false);
-      toast.success('Profile updated successfully!', { position: 'top-center' });
+      setErrors({});
+      toast.success('Profile updated successfully!', {
+        position: 'top-center', autoClose: 5000,
+        onClose: () => {
+          setErrors({});
+        }
+      });
 
       // If you also store auth in localStorage separately, update that too (AuthProvider already handles persistence)
       // localStorage.setItem('auth', JSON.stringify({ ...auth, user: updatedUser }));
 
     } catch (err) {
       console.error('Save failed', err);
-      if (err.response?.status === 400) {
+      if (err.response?.status === 400 && err.response.data?.message) {
         // backend returns msg e.g. 'Email already exists' or 'Phone number already exists'
-        toast.warn(err.response.data.message, { position: 'top-center' });
-        return;
+        toast.warn(err.response.data.message, {
+          position: 'top-center',
+          autoClose: 5000,
+          onClose: () => {
+            setEditing(false);
+            setErrors({});
+          }
+        });
+
       } else {
-        toast.error('Error updating profile. Please try again.', { position: 'top-center' });
+        toast.error('Error updating profile. Please try again.', { position: 'top-center',
+        autoClose: 5000,
+        onClose: () => {
+          setEditing(false);
+          setErrors({});
+        } });
       }
 
     }

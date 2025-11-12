@@ -804,7 +804,8 @@ function Workreport() {
             const { insertedCount, duplicateCount, duplicateIds } = response.data;
 
             if (insertedCount > 0) {
-                toast.success(`${insertedCount} students moved to Admission.`, {
+                const noun = insertedCount > 1 ? 'students' : 'student';
+                toast.success(`${insertedCount} ${noun} moved to admission.`, {
                     position: "top-center",
                     autoClose: 5000,
                     theme: "light",
@@ -812,23 +813,24 @@ function Workreport() {
             }
 
             if (duplicateCount > 0) {
-                toast.warning(`${duplicateCount} students were already in Admission and were skipped.`, {
+                const noun = duplicateCount > 1 ? 'students' : 'student';
+                toast.warning(`${duplicateCount} ${noun} were already in admission and were skipped.`, {
                     position: "top-center",
                     autoClose: 5000,
                     theme: "light",
                 });
                 // Optionally: you could log or highlight which ones (duplicateIds) in the UI
-                console.log("Duplicates skipped:", duplicateIds);
+                /* console.log("Duplicates skipped:", duplicateIds);*/
             }
 
-            if (insertedCount === 0 && duplicateCount > 0) {
+            {/*   if (insertedCount === 0 && duplicateCount > 0) {
                 // all selected were duplicates
                 toast.info("All selected students were already in Admission. No new moves.", {
                     position: "top-center",
                     autoClose: 5000,
                     theme: "light",
                 });
-            }
+            }*/}
 
             // clear selection, maybe refresh list
             setSelectedIds([]);
@@ -854,7 +856,8 @@ function Workreport() {
             const { insertedCount, duplicateCount, duplicateIds } = response.data;
 
             if (insertedCount > 0) {
-                toast.success(`${insertedCount} students moved to Contact Later.`, {
+                const noun = insertedCount > 1 ? 'students' : 'student';
+                toast.success(`${insertedCount} ${noun} moved to contact later.`, {
                     position: "top-center",
                     autoClose: 5000,
                     theme: "light",
@@ -862,21 +865,22 @@ function Workreport() {
             }
 
             if (duplicateCount > 0) {
-                toast.warning(`${duplicateCount} students were already in contact Later and were skipped.`, {
+                const noun = duplicateCount > 1 ? 'students' : 'student';
+                toast.warning(`${duplicateCount} ${noun} were already in contact later and were skipped.`, {
                     position: "top-center",
                     autoClose: 5000,
                     theme: "light",
                 });
-                console.log("Duplicates skipped:", duplicateIds);
+                /*console.log("Duplicates skipped:", duplicateIds);*/
             }
 
-            if (insertedCount === 0 && duplicateCount > 0) {
+            {/*if (insertedCount === 0 && duplicateCount > 0) {
                 toast.info("All selected students were already in Contact Later. No new moves.", {
                     position: "top-center",
                     autoClose: 5000,
                     theme: "light",
                 });
-            }
+            }*/}
 
             setSelectedIds([]);
         } catch (err) {
@@ -901,7 +905,8 @@ function Workreport() {
 
             if (success) {
                 if (modifiedCount > 0) {
-                    toast.success(`${modifiedCount} students verified.`, { position: 'top-center' });
+                    const noun = modifiedCount > 2 ? 'students' : 'student';
+                    toast.success(`${modifiedCount} ${noun} verified.`, { position: 'top-center' });
                 }
                 if (alreadyVerifiedCount > 0) {
                     toast.warning(`${alreadyVerifiedCount} students were already verified.`, { position: 'top-center' });
@@ -1319,8 +1324,17 @@ function Workreport() {
 
                                                                     <td>
                                                                         <div className="d-flex align-items-center gap-1">
-                                                                            <span>{s.name}</span>
-
+                                                                            <span
+                                                                                style={{
+                                                                                    color: s.isMovedToAdmission
+                                                                                        ? 'red'
+                                                                                        : s.isMovedToContactLater
+                                                                                            ? 'orange'
+                                                                                            : 'inherit'
+                                                                                }}
+                                                                            >
+                                                                                {s.name}
+                                                                            </span>
                                                                             {/* ✅ Verified tooltip */}
                                                                             {ci.verified && (
                                                                                 <OverlayTrigger
@@ -1333,40 +1347,44 @@ function Workreport() {
                                                                                 </OverlayTrigger>
                                                                             )}
 
-                                                                          {/* ✅ Admission / Contact Later tooltip */}
-{(s.isMovedToAdmission || s.isMovedToContactLater) && (
-  <OverlayTrigger
-    placement="top"
-    // explicitly set trigger if you want
-    trigger={['hover','focus']}
-    overlay={
-      <Tooltip id={`move-${s._id}`}>
-        { s.isMovedToAdmission ? 'Moved to Admission' : 'Moved to Contact Later' }
-      </Tooltip>
-    }
-  >
-    <span
-      style={{
-        cursor: 'pointer',
-        display: 'inline-flex',
-        alignItems: 'center',
-        padding: '4px',       // slightly more padding helps hover
-        marginLeft: '4px'     // to separate from previous icon
-      }}
-    >
-      <FaArrowAltCircleRight
-        style={{
-          color: s.isMovedToAdmission ? 'blue' : 'orange'
-        }}
-      />
-    </span>
-  </OverlayTrigger>
-)}
 
                                                                         </div>
                                                                     </td>
 
-                                                                    <td>{ci.callStatus ?? '-'}</td>
+                                                                    <td>
+                                                                        <div className="d-flex align-items-center gap-1">
+                                                                            <span>{ci.callStatus ?? '-'}</span>
+
+                                                                            {(s.isMovedToAdmission || s.isMovedToContactLater) && (
+                                                                                <OverlayTrigger
+                                                                                    placement="top"
+                                                                                    trigger={['hover', 'focus']}
+                                                                                    overlay={
+                                                                                        <Tooltip id={`move-tooltip-${s._id}`}>
+                                                                                            {s.isMovedToAdmission ? 'Moved to Admission' : 'Moved to Contact Later'}
+                                                                                        </Tooltip>
+                                                                                    }
+                                                                                >
+                                                                                    <span
+                                                                                        style={{
+                                                                                            cursor: 'pointer',
+                                                                                            display: 'inline-flex',
+                                                                                            alignItems: 'center',
+                                                                                            padding: '4px',
+                                                                                            marginLeft: '4px',
+                                                                                        }}
+                                                                                    >
+                                                                                        <FaArrowAltCircleRight
+                                                                                            style={{
+                                                                                                color: s.isMovedToAdmission ? 'blue' : 'orange',
+                                                                                            }}
+                                                                                        />
+                                                                                    </span>
+                                                                                </OverlayTrigger>
+                                                                            )}
+                                                                        </div>
+                                                                    </td>
+
                                                                     <td>
                                                                         {ci.callDuration != null && !isNaN(ci.callDuration) ?
                                                                             (() => {

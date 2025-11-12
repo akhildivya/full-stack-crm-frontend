@@ -45,6 +45,7 @@ function Followup() {
         fetchData();
     }, [mode, searchTerm, sortKey, sortDir, page, rowsPerPage]);
 
+    
     const handleExportPDF = () => {
         const doc = new jsPDF();
 
