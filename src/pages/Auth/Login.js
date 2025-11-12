@@ -83,6 +83,11 @@ function Login() {
                 autoClose: 5000,
                 theme: "light",
             });
+             setInputs({
+
+                    email: "",
+                    password: ""
+                })
             return;
         }
         if (validateAll()) {

@@ -87,6 +87,10 @@ function ResetPassword() {
                 autoClose: 5000,
                 theme: "light",
             });
+            setInputs({
+                password: "",
+                confirmPassword: ""
+            })
             return;
         }
         if (!password || !confirmPassword) {

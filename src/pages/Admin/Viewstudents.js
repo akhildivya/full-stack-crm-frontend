@@ -246,6 +246,13 @@ function Viewstudents() {
   };
 
   const handleSaveChanges = async () => {
+     if (Object.keys(validationErrors).length > 0) {
+    toast.warn("Please fix the highlighted errors before updating.", {
+      position: "top-center",
+      autoClose: 3000,
+    });
+    return; // Stop the function if there are validation issues
+  }
     if (!canSave()) return;
     try {
       const payload = {

@@ -75,7 +75,7 @@ function Notifications() {
   };
 
   function formatDateToDDMMMYYYY(dateString) {
-    const d = new Date(dateString);
+    const d = new Date(dateString+ "T00:00:00");
     const day = d.getDate().toString().padStart(2, "0");
     const year = d.getFullYear();
     const monthNames = [

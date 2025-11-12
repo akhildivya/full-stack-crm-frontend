@@ -129,12 +129,30 @@ function Register() {
         const errors = [];
         if (!validateAll()) {
             toast.warn('Please fix the errors before submitting', { 'position': 'top-center' });
+            setInputs({
+
+                username: "",
+                email: "",
+                password: "",
+                confirmPassword: "",
+                phone: '',
+                userType: 'User'
+            })
             return;
         }
 
         // Now also check password match etc
         if (password !== confirmPassword) {
             toast.warn('Passwords do not match', { 'position': 'top-center' });
+            setInputs({
+
+                username: "",
+                email: "",
+                password: "",
+                confirmPassword: "",
+                phone: '',
+                userType: 'User'
+            })
             return;
         }
         if (userType === "Admin" && secretKey !== "Unl0ckMySuperH30Best2025!") {

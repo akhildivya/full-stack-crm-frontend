@@ -189,6 +189,18 @@ const getWeekRange = (weekValue) => {
     }
     return false;
   };
+
+  function toLocalDateString(dateStr) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  const local = new Date(d.getTime() + d.getTimezoneOffset() * 60000);
+  return local.toLocaleDateString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric"
+  });
+}
+
   const exportToPDF = () => {
     const doc = new jsPDF();
     const title = `CRM - ${reportType === "weekly"
@@ -513,11 +525,7 @@ const getWeekRange = (weekValue) => {
                               <td>
                                 {reportType === "daily" ? (
                                   <span>
-                                    {new Date(r.day).toLocaleDateString("en-IN", {
-                                      day: "2-digit",
-                                      month: "short",
-                                      year: "numeric"
-                                    })}
+                                    {toLocalDateString(r.day)}
                                     {pending && (
                                       <span className="badge bg-warning ms-2">
                                         Pending
