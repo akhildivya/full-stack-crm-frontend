@@ -1419,7 +1419,7 @@ function Viewstudents() {
                                 <tr>
                                   <th>User</th>
                                   <th>Assigned At</th>
-                                  <th>Unassigned At</th>
+                                  
                                 </tr>
                               </thead>
                               <tbody>
@@ -1431,11 +1431,7 @@ function Viewstudents() {
                                         ? formatAssignedDate(a.assignedAt)
                                         : '-'}
                                     </td>
-                                    <td>
-                                      {a.unassignedAt
-                                        ? formatAssignedDate(a.unassignedAt).toLocaleString()
-                                        : '---'}
-                                    </td>
+                                    
                                   </tr>
                                 ))}
                               </tbody>

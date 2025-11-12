@@ -794,71 +794,120 @@ function Workreport() {
     };
 
     const handleBulkAdmission = async () => {
-        // get selectedIds, ask confirm, then send to backend: move to “admission” table
+        if (!selectedIds.length) {
+            toast.info("No students selected.");
+            return;
+        }
+
         try {
-            await axios.post(`${BASEURL}/admin/move-to-admission`, { ids: selectedIds });
-            // remove those students from current table state
+            const response = await axios.post(`${BASEURL}/admin/move-to-admission`, { ids: selectedIds });
+            const { insertedCount, duplicateCount, duplicateIds } = response.data;
 
-            toast.success("Added to admission", {
-                position: "top-center",
-                autoClose: 5000,
-                hideProgressBar: false,
-                closeOnClick: false,
-                pauseOnHover: true,
-                draggable: true,
-                progress: undefined,
-                theme: "light",
+            if (insertedCount > 0) {
+                toast.success(`${insertedCount} students moved to Admission.`, {
+                    position: "top-center",
+                    autoClose: 5000,
+                    theme: "light",
+                });
+            }
 
-            });
-            // clear selectedIds, refresh summary if needed
+            if (duplicateCount > 0) {
+                toast.warning(`${duplicateCount} students were already in Admission and were skipped.`, {
+                    position: "top-center",
+                    autoClose: 5000,
+                    theme: "light",
+                });
+                // Optionally: you could log or highlight which ones (duplicateIds) in the UI
+                console.log("Duplicates skipped:", duplicateIds);
+            }
+
+            if (insertedCount === 0 && duplicateCount > 0) {
+                // all selected were duplicates
+                toast.info("All selected students were already in Admission. No new moves.", {
+                    position: "top-center",
+                    autoClose: 5000,
+                    theme: "light",
+                });
+            }
+
+            // clear selection, maybe refresh list
             setSelectedIds([]);
+            // maybe trigger refresh of the students table
         } catch (err) {
-            toast.error("Failed to move to Admission", {
+            console.error(err);
+            toast.error("Failed to move to Admission. Please try again.", {
                 position: "top-center",
                 autoClose: 5000,
-                hideProgressBar: false,
-                closeOnClick: false,
-                pauseOnHover: true,
-                draggable: true,
-                progress: undefined,
                 theme: "light",
-
             });
         }
     };
 
     const handleBulkContactLater = async () => {
-        try {
-            await axios.post(`${BASEURL}/admin/move-to-contact-later`, { ids: selectedIds });
-           
-            toast.success("Added to later contacts", {
-                position: "top-center",
-                autoClose: 5000,
-                hideProgressBar: false,
-                closeOnClick: false,
-                pauseOnHover: true,
-                draggable: true,
-                progress: undefined,
-                theme: "light",
+        if (!selectedIds.length) {
+            toast.info("No students selected.");
+            return;
+        }
 
-            });
+        try {
+            const response = await axios.post(`${BASEURL}/admin/move-to-contact-later`, { ids: selectedIds });
+            const { insertedCount, duplicateCount, duplicateIds } = response.data;
+
+            if (insertedCount > 0) {
+                toast.success(`${insertedCount} students moved to Contact Later.`, {
+                    position: "top-center",
+                    autoClose: 5000,
+                    theme: "light",
+                });
+            }
+
+            if (duplicateCount > 0) {
+                toast.warning(`${duplicateCount} students were already in contact Later and were skipped.`, {
+                    position: "top-center",
+                    autoClose: 5000,
+                    theme: "light",
+                });
+                console.log("Duplicates skipped:", duplicateIds);
+            }
+
+            if (insertedCount === 0 && duplicateCount > 0) {
+                toast.info("All selected students were already in Contact Later. No new moves.", {
+                    position: "top-center",
+                    autoClose: 5000,
+                    theme: "light",
+                });
+            }
+
             setSelectedIds([]);
         } catch (err) {
-            toast.error("Failed to move to Contact Later",);
+            console.error(err);
+            toast.error("Failed to move to Contact Later. Please try again.", {
+                position: "top-center",
+                autoClose: 5000,
+                theme: "light",
+            });
         }
     };
     const handleBulkVerify = async () => {
         if (selectedIds.length === 0) return;
+
         try {
             const resp = await axios.put(
                 `${BASEURL}/admin/students-call/bulk-verify`,
                 { ids: selectedIds },
                 { headers: { Authorization: auth.token } }
             );
-            if (resp.data.success) {
-                toast.success(resp.data.message, { position: 'top-center' });
+            const { success, message, modifiedCount, alreadyVerifiedCount } = resp.data;
 
-                // Update local state: set verified flag for students
+            if (success) {
+                if (modifiedCount > 0) {
+                    toast.success(`${modifiedCount} students verified.`, { position: 'top-center' });
+                }
+                if (alreadyVerifiedCount > 0) {
+                    toast.warning(`${alreadyVerifiedCount} students were already verified.`, { position: 'top-center' });
+                }
+
+                // update local state
                 setStudents(prev =>
                     prev.map(s =>
                         selectedIds.includes(s._id)
@@ -868,7 +917,8 @@ function Workreport() {
                 );
                 setSelectedIds([]);
             } else {
-                toast.error(resp.data.message || 'Bulk verify failed', { position: 'top-center' });
+                // maybe message saying nothing done
+                toast.warning(message || 'Bulk verify did nothing', { position: 'top-center' });
             }
         } catch (err) {
             console.error('Error bulk verifying:', err);
@@ -882,9 +932,10 @@ function Workreport() {
                 {},
                 { headers: { Authorization: auth.token } }
             );
-            if (resp.data.success) {
-                toast.success(resp.data.message, { position: 'top-center' });
-                // update state
+            const { success, message, student } = resp.data;
+
+            if (success) {
+                toast.success(message, { position: 'top-center' });
                 setStudents(prev =>
                     prev.map(s =>
                         s._id === studentId
@@ -893,7 +944,8 @@ function Workreport() {
                     )
                 );
             } else {
-                toast.error(resp.data.message || 'Verify failed', { position: 'top-center' });
+                // Could be "already verified" or other reason
+                toast.warning(message || 'Verify failed', { position: 'top-center' });
             }
         } catch (err) {
             console.error('Error verifying:', err);
@@ -1266,45 +1318,53 @@ function Workreport() {
                                                                     <td>{serialNo}</td>
 
                                                                     <td>
-  <div className="d-flex align-items-center gap-1">
-    <span>{s.name}</span>
+                                                                        <div className="d-flex align-items-center gap-1">
+                                                                            <span>{s.name}</span>
 
-    {/* ✅ Verified tooltip */}
-    {ci.verified && (
-      <OverlayTrigger
-        placement="top"
-        overlay={<Tooltip id={`verified-${s._id}`}>Verified Call Info</Tooltip>}
-      >
-        <span style={{ cursor: 'pointer' }}>
-          <FaCheckCircle style={{ color: 'green' }} />
-        </span>
-      </OverlayTrigger>
-    )}
+                                                                            {/* ✅ Verified tooltip */}
+                                                                            {ci.verified && (
+                                                                                <OverlayTrigger
+                                                                                    placement="top"
+                                                                                    overlay={<Tooltip id={`verified-${s._id}`}>Verified Call Info</Tooltip>}
+                                                                                >
+                                                                                    <span style={{ cursor: 'pointer' }}>
+                                                                                        <FaCheckCircle style={{ color: 'green' }} />
+                                                                                    </span>
+                                                                                </OverlayTrigger>
+                                                                            )}
 
-    {/* ✅ Admission / Contact Later tooltip */}
-    {(s.isMovedToAdmission || s.isMovedToContactLater) && (
-      <OverlayTrigger
-        placement="top"
-        overlay={
-          <Tooltip id={`move-${s._id}`}>
-            {s.isMovedToAdmission
-              ? 'Moved to Admission'
-              : 'Moved to Contact Later'}
-          </Tooltip>
-        }
-      >
-        <span style={{ cursor: 'pointer' }}>
-          <FaArrowAltCircleRight
-            style={{
-              color: s.isMovedToAdmission ? 'blue' : 'orange',
-              marginLeft: '4px'
-            }}
-          />
-        </span>
-      </OverlayTrigger>
-    )}
-  </div>
-</td>
+                                                                          {/* ✅ Admission / Contact Later tooltip */}
+{(s.isMovedToAdmission || s.isMovedToContactLater) && (
+  <OverlayTrigger
+    placement="top"
+    // explicitly set trigger if you want
+    trigger={['hover','focus']}
+    overlay={
+      <Tooltip id={`move-${s._id}`}>
+        { s.isMovedToAdmission ? 'Moved to Admission' : 'Moved to Contact Later' }
+      </Tooltip>
+    }
+  >
+    <span
+      style={{
+        cursor: 'pointer',
+        display: 'inline-flex',
+        alignItems: 'center',
+        padding: '4px',       // slightly more padding helps hover
+        marginLeft: '4px'     // to separate from previous icon
+      }}
+    >
+      <FaArrowAltCircleRight
+        style={{
+          color: s.isMovedToAdmission ? 'blue' : 'orange'
+        }}
+      />
+    </span>
+  </OverlayTrigger>
+)}
+
+                                                                        </div>
+                                                                    </td>
 
                                                                     <td>{ci.callStatus ?? '-'}</td>
                                                                     <td>
