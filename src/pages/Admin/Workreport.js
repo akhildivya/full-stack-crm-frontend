@@ -29,7 +29,7 @@ function Workreport() {
     const [selectedIds, setSelectedIds] = useState([]);
 
     const [isExpanded, setIsExpanded] = useState(false);
-
+    const [showOnlyVerified, setShowOnlyVerified] = useState(false);
 
     const formatSeconds = (sec) => {
         if (!sec) return '0 sec';
@@ -980,6 +980,10 @@ function Workreport() {
         return summary;
     }, [currentRows]);
 
+    const filteredRows = showOnlyVerified
+  ? currentRows.filter(s => !(s.callInfo?.verified))
+  : currentRows;
+
     return (
         <Layout title={"CRM - Work Report"}>
             <div className="container-fluid m-3 p-3 admin-root">
@@ -1249,6 +1253,13 @@ function Workreport() {
                                                 >
                                                     Delete Selected ({selectedIds.length})
                                                 </Button>
+                                                <Button
+                                                    variant="info"
+                                                    size="sm"
+                                                    onClick={() => setShowOnlyVerified(prev => !prev)}
+                                                >
+                                                    {showOnlyVerified ? 'Show All Rows' : 'Hide Verified Rows'}
+                                                </Button>
                                             </div>
 
                                             <div className="d-flex justify-content-start mb-2">
@@ -1260,6 +1271,7 @@ function Workreport() {
                                                     {isExpanded ? "Shrink View" : "Expand View"}
                                                 </Button>
                                             </div>
+                                            
                                             <table className="table custom-table table-hover align-middle">
                                                 <thead className="table-header">
                                                     <tr>
@@ -1292,14 +1304,14 @@ function Workreport() {
                                                     </tr>
                                                 </thead>
                                                 <tbody>
-                                                    {currentRows.length === 0 ? (
+                                                    {filteredRows.length === 0 ? (
                                                         <tr>
                                                             <td colSpan="13" className="no-data-cell">
                                                                 No matches found.
                                                             </td>
                                                         </tr>
                                                     ) : (
-                                                        currentRows.map((s, idx) => {
+                                                        filteredRows.map((s, idx) => {
                                                             const ci = s.callInfo || {};
                                                             const totalSec = s.callSessionDurationSeconds != null ? s.callSessionDurationSeconds : null;  // NEW
                                                             const assignedAt = s.assignedAt ? new Date(s.assignedAt) : null;
