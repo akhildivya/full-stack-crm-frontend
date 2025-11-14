@@ -1125,8 +1125,8 @@ function Workreport() {
                                     {loadingStudents ? (
                                         <p>Loading students…</p>
                                     ) : (
-                                        <div className="table-responsive custom-table-wrapper">
-                                            <Accordion defaultActiveKey="0" className="mb-3">
+                                        <div className="table-responsive custom-table-wrapper  w-100">
+                                            <Accordion defaultActiveKey="0" className="mb-3  w-100">
                                                 <Accordion.Item eventKey="0">
                                                     <Accordion.Header>Summary</Accordion.Header>
                                                     <Accordion.Body>
@@ -1218,12 +1218,13 @@ function Workreport() {
                                                     </Accordion.Body>
                                                 </Accordion.Item>
                                             </Accordion>
-                                            <div className="mb-3 d-flex justify-content-start gap-2">
+                                            <div className="mb-3 d-flex justify-content-start gap-2 w-100">
                                                 <Button
                                                     variant="success"
                                                     size="sm"
                                                     disabled={selectedIds.length === 0}
                                                     onClick={handleBulkVerify}
+                                                     className="w-100 w-md-auto mb-2 mb-md-0"
                                                 >
                                                     Verify Selected ({selectedIds.length})
                                                 </Button>
@@ -1232,6 +1233,7 @@ function Workreport() {
                                                     size="sm"
                                                     disabled={selectedIds.length === 0}
                                                     onClick={handleBulkAdmission}
+                                                     className="w-100 w-md-auto mb-2 mb-md-0"
                                                 >
                                                     Admission Selected ({selectedIds.length})
                                                 </Button>
@@ -1241,6 +1243,7 @@ function Workreport() {
                                                     size="sm"
                                                     disabled={selectedIds.length === 0}
                                                     onClick={handleBulkContactLater}
+                                                     className="w-100 w-md-auto mb-2 mb-md-0"
                                                 >
                                                     Contact Later Selected ({selectedIds.length})
                                                 </Button>
@@ -1250,6 +1253,7 @@ function Workreport() {
                                                     size="sm"
                                                     disabled={selectedIds.length === 0}
                                                     onClick={handleBulkDelete}
+                                                     className="w-100 w-md-auto mb-2 mb-md-0"
                                                 >
                                                     Delete Selected ({selectedIds.length})
                                                 </Button>
@@ -1257,12 +1261,13 @@ function Workreport() {
                                                     variant="info"
                                                     size="sm"
                                                     onClick={() => setShowOnlyVerified(prev => !prev)}
+                                                     className="w-100 w-md-auto mb-2 mb-md-0"
                                                 >
                                                     {showOnlyVerified ? 'Show All Rows' : 'Hide Verified Rows'}
                                                 </Button>
                                             </div>
 
-                                            <div className="d-flex justify-content-start mb-2">
+                                            <div className="d-flex justify-content-start mb-2 w-100">
                                                 <Button
                                                     variant={isExpanded ? "secondary" : "primary"}
                                                     size="sm"
