@@ -29,8 +29,6 @@ function HomePage() {
                             <div className="slider">
                                 <div className="track">
                                     <img src="https://i.postimg.cc/g21fVZKh/25644134-7015971-removebg-preview.png" alt="CRM Illustration 1" />
-                                    <img src="https://i.postimg.cc/m2G3P3Tr/illustration2.png" alt="CRM Illustration 2" />
-                                    <img src="https://i.postimg.cc/3x3K9n3v/illustration3.png" alt="CRM Illustration 3" />
                                 </div>
                             </div>
                         </div>
